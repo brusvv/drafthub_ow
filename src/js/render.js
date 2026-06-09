@@ -9,14 +9,14 @@ function renderCurrentView(){
   if(id==='view-players')renderPlayers();
   if(id==='view-roster')renderRoster();
 }
-
+ 
 function dots5(val,type,max=5){
   let h='<div class="dots">';
   for(let i=1;i<=max;i++)h+=`<div class="dot ${i<=val?type:''}"></div>`;
   return h+'</div>';
 }
-
-// MAPS
+ 
+// ════ MAPS ════
 function renderMaps(){
   const grid=document.getElementById('mapGrid');
   const detail=document.getElementById('mapDetail');
@@ -45,7 +45,7 @@ function renderMaps(){
     </div>`;
   }).join('');
 }
-
+ 
 function showMapDetail(name){
   const m=maps.find(x=>x.name===name);if(!m)return;
   document.getElementById('mapGrid').innerHTML='';
@@ -53,7 +53,8 @@ function showMapDetail(name){
   detail.classList.add('show');
   const noAD=NO_ATKDEF.includes(m.type);
   const src=mapImg(m.name);
-
+ 
+  // Preferred heroes
   const byRole={Tank:[],Damage:[],Support:[]};
   m.preferredHeroes.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(h)});
   const heroRows=['Tank','Damage','Support'].flatMap(role=>
@@ -63,33 +64,58 @@ function showMapDetail(name){
       <div class="hero-row-info"><div class="hero-row-name">${h.name}</div><div class="hero-row-sub">${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
     </div>`})
   ).join('')||'<div class="empty">Не указаны</div>';
-
-  const banItems=m.bans.map(n=>{const ps=portrait(n);return`<div class="ban-item">
-    ${ps?`<img src="${ps}" class="ban-item-av" onerror="this.outerHTML='<div class=ban-item-av-ph>${n[0]}</div>'">`:`<div class="ban-item-av-ph">${n[0]}</div>`}
-    <span class="ban-item-name">${n}</span>
-  </div>`}).join('')||'<div class="empty">Не указаны</div>';
-
-  const compItems=m.comp.map(c=>{const ps=portrait(c.hero);return`<div class="comp-card ${c.role}">
-    ${ps?`<img src="${ps}" class="comp-av" onerror="this.outerHTML='<div class=comp-av-ph>${c.hero[0]}</div>'">`:`<div class="comp-av-ph">${c.hero[0]}</div>`}
-    <div class="comp-name">${c.hero}</div>
-  </div>`}).join('')||'<div class="empty">Не указан</div>';
-
+ 
+  // Bans — grouped by role: Tank, Damage, Support
+  const banByRole={Tank:[],Damage:[],Support:[]};
+  m.bans.forEach(n=>{
+    const h=heroMap[n];
+    const role=h?h.role:'Damage';
+    if(!banByRole[role])banByRole[role]=[];
+    banByRole[role].push(n);
+  });
+  const banGroupsHtml=['Tank','Damage','Support'].filter(r=>banByRole[r].length).map(r=>`
+    <div class="ban-role-group">
+      <div class="ban-role-header">
+        ${roleIcon(r,14)}
+        <span class="ban-role-title" style="color:${rc[r]}">${r}</span>
+      </div>
+      <div class="ban-role-heroes">
+        ${banByRole[r].map(n=>{const ps=portrait(n);return`<div class="ban-chip">
+          ${ps?`<img src="${ps}" onerror="this.outerHTML='<div class=ban-chip-ph>${n[0]}</div>'">`:`<div class="ban-chip-ph">${n[0]}</div>`}
+          <span class="ban-chip-name">${n}</span>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty">Не указаны</div>';
+ 
+  // Comp — role-aware slots
+  const compHtml=buildCompDisplay(m.comp);
+ 
+  // Counters
+  const counterByRole={Tank:[],Damage:[],Support:[]};
+  (m.counters||[]).forEach(n=>{
+    const h=heroMap[n];
+    const role=h?h.role:'Damage';
+    if(!counterByRole[role])counterByRole[role]=[];
+    counterByRole[role].push(n);
+  });
+  const counterGroupsHtml=['Tank','Damage','Support'].filter(r=>counterByRole[r].length).map(r=>`
+    <div class="ban-role-group">
+      <div class="ban-role-header">
+        ${roleIcon(r,14)}
+        <span class="ban-role-title" style="color:${rc[r]}">${r}</span>
+      </div>
+      <div class="ban-role-heroes">
+        ${counterByRole[r].map(n=>{const ps=portrait(n);const hd=heroMap[n];return`<div class="ban-chip" style="background:rgba(240,160,48,.06);border-color:rgba(240,160,48,.2)">
+          ${ps?`<img src="${ps}" onerror="this.outerHTML='<div class=ban-chip-ph>${n[0]}</div>'">`:`<div class="ban-chip-ph">${n[0]}</div>`}
+          <span class="ban-chip-name" style="color:var(--accent)">${n}</span>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty">Не указаны</div>';
+ 
   const notesHtml=m.notes
     ?m.notes.split(/[.\n]/).filter(s=>s.trim()).map(s=>`<span class="note-line">${s.trim()}</span>`).join('')
     :'<div class="empty">Нет заметок</div>';
-
-  const counterItems=(m.counters||[]).map(n=>{
-    const h=heroMap[n]||{};const ps=portrait(n);
-    const hd=heroMap[n];const score=hd?Math.max(0,...(hd.counters||[]).map(c=>c.score)):0;
-    const banRec=score>=8?`<span style="font-family:var(--mono);font-size:8px;text-transform:uppercase;background:rgba(224,85,85,.15);color:var(--damage);border:1px solid rgba(224,85,85,.3);border-radius:4px;padding:1px 5px;margin-left:auto">БАН</span>`:'';
-    return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg3)">
-      ${ps?`<img src="${ps}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" onerror="this.outerHTML='<div style=width:24px;height:24px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800>${n[0]}</div>'">`:`<div style="width:24px;height:24px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">${n[0]}</div>`}
-      <span style="font-size:12px;font-weight:600;flex:1">${n}</span>
-      ${h.role?`<div style="display:flex;align-items:center;gap:3px">${roleIcon(h.role,13)}${subroleIcon(h.role,h.subrole,13)}</div>`:''}
-      ${banRec}
-    </div>`;
-  }).join('')||'<div class="empty">Не указаны</div>';
-
+ 
   detail.innerHTML=`
     <div class="detail-header">
       ${src?`<img src="${src}" class="detail-banner" alt="${m.name}" onerror="this.outerHTML='<div class=detail-banner-ph><div class=detail-banner-ph-inner>${m.name}</div></div>'">`:`<div class="detail-banner-ph"><div class="detail-banner-ph-inner">${m.name}</div></div>`}
@@ -120,15 +146,15 @@ function showMapDetail(name){
       </div>
       <div class="d-card">
         <div class="d-card-title">Цели для банов</div>
-        <div class="ban-grid">${banItems}</div>
-        <div style="margin-top:1rem">
-          <div class="d-card-title" style="border:none;padding:0;margin-bottom:8px">Предпочтительный состав</div>
-          <div class="comp-row">${compItems}</div>
-        </div>
+        ${banGroupsHtml}
       </div>
       <div class="d-card">
-        <div class="d-card-title">Контрпики на этой карте</div>
-        <div style="display:flex;flex-direction:column;gap:4px">${counterItems}</div>
+        <div class="d-card-title">Предпочтительный состав</div>
+        ${compHtml}
+      </div>
+      <div class="d-card">
+        <div class="d-card-title">Контрпики на карте</div>
+        ${counterGroupsHtml}
       </div>
       <div class="d-card full">
         <div class="d-card-title">Заметки о подготовке</div>
@@ -136,90 +162,300 @@ function showMapDetail(name){
       </div>
     </div>`;
 }
-
+ 
+// Состав — отображение по ролям
+function buildCompDisplay(comp){
+  if(!comp||!comp.length)return'<div class="empty">Не указан</div>';
+  const byRole={Tank:[],Damage:[],Support:[]};
+  comp.forEach(c=>{
+    const role=c.playerRole||c.role||(heroMap[c.hero]||{}).role||'Damage';
+    if(!byRole[role])byRole[role]=[];
+    byRole[role].push({...c,displayRole:role});
+  });
+  return['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
+    <div style="margin-bottom:8px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${rc[r]};margin-bottom:5px;font-weight:700">${r}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${byRole[r].map(c=>{const ps=portrait(c.hero);return`<div class="comp-card ${r}">
+          ${ps?`<img src="${ps}" class="comp-av" onerror="this.outerHTML='<div class=comp-av-ph>${c.hero[0]}</div>'">`:`<div class="comp-av-ph">${c.hero[0]}</div>`}
+          <div class="comp-name">${c.hero}</div>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('');
+}
+ 
 function backToMaps(){document.getElementById('mapDetail').classList.remove('show');document.getElementById('mapDetail').innerHTML='';renderMaps()}
 function filterMaps(type,btn){mapFilter=type;document.querySelectorAll('#mapFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');backToMaps()}
-
-// HEROES
+ 
+// ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   const pool=document.getElementById('heroPool');
   const roles=heroFilter==='all'?['Tank','Damage','Support']:[heroFilter];
   pool.innerHTML=roles.map(role=>{
     const h=heroes.filter(x=>x.role===role).sort((a,b)=>b.priority-a.priority);
     if(!h.length)return'';
+ 
+    // Группировка по подклассу
+    const subroleOrder={
+      Tank:['Initiator','Bruiser','Stalwart'],
+      Damage:['Sharpshooter','Flanker','Recon','Specialist'],
+      Support:['Tactician','Medic','Survivor']
+    };
+    const order=subroleOrder[role]||[];
+    const bySubrole={};
+    h.forEach(hero=>{
+      const sub=hero.subrole||'Other';
+      if(!bySubrole[sub])bySubrole[sub]=[];
+      bySubrole[sub].push(hero);
+    });
+    const sortedSubs=[...new Set([...order,...Object.keys(bySubrole)])].filter(s=>bySubrole[s]);
+ 
+    const subroleGroups=sortedSubs.map(sub=>`
+      <div class="subrole-group">
+        <div class="subrole-lbl">${subroleIcon(role,sub,11)} ${sub}</div>
+        <div class="hero-grid">${bySubrole[sub].map(hero=>{
+          const src=portrait(hero.name);
+          return`<div class="h-card ${hero.banned?'banned':''}" onclick="openHeroModal(heroes.find(x=>x.name==='${esc(hero.name)}'))">
+            <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
+            ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
+            ${hero.banned?'<div class="banned-tag">БАН</div>':''}
+            ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="banned-tag" style="background:var(--accent);top:auto;bottom:5px;font-size:8px">⚠ Контр</div>':''}
+            <div class="h-card-body">
+              <div class="h-card-name">${hero.name}</div>
+              <div class="h-card-sub">${subroleIcon(hero.role,hero.subrole,12)}<span>${hero.subrole}</span></div>
+              <div class="h-card-prio">Приоритет: ${hero.priority}/10</div>
+              ${hero.counters&&hero.counters.length?`<div class="h-card-prio" style="color:var(--damage);font-size:9px">▲ ${hero.counters.slice().sort((a,b)=>b.score-a.score).slice(0,2).map(c=>c.name).join(', ')}</div>`:''}
+            </div>
+          </div>`;
+        }).join('')}</div>
+      </div>`).join('');
+ 
     return`<div class="role-section">
       <div class="role-header">
         ${roleIcon(role,18)}
         <span class="role-title">${role}</span>
         <span class="role-cnt">${h.length} героев</span>
       </div>
-      <div class="hero-grid">${h.map(hero=>{
-        const src=portrait(hero.name);
-        return`<div class="h-card ${hero.banned?'banned':''}" onclick="openHeroModal(heroes.find(x=>x.name==='${esc(hero.name)}'))">
-          <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
-          ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
-          ${hero.banned?'<div class="banned-tag">БАН</div>':''}
-          ${hero.counters.some(c=>c.score>=8)?'<div class="banned-tag" style="background:var(--accent);top:auto;bottom:5px;font-size:8px">⚠ Контр</div>':''}
-          <div class="h-card-body">
-            <div class="h-card-name">${hero.name}</div>
-            <div class="h-card-sub">${subroleIcon(hero.role,hero.subrole,12)}<span>${hero.subrole}</span></div>
-            <div class="h-card-prio">Приоритет: ${hero.priority}/10</div>
-            ${hero.counters.length?`<div class="h-card-prio" style="color:var(--damage);font-size:9px">▲ ${hero.counters.slice().sort((a,b)=>b.score-a.score).slice(0,2).map(c=>c.name).join(', ')}</div>`:''}
-          </div>
-        </div>`;
-      }).join('')}</div>
+      ${subroleGroups}
     </div>`;
   }).join('')||'<div class="empty">Нет героев.</div>';
 }
-
+ 
 function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#heroFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHeroes()}
-
-// TIERS
-function renderTiers(){
-  const tl=document.getElementById('tierList');
-  const byT={};maps.forEach(m=>{if(!byT[m.tier])byT[m.tier]=[];byT[m.tier].push(m)});
-  tl.innerHTML=['S','A','B','C','D'].filter(t=>byT[t]).map(t=>`
-    <div class="tier-row">
-      <div class="tier-lbl" style="background:${ts[t].bg};color:${ts[t].c}">${t}</div>
-      <div class="tier-maps">${byT[t].map(m=>`<div class="tier-pill" onclick="goToMap('${esc(m.name)}')">${m.name}</div>`).join('')}</div>
-    </div>`).join('')||'<div class="empty">Нет данных</div>';
+ 
+// ════ TIER LIST — D&D ════
+ 
+// Состояние тирлистов (сохраняется локально)
+let tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};    // mapName -> tier
+let tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};  // heroName -> tier
+ 
+function switchTierTab(tab,btn){
+  document.querySelectorAll('.tier-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tierListMaps').style.display=tab==='maps'?'block':'none';
+  document.getElementById('tierListHeroes').style.display=tab==='heroes'?'block':'none';
 }
-
+ 
+function renderTiers(){
+  renderTierMaps();
+  renderTierHeroes();
+}
+ 
+function initTierMaps(){
+  // Собираем из maps[], потом применяем локальные overrides
+  const saved=JSON.parse(localStorage.getItem('draft_tier_maps')||'null');
+  if(saved){
+    tierOrderMaps=saved;
+    // Добавляем карты которых нет в сохранённом
+    const allNames=maps.map(m=>m.name);
+    const inTiers=Object.values(tierOrderMaps).flat();
+    allNames.filter(n=>!inTiers.includes(n)).forEach(n=>{
+      const m=maps.find(x=>x.name===n);
+      const tier=m?m.tier:'C';
+      if(!tierOrderMaps[tier])tierOrderMaps[tier]=[];
+      tierOrderMaps[tier].push(n);
+    });
+  }else{
+    tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};
+    maps.forEach(m=>{
+      if(!tierOrderMaps[m.tier])tierOrderMaps[m.tier]=[];
+      tierOrderMaps[m.tier].push(m.name);
+    });
+  }
+}
+ 
+function initTierHeroes(){
+  const saved=JSON.parse(localStorage.getItem('draft_tier_heroes')||'null');
+  if(saved){
+    tierOrderHeroes=saved;
+    const allNames=heroes.map(h=>h.name);
+    const inTiers=Object.values(tierOrderHeroes).flat();
+    allNames.filter(n=>!inTiers.includes(n)).forEach(n=>{
+      tierOrderHeroes['C'].push(n);
+    });
+  }else{
+    tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};
+    heroes.forEach(h=>{
+      const tier=h.priority>=9?'S':h.priority>=7?'A':h.priority>=5?'B':h.priority>=3?'C':'D';
+      if(!tierOrderHeroes[tier])tierOrderHeroes[tier]=[];
+      tierOrderHeroes[tier].push(h.name);
+    });
+  }
+}
+ 
+function saveTierMaps(){localStorage.setItem('draft_tier_maps',JSON.stringify(tierOrderMaps))}
+function saveTierHeroes(){localStorage.setItem('draft_tier_heroes',JSON.stringify(tierOrderHeroes))}
+ 
+// drag state
+let dragItem=null,dragType=null;
+ 
+function renderTierMaps(){
+  initTierMaps();
+  const el=document.getElementById('tierListMaps');
+  el.innerHTML=['S','A','B','C','D'].map(t=>{
+    const items=tierOrderMaps[t]||[];
+    const style=ts[t];
+    return`<div class="tier-row" data-tier="${t}">
+      <div class="tier-lbl" style="background:${style.bg};color:${style.c}">${t}</div>
+      <div class="tier-maps" id="tierMapZone_${t}"
+        ondragover="onDragOver(event,'maps','${t}')"
+        ondrop="onDrop(event,'maps','${t}')"
+        ondragleave="onDragLeave(event)">
+        ${items.map(name=>`<div class="tier-pill" draggable="true"
+          data-name="${esc(name)}" data-tier="${t}" data-type="maps"
+          ondragstart="onDragStart(event,'maps','${t}')"
+          ondragend="onDragEnd(event)"
+          onclick="goToMap('${esc(name)}')">
+          ${name}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+ 
+function renderTierHeroes(){
+  initTierHeroes();
+  const el=document.getElementById('tierListHeroes');
+  el.innerHTML=['S','A','B','C','D'].map(t=>{
+    const items=tierOrderHeroes[t]||[];
+    const style=ts[t];
+    return`<div class="tier-row" data-tier="${t}">
+      <div class="tier-lbl" style="background:${style.bg};color:${style.c}">${t}</div>
+      <div class="tier-maps" id="tierHeroZone_${t}"
+        ondragover="onDragOver(event,'heroes','${t}')"
+        ondrop="onDrop(event,'heroes','${t}')"
+        ondragleave="onDragLeave(event)">
+        ${items.map(name=>{
+          const h=heroMap[name];
+          const src=portrait(name);
+          return`<div class="tier-hero-pill" draggable="true"
+            data-name="${esc(name)}" data-tier="${t}" data-type="heroes"
+            ondragstart="onDragStart(event,'heroes','${t}')"
+            ondragend="onDragEnd(event)">
+            ${src?`<img src="${src}" width="22" height="22" style="border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
+            ${name}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+ 
+// ── Drag & Drop ──
+function onDragStart(e,type,fromTier){
+  dragItem={name:e.currentTarget.dataset.name,tier:fromTier};
+  dragType=type;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',e.currentTarget.dataset.name);
+}
+ 
+function onDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.tier-maps').forEach(z=>z.classList.remove('drag-over'));
+  dragItem=null;dragType=null;
+}
+ 
+function onDragOver(e,type,tier){
+  if(type!==dragType)return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('drag-over');
+}
+ 
+function onDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+ 
+function onDrop(e,type,toTier){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragItem||type!==dragType)return;
+  const {name,tier:fromTier}=dragItem;
+  const order=type==='maps'?tierOrderMaps:tierOrderHeroes;
+ 
+  // Убираем из старого тира
+  order[fromTier]=order[fromTier].filter(n=>n!==name);
+  // Добавляем в новый
+  if(!order[toTier])order[toTier]=[];
+ 
+  // Определяем позицию по месту дропа
+  const zone=e.currentTarget;
+  const pills=[...zone.querySelectorAll('[draggable]')].filter(el=>el.dataset.name!==name);
+  let insertIdx=pills.length;
+  for(let i=0;i<pills.length;i++){
+    const rect=pills[i].getBoundingClientRect();
+    if(e.clientX<rect.left+rect.width/2){insertIdx=i;break}
+  }
+  order[toTier].splice(insertIdx,0,name);
+ 
+  if(type==='maps'){saveTierMaps();renderTierMaps();}
+  else{saveTierHeroes();renderTierHeroes();}
+}
+ 
 function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30)}
-
-// BANS
+ 
+// ════ BANS — по ролям ════
 function renderBans(){
   const bg=document.getElementById('bansGrid');
   const banned=heroes.filter(h=>h.banned);
-  const highCounters=heroes.filter(h=>!h.banned&&h.counters.some(c=>c.score>=8));
+  const highCounters=heroes.filter(h=>!h.banned&&h.counters&&h.counters.some(c=>c.score>=8));
+ 
+  function buildRoleGroups(heroList,chipStyle){
+    const byRole={Tank:[],Damage:[],Support:[]};
+    heroList.forEach(h=>{if(byRole[h.role])byRole[h.role].push(h)});
+    return['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
+      <div class="ban-role-group">
+        <div class="ban-role-header">
+          ${roleIcon(r,14)}
+          <span class="ban-role-title" style="color:${rc[r]}">${r}</span>
+        </div>
+        <div class="ban-role-heroes">
+          ${byRole[r].map(h=>{const src=portrait(h.name);return`<div class="ban-chip" style="${chipStyle||''}">
+            ${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="ban-chip-ph">${h.name[0]}</div>`}
+            <span class="ban-chip-name">${h.name}</span>
+          </div>`;}).join('')}
+        </div>
+      </div>`).join('');
+  }
+ 
   let html='';
   if(banned.length){
-    html+=banned.map(h=>{
-      const src=portrait(h.name);
-      return`<div class="ban-card">
-        ${src?`<img src="${src}" class="ban-card-img" alt="${h.name}" onerror="this.outerHTML='<div class=ban-card-img-ph>${h.name[0]}</div>'">`:`<div class="ban-card-img-ph">${h.name[0]}</div>`}
-        <div class="ban-card-body"><div class="ban-card-name">${h.name}</div><div class="ban-card-role">${roleIcon(h.role,11)}<span>${h.role}</span>${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
-      </div>`;
-    }).join('');
+    html+=`<div style="margin-bottom:1.5rem">
+      <div class="section-lbl" style="margin-bottom:.75rem">Текущие баны команды</div>
+      ${buildRoleGroups(banned,'')}
+    </div>`;
   }
   if(highCounters.length){
-    html+=`<div class="section-lbl" style="grid-column:1/-1;margin-top:${banned.length?'1.5rem':'0'};margin-bottom:.25rem">Рекомендуется к бану (контрпики ≥8)</div>`;
-    html+=highCounters.map(h=>{
-      const src=portrait(h.name);
-      const topC=h.counters.filter(c=>c.score>=8).sort((a,b)=>b.score-a.score);
-      return`<div class="ban-card" style="border-color:rgba(240,160,48,.3)">
-        ${src?`<img src="${src}" class="ban-card-img" alt="${h.name}" onerror="this.outerHTML='<div class=ban-card-img-ph>${h.name[0]}</div>'">`:`<div class="ban-card-img-ph">${h.name[0]}</div>`}
-        <div class="ban-card-body">
-          <div class="ban-card-name" style="color:var(--accent)">${h.name}</div>
-          <div class="ban-card-role">${topC.map(c=>`${c.name}(${c.score})`).join(', ')}</div>
-        </div>
-      </div>`;
-    }).join('');
+    html+=`<div>
+      <div class="section-lbl" style="margin-bottom:.75rem">Рекомендуется к бану (контрпики ≥8)</div>
+      ${buildRoleGroups(highCounters,'background:rgba(240,160,48,.06);border-color:rgba(240,160,48,.25)')}
+    </div>`;
   }
   bg.innerHTML=html||'<div class="empty">Нет активных банов и контрпиков</div>';
 }
-
-// NAV
+ 
+// ════ NAV ════
 function showView(v,btn){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
@@ -227,38 +463,27 @@ function showView(v,btn){
   if(btn)btn.classList.add('active');
   renderCurrentView();
 }
-
+ 
 function showLoading(id){const el=document.getElementById(id);if(el)el.innerHTML='<div class="loading-state"><div class="spinner"></div><br>Загрузка...</div>'}
 function showError(id,msg){const el=document.getElementById(id);if(el)el.innerHTML=`<div class="error-state">⚠ ${msg}</div>`}
 let toastT;
 function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000)}
 function esc(s){return(s||'').replace(/'/g,"\\'")}
-
+ 
 if(!getClientId())document.getElementById('authConfigBanner').style.display='block';
-
-
+ 
 // ════ HELPERS ════
-// roleIcon() и subroleIcon() определены в config.js (Wiki-иконки с SVG-фолбеком)
-
-// ════ PLAYER RECOMMENDATIONS ════
 function computePlayerRecs(p){
   const allHeroes=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-  // recommended bans: counters of player's heroes with score >= 6, sorted by score
   const banScores={};
   allHeroes.forEach(hn=>{
     const h=heroMap[hn];if(!h)return;
     (h.counters||[]).forEach(c=>{
       if(!banScores[c.name])banScores[c.name]={name:c.name,score:0,count:0};
-      banScores[c.name].score+=c.score;
-      banScores[c.name].count++;
+      banScores[c.name].score+=c.score;banScores[c.name].count++;
     });
   });
-  const recBans=Object.values(banScores)
-    .filter(b=>b.score/b.count>=6)
-    .sort((a,b)=>b.score-a.score)
-    .slice(0,6);
-
-  // preferred maps: maps where player's heroes are strong
+  const recBans=Object.values(banScores).filter(b=>b.score/b.count>=6).sort((a,b)=>b.score-a.score).slice(0,6);
   const mapScores={};
   maps.forEach(m=>{
     let score=0;
@@ -270,8 +495,6 @@ function computePlayerRecs(p){
     if(score>0)mapScores[m.name]={name:m.name,score,type:m.type,tier:m.tier};
   });
   const recMaps=Object.values(mapScores).sort((a,b)=>b.score-a.score).slice(0,6);
-
-  // maps to avoid
   const avoidScores={};
   maps.forEach(m=>{
     let score=0;
@@ -282,11 +505,9 @@ function computePlayerRecs(p){
     if(score>0)avoidScores[m.name]={name:m.name,score,type:m.type,tier:m.tier};
   });
   const avoidMaps=Object.values(avoidScores).sort((a,b)=>b.score-a.score).slice(0,4);
-
   return{recBans,recMaps,avoidMaps};
 }
-
-// ════ PLAYERS ════
+ 
 function renderPlayers(){
   const grid=document.getElementById('playerGrid');
   if(!grid)return;
@@ -297,36 +518,24 @@ function renderPlayers(){
     const mainH=p.mainHeroes.slice(0,5);
     const isFlex=p.mainRole==='Flex';
     const hasOff=p.offRole&&p.offRole!==p.mainRole;
-
-    // role icon block
     let roleBlock='';
-    if(isFlex){
-      roleBlock=`<div class="player-role-icon flex">${roleIcon(p.mainRole,48)}</div>`;
-    } else if(hasOff){
-      roleBlock=`<div class="player-role-icon two">${roleIcon(p.mainRole,28)}${roleIcon(p.offRole,22)}</div>`;
-    } else if(p.mainRole){
-      roleBlock=`<div class="player-role-icon one">${roleIcon(p.mainRole,36)}</div>`;
-    }
-
+    if(isFlex)roleBlock=`<div class="player-role-icon flex">${roleIcon(p.mainRole,48)}</div>`;
+    else if(hasOff)roleBlock=`<div class="player-role-icon two">${roleIcon(p.mainRole,28)}${roleIcon(p.offRole,22)}</div>`;
+    else if(p.mainRole)roleBlock=`<div class="player-role-icon one">${roleIcon(p.mainRole,36)}</div>`;
     return`<div class="player-card" onclick="showPlayerDetail('${esc(p.name)}')">
       <div class="player-card-top">
         <div class="player-av">${p.name[0].toUpperCase()}</div>
-        <div>
-          <div class="player-name">${p.name}</div>
-          <div class="player-btag">${p.btag||'—'}</div>
-        </div>
+        <div><div class="player-name">${p.name}</div><div class="player-btag">${p.btag||'—'}</div></div>
         ${roleBlock}
       </div>
       <div class="player-card-heroes">
-        ${mainH.map(n=>{const src=portrait(n);return src
-          ?`<img src="${src}" class="mini-av" title="${n}" onerror="this.outerHTML='<div class=mini-av-ph>${n[0]}</div>'">`
-          :`<div class="mini-av-ph">${n[0]}</div>`}).join('')}
+        ${mainH.map(n=>{const src=portrait(n);return src?`<img src="${src}" class="mini-av" title="${n}" onerror="this.outerHTML='<div class=mini-av-ph>${n[0]}</div>'">`:`<div class="mini-av-ph">${n[0]}</div>`;}).join('')}
         ${!mainH.length?'<span style="font-size:11px;color:var(--text3)">Герои не указаны</span>':''}
       </div>
     </div>`;
   }).join('');
 }
-
+ 
 function showPlayerDetail(name){
   const p=players.find(x=>x.name===name);if(!p)return;
   document.getElementById('playerGrid').innerHTML='';
@@ -339,29 +548,12 @@ function showPlayerDetail(name){
   const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
   const byRole={Tank:[],Damage:[],Support:[]};
   pool.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push({name:n,isMain:p.mainHeroes.includes(n)})});
-
   const isFlex=p.mainRole==='Flex';
   const hasOff=p.offRole&&p.offRole!==p.mainRole;
-
-  // Role icon display
   let roleIconHtml='';
-  if(isFlex){
-    roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      ${roleIcon('Flex',56)}
-      <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--accent)">Flex</span>
-    </div>`;
-  } else if(hasOff){
-    roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      ${roleIcon(p.mainRole,40)}
-      ${roleIcon(p.offRole,28)}
-    </div>`;
-  } else if(p.mainRole){
-    roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      ${roleIcon(p.mainRole,44)}
-      <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:${rc[p.mainRole]||'var(--accent)'}">${p.mainRole}</span>
-    </div>`;
-  }
-
+  if(isFlex)roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">${roleIcon('Flex',56)}<span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--accent)">Flex</span></div>`;
+  else if(hasOff)roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">${roleIcon(p.mainRole,40)}${roleIcon(p.offRole,28)}</div>`;
+  else if(p.mainRole)roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">${roleIcon(p.mainRole,44)}<span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:${rc[p.mainRole]||'var(--accent)'}"> ${p.mainRole}</span></div>`;
   const poolHtml=['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
     <div style="margin-bottom:.75rem">
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:${rc[r]};margin-bottom:5px">${r}</div>
@@ -373,13 +565,10 @@ function showPlayerDetail(name){
         </div>`;
       }).join('')}</div>
     </div>`).join('')||'<div class="empty">Герои не указаны</div>';
-
   const recs=computePlayerRecs(p);
-
   const recBansHtml=recs.recBans.length?recs.recBans.map(b=>{
     const src=portrait(b.name);const h=heroMap[b.name]||{};
-    const avg=Math.round(b.score/b.count);
-    const color=avg>=8?'var(--damage)':avg>=6?'var(--accent)':'var(--text3)';
+    const avg=Math.round(b.score/b.count);const color=avg>=8?'var(--damage)':avg>=6?'var(--accent)':'var(--text3)';
     return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${avg>=8?'rgba(224,85,85,.3)':'var(--border)'}">
       ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
@@ -387,7 +576,6 @@ function showPlayerDetail(name){
       <span style="font-family:var(--mono);font-size:9px;color:${color}">${avg>=8?'🔴 БАН':'⚠ КОНТР'}</span>
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
-
   const recMapsHtml=recs.recMaps.length?recs.recMaps.map(m=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid rgba(43,189,142,.25)">
       <div style="width:6px;height:6px;border-radius:50%;background:var(--support);flex-shrink:0"></div>
@@ -395,14 +583,12 @@ function showPlayerDetail(name){
       <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${m.type}</span>
       <div class="tier-badge tier-${m.tier}" style="font-size:9px;padding:1px 5px">${m.tier}</div>
     </div>`).join(''):'<div class="empty">Нет данных о картах героев</div>';
-
   const avoidMapsHtml=recs.avoidMaps.length?recs.avoidMaps.map(m=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid rgba(224,85,85,.2)">
       <div style="width:6px;height:6px;border-radius:50%;background:var(--damage);flex-shrink:0"></div>
       <span style="font-size:12px;font-weight:600;flex:1">${m.name}</span>
       <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${m.type}</span>
     </div>`).join(''):'';
-
   detail.innerHTML=`
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -440,25 +626,20 @@ function showPlayerDetail(name){
     </div>
     <button class="back-btn" onclick="backToPlayers()" style="margin-top:10px">← Назад к игрокам</button>`;
 }
-
 function backToPlayers(){document.getElementById('playerDetail').classList.remove('show');document.getElementById('playerDetail').innerHTML='';renderPlayers()}
-
-// ════ ROSTER ════
+ 
 let rosterPlayers=[];
-
 function renderRoster(){
   const el=document.getElementById('rosterContent');if(!el)return;
-  if(!rosterPlayers.length){
-    el.innerHTML='<div class="empty">Добавь игроков для анализа состава.</div>';return;
-  }
+  if(!rosterPlayers.length){el.innerHTML='<div class="empty">Добавь игроков для анализа состава.</div>';return;}
   const recs=computeRosterRecs();
   const playerCards=rosterPlayers.map(p=>{
     const mainH=p.mainHeroes.slice(0,5);
-    const isFlex=p.mainRole==='Flex';
-    const hasOff=p.offRole&&p.offRole!==p.mainRole;
+    const isFlex=p.mainRole==='Flex';const hasOff=p.offRole&&p.offRole!==p.mainRole;
     let roleBlock='';
-    if(isFlex) roleBlock=roleIcon('Flex',20);
-    else if(p.mainRole) roleBlock=roleIcon(p.mainRole,16)+(hasOff?roleIcon(p.offRole,12):'');    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px">
+    if(isFlex)roleBlock=roleIcon('Flex',20);
+    else if(p.mainRole)roleBlock=roleIcon(p.mainRole,16)+(hasOff?roleIcon(p.offRole,12):'');
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="display:flex;gap:3px;align-items:center">${roleBlock}</div>
         <span style="font-weight:700;font-size:13px">${p.name}</span>
@@ -467,10 +648,8 @@ function renderRoster(){
       <button class="btn btn-danger" style="padding:3px 8px;font-size:10px" onclick="removeRosterPlayer('${esc(p.name)}')">✕</button>
     </div>`;
   }).join('');
-
   const banHtml=recs.bans.length?recs.bans.map(b=>{
-    const src=portrait(b.name);const h=heroMap[b.name]||{};
-    const color=b.avg>=8?'var(--damage)':'var(--accent)';
+    const src=portrait(b.name);const h=heroMap[b.name]||{};const color=b.avg>=8?'var(--damage)':'var(--accent)';
     return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${b.avg>=8?'rgba(224,85,85,.3)':'rgba(240,160,48,.2)'}">
       ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
@@ -478,7 +657,6 @@ function renderRoster(){
       <span style="font-family:var(--mono);font-size:9px;color:${color}">${b.count} игрок(ов)</span>
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
-
   const mapHtml=recs.maps.length?recs.maps.map(m=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid rgba(43,189,142,.25)">
       <div style="width:6px;height:6px;border-radius:50%;background:var(--support);flex-shrink:0"></div>
@@ -487,80 +665,37 @@ function renderRoster(){
       <div class="tier-badge tier-${m.tier}" style="font-size:9px;padding:1px 5px">${m.tier}</div>
       <span style="font-family:var(--mono);font-size:9px;color:var(--support)">+${m.score}</span>
     </div>`).join(''):'<div class="empty">Добавь героев игрокам</div>';
-
   const avoidHtml=recs.avoid.length?recs.avoid.map(m=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3)">
       <div style="width:6px;height:6px;border-radius:50%;background:var(--damage);flex-shrink:0"></div>
       <span style="font-size:12px;font-weight:600;flex:1">${m.name}</span>
       <span style="font-family:var(--mono);font-size:9px;color:var(--damage)">−${m.score}</span>
     </div>`).join(''):'';
-
   el.innerHTML=`
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem">${playerCards}</div>
     <div class="detail-grid">
-      <div class="d-card">
-        <div class="d-card-title">🔴 Рекомендованные баны</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px">Контрпики нескольких игроков</div>
-        <div style="display:flex;flex-direction:column;gap:4px">${banHtml}</div>
-      </div>
-      <div class="d-card">
-        <div class="d-card-title">✅ Предпочтительные карты</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px">По сильным картам всех игроков</div>
-        <div style="display:flex;flex-direction:column;gap:4px">${mapHtml}</div>
-        ${avoidHtml?`<div class="d-card-title" style="margin-top:12px;border:none;padding:0 0 8px">⚠ Избегать</div><div style="display:flex;flex-direction:column;gap:4px">${avoidHtml}</div>`:''}
-      </div>
+      <div class="d-card"><div class="d-card-title">🔴 Рекомендованные баны</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px">Контрпики нескольких игроков</div><div style="display:flex;flex-direction:column;gap:4px">${banHtml}</div></div>
+      <div class="d-card"><div class="d-card-title">✅ Предпочтительные карты</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:8px">По сильным картам всех игроков</div><div style="display:flex;flex-direction:column;gap:4px">${mapHtml}</div>${avoidHtml?`<div class="d-card-title" style="margin-top:12px;border:none;padding:0 0 8px">⚠ Избегать</div><div style="display:flex;flex-direction:column;gap:4px">${avoidHtml}</div>`:''}</div>
     </div>`;
 }
-
 function computeRosterRecs(){
-  // bans: aggregate counter scores across all roster players
   const banMap={};
   rosterPlayers.forEach(p=>{
     const allH=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-    allH.forEach(hn=>{
-      const h=heroMap[hn];if(!h)return;
-      (h.counters||[]).forEach(c=>{
-        if(!banMap[c.name])banMap[c.name]={name:c.name,totalScore:0,count:0};
-        banMap[c.name].totalScore+=c.score;
-        banMap[c.name].count++;
-      });
-    });
+    allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.counters||[]).forEach(c=>{if(!banMap[c.name])banMap[c.name]={name:c.name,totalScore:0,count:0};banMap[c.name].totalScore+=c.score;banMap[c.name].count++;});});
   });
-  const bans=Object.values(banMap)
-    .map(b=>({...b,avg:Math.round(b.totalScore/b.count)}))
-    .filter(b=>b.avg>=6&&b.count>=1)
-    .sort((a,b)=>b.count-a.count||b.avg-a.avg)
-    .slice(0,8);
-
-  // maps: sum scores across all players
+  const bans=Object.values(banMap).map(b=>({...b,avg:Math.round(b.totalScore/b.count)})).filter(b=>b.avg>=6&&b.count>=1).sort((a,b)=>b.count-a.count||b.avg-a.avg).slice(0,8);
   const mapScores={};
   rosterPlayers.forEach(p=>{
     const allH=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-    allH.forEach(hn=>{
-      const h=heroMap[hn];if(!h)return;
-      (h.strongMaps||[]).forEach(mn=>{
-        const m=maps.find(x=>x.name===mn);if(!m)return;
-        if(!mapScores[mn])mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};
-        mapScores[mn].score+=p.mainHeroes.includes(hn)?2:1;
-      });
-      (h.weakMaps||[]).forEach(mn=>{
-        if(!mapScores[mn]){const m=maps.find(x=>x.name===mn);if(!m)return;mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};}
-        mapScores[mn].score-=p.mainHeroes.includes(hn)?2:1;
-      });
-    });
+    allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.strongMaps||[]).forEach(mn=>{const m=maps.find(x=>x.name===mn);if(!m)return;if(!mapScores[mn])mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};mapScores[mn].score+=p.mainHeroes.includes(hn)?2:1;});(h.weakMaps||[]).forEach(mn=>{if(!mapScores[mn]){const m=maps.find(x=>x.name===mn);if(!m)return;mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};}mapScores[mn].score-=p.mainHeroes.includes(hn)?2:1;});});
   });
   const mapArr=Object.values(mapScores);
-  const recMaps=mapArr.filter(m=>m.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
-  const avoid=mapArr.filter(m=>m.score<0).sort((a,b)=>a.score-b.score).slice(0,4);
-
-  return{bans,maps:recMaps,avoid};
+  return{bans,maps:mapArr.filter(m=>m.score>0).sort((a,b)=>b.score-a.score).slice(0,8),avoid:mapArr.filter(m=>m.score<0).sort((a,b)=>a.score-b.score).slice(0,4)};
 }
-
 function openRosterPlayerPicker(){
-  // show list of players not already in roster
   const avail=players.filter(p=>!rosterPlayers.find(r=>r.name===p.name));
   if(!avail.length){toast('Все игроки уже добавлены','err');return}
-  // simple inline picker — no overlay, use toast flow
   const html=`<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center" id="rosterPickerBg" onclick="if(event.target.id==='rosterPickerBg')document.getElementById('rosterPickerBg').remove()">
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto">
       <div style="font-size:15px;font-weight:800;margin-bottom:12px">Выбери игрока</div>
@@ -575,15 +710,9 @@ function openRosterPlayerPicker(){
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
 }
-
 function addRosterPlayer(name){
   const bg=document.getElementById('rosterPickerBg');if(bg)bg.remove();
   const p=players.find(x=>x.name===name);if(!p||rosterPlayers.find(r=>r.name===name))return;
-  rosterPlayers.push(p);
-  renderRoster();
+  rosterPlayers.push(p);renderRoster();
 }
-
-function removeRosterPlayer(name){
-  rosterPlayers=rosterPlayers.filter(p=>p.name!==name);
-  renderRoster();
-}
+function removeRosterPlayer(name){rosterPlayers=rosterPlayers.filter(p=>p.name!==name);renderRoster()}
