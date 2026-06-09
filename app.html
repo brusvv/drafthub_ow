@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --tank: #378ADD; --damage: #E24B4A; --support: #1D9E75;
+  --tier-s: #EF9F27; --tier-a: #97C459; --tier-b: #378ADD; --tier-c: #888780; --tier-d: #993C1D;
+  --bg: #0f0f11; --bg2: #17171a; --bg3: #1e1e22;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.16);
+  --text: #f0f0f0; --text2: #888; --text3: #444;
+  --font: 'Syne', sans-serif; --mono: 'Space Mono', monospace;
+  --accent: #EF9F27;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+.app { max-width: 980px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+/* ── AUTH SCREEN ── */
+.auth-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem;
+}
+.auth-logo { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; }
+.auth-sub { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); }
+.auth-card {
+  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 16px;
+  padding: 2rem 2.5rem; text-align: center; max-width: 400px; width: 100%;
+}
+.auth-card p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 1.5rem; }
+.google-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: #fff; color: #333; font-family: var(--font); font-size: 14px; font-weight: 600;
+  padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; transition: opacity 0.15s; width: 100%; justify-content: center;
+}
+.google-btn:hover { opacity: 0.9; }
+.google-btn svg { flex-shrink: 0; }
+.auth-note { font-family: var(--mono); font-size: 10px; color: var(--text3); text-align: center; margin-top: 1rem; line-height: 1.6; }
+
+/* ── CONFIG ── */
+.config-banner {
+  background: rgba(239,159,39,0.07); border: 0.5px solid rgba(239,159,39,0.3);
+  border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+}
+.config-banner h3 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.config-banner p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 8px; }
+.config-banner code { font-family: var(--mono); font-size: 11px; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; }
+.config-row { display: flex; gap: 8px; margin-top: 10px; }
+.config-input {
+  flex: 1; font-family: var(--mono); font-size: 12px;
+  background: rgba(255,255,255,0.05); border: 0.5px solid var(--border2);
+  border-radius: 8px; padding: 8px 12px; color: var(--text); outline: none;
+}
+.config-input:focus { border-color: rgba(255,255,255,0.35); }
+.config-save {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 8px 16px; border-radius: 8px; border: none; background: var(--accent); color: #000; cursor: pointer; font-weight: 700;
+}
+
+/* ── HEADER ── */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 12px; }
+.header-left { display: flex; align-items: baseline; gap: 12px; }
+.header-tag { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text3); }
+.header-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg2); border: 0.5px solid var(--border); border-radius: 20px;
+  padding: 5px 12px 5px 5px; font-size: 12px;
+}
+.user-avatar {
+  width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+}
+.user-avatar-placeholder {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000;
+}
+.icon-btn {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 6px 12px; border-radius: 20px; border: 0.5px solid var(--border);
+  background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--border2); }
+.icon-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.icon-btn.danger { color: var(--damage); border-color: rgba(226,75,74,0.3); }
+.icon-btn.danger:hover { background: rgba(226,75,74,0.1); }
+
+/* ── NAV ── */
+.nav { display: flex; gap: 4px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.nav-btn {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 7px 14px; border-radius: 20px; border: 0.5px solid var(--border);
+  background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s;
+}
+.nav-btn:hover { color: var(--text); border-color: var(--border2); }
+.nav-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ── FILTER ── */
+.filter-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-btn {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border);
+  background: transparent; color: var(--text3); cursor: pointer; transition: all 0.1s;
+}
+.filter-btn:hover { color: var(--text2); }
+.filter-btn.active { border-color: var(--border2); color: var(--text); }
+
+.section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── MAP GRID ── */
+.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 10px; }
+.map-card {
+  border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem;
+  cursor: pointer; transition: all 0.15s; background: var(--bg2);
+}
+.map-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.map-card-type { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 6px; }
+.map-card-name { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.map-meta { display: flex; gap: 8px; align-items: center; }
+.tier-badge {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tier-S { background: rgba(239,159,39,0.15); color: var(--tier-s); }
+.tier-A { background: rgba(151,196,89,0.15); color: var(--tier-a); }
+.tier-B { background: rgba(55,138,221,0.15); color: var(--tier-b); }
+.tier-C { background: rgba(136,135,128,0.12); color: var(--tier-c); }
+.tier-D { background: rgba(153,60,29,0.15); color: var(--tier-d); }
+.ratings { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.rating-row-sm { display: flex; align-items: center; gap: 6px; }
+.rating-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); width: 22px; }
+.dots { display: flex; gap: 3px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); }
+.dot.atk { background: var(--damage); }
+.dot.def { background: var(--support); }
+
+/* ── MAP DETAIL ── */
+.map-detail { display: none; }
+.map-detail.show { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 1.5rem; }
+.detail-header { grid-column: 1/-1; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; }
+.back-btn {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 5px 10px; border: 0.5px solid var(--border2); border-radius: 6px;
+  background: transparent; color: var(--text2); cursor: pointer; margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 6px;
+}
+.back-btn:hover { color: var(--text); }
+.detail-name { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.detail-meta { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.meta-item { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text2); }
+.meta-val { color: var(--text); font-weight: 600; }
+.detail-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; }
+.detail-card.full { grid-column: 1/-1; }
+.detail-card-title {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text3); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border);
+}
+.hero-list { display: flex; flex-direction: column; gap: 6px; }
+.hero-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--bg3); }
+.role-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.hero-name-sm { font-size: 13px; font-weight: 600; }
+.hero-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
+.ban-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ban-pill {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+  background: rgba(226,75,74,0.1); color: var(--damage); border: 0.5px solid rgba(226,75,74,0.3);
+}
+.comp-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.comp-hero { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px; background: var(--bg3); border: 0.5px solid var(--border); }
+.comp-hero.Tank { border-left: 3px solid var(--tank); }
+.comp-hero.Damage { border-left: 3px solid var(--damage); }
+.comp-hero.Support { border-left: 3px solid var(--support); }
+.notes-text { font-size: 13px; line-height: 1.7; color: var(--text2); }
+.notes-line { display: block; margin-bottom: 4px; }
+.notes-line::before { content: '→ '; color: var(--text3); }
+
+/* ── HERO POOL ── */
+.role-section { margin-bottom: 2rem; }
+.role-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.role-title { font-size: 18px; font-weight: 800; }
+.role-count { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.hero-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.hero-card {
+  border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 12px 12px 15px;
+  background: var(--bg2); position: relative; overflow: hidden; transition: opacity 0.15s;
+}
+.hero-card.banned { opacity: 0.4; }
+.hero-accent { position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
+.hero-card-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.hero-card-sub { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--text3); letter-spacing: 0.06em; }
+.hero-prio { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 6px; }
+.banned-badge {
+  display: inline-block; margin-left: 6px; font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+  background: rgba(226,75,74,0.15); color: var(--damage); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ── TIER LIST ── */
+.tier-section { margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 14px; }
+.tier-box {
+  font-family: var(--mono); font-size: 16px; font-weight: 700;
+  width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 6px;
+}
+.tier-maps-row { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; }
+.tier-map-pill {
+  font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 8px;
+  background: var(--bg2); border: 0.5px solid var(--border); cursor: pointer; transition: all 0.1s;
+}
+.tier-map-pill:hover { border-color: var(--border2); }
+
+/* ── BANS ── */
+.bans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.ban-card { padding: 12px 14px; border-radius: 10px; border: 0.5px solid rgba(226,75,74,0.35); background: rgba(226,75,74,0.05); }
+.ban-card-name { font-size: 14px; font-weight: 700; color: var(--damage); margin-bottom: 3px; }
+.ban-card-role { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--text3); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 16px;
+  padding: 1.5rem; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+}
+.modal-title { font-size: 18px; font-weight: 800; margin-bottom: 1.5rem; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 0.5px solid var(--border); }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 1rem; }
+.form-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); display: block; margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 0.5px solid var(--border2);
+  border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(255,255,255,0.35); }
+.form-select { appearance: none; cursor: pointer; }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-checkbox-group { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding: 8px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: 8px; }
+.form-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 3px 0; }
+.form-checkbox-label input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+/* ── MISC ── */
+.loading-state { text-align: center; padding: 3rem; color: var(--text3); font-family: var(--mono); font-size: 12px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--text2); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-state { background: rgba(226,75,74,0.07); border: 0.5px solid rgba(226,75,74,0.25); border-radius: 10px; padding: 1rem 1.25rem; font-size: 13px; color: var(--damage); }
+.empty { color: var(--text3); font-size: 13px; font-style: italic; padding: 6px 0; }
+.section-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 2000;
+  background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 10px;
+  padding: 10px 16px; font-size: 13px; font-family: var(--mono);
+  transform: translateY(20px); opacity: 0; transition: all 0.25s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { border-color: rgba(29,158,117,0.5); color: var(--support); }
+.toast.err { border-color: rgba(226,75,74,0.5); color: var(--damage); }
+
+@media (max-width: 600px) {
+  .map-detail.show { grid-template-columns: 1fr; }
+  .detail-header, .detail-card.full { grid-column: 1; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-screen">
+  <div>
+    <div class="auth-logo">Draft Hub</div>
+    <div class="auth-sub" style="text-align:center;margin-top:4px;">Team Analyst</div>
+  </div>
+  <div class="auth-card">
+    <p>Войди через Google чтобы читать и редактировать данные команды в Google Sheets.</p>
+    <button class="google-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Войти через Google
+    </button>
+    <div class="auth-note">
+      Нужен доступ к Google Sheets API.<br>
+      Данные команды хранятся в вашей таблице.
+    </div>
+  </div>
+  <div id="authConfigBanner" style="max-width:480px;width:100%;display:none">
+    <div class="config-banner">
+      <h3>⚙ Настройка Google OAuth</h3>
+      <p>Вставь <code>Client ID</code> из Google Cloud Console.<br>
+      Инструкция: <code>DEPLOY.md → Шаг 0</code></p>
+      <div class="config-row">
+        <input class="config-input" id="clientIdInput" placeholder="xxxxxxxxx.apps.googleusercontent.com" />
+        <button class="config-save" onclick="saveClientId()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <span class="header-tag">Draft Hub</span>
+      <span class="header-title">Team Analyst</span>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="seedSheets()" title="Заполнить таблицу стартовым пулом героев и карт">⬇ Seed</button>
+      <button class="icon-btn" onclick="loadAllData()">↻ Обновить</button>
+      <div class="user-chip">
+        <div class="user-avatar-placeholder" id="userInitial">?</div>
+        <span id="userName" style="font-size:12px"></span>
+      </div>
+      <button class="icon-btn danger" onclick="signOut()">Выйти</button>
+    </div>
+  </div>
+
+  <div id="sheetConfigBanner" class="config-banner" style="display:none">
+    <h3>⚙ Укажи Sheet ID</h3>
+    <p>Вставь ID Google Таблицы из URL: <code>spreadsheets/d/<b>ВОТ_ЭТО</b>/edit</code><br>
+    Убедись что ты добавлен как редактор этой таблицы.</p>
+    <div class="config-row">
+      <input class="config-input" id="sheetIdInput" placeholder="Sheet ID..." />
+      <button class="config-save" onclick="saveSheetId()">Сохранить</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showView('maps',this)">Карты</button>
+    <button class="nav-btn" onclick="showView('heroes',this)">Пул героев</button>
+    <button class="nav-btn" onclick="showView('tiers',this)">Tier List</button>
+    <button class="nav-btn" onclick="showView('bans',this)">Текущие баны</button>
+  </nav>
+
+  <!-- MAPS -->
+  <div id="view-maps" class="view active">
+    <div class="section-toolbar">
+      <div class="filter-row" id="mapFilters" style="margin:0">
+        <button class="filter-btn active" onclick="filterMaps('all',this)">Все</button>
+        <button class="filter-btn" onclick="filterMaps('Hybrid',this)">Hybrid</button>
+        <button class="filter-btn" onclick="filterMaps('Escort',this)">Escort</button>
+        <button class="filter-btn" onclick="filterMaps('Control',this)">Control</button>
+        <button class="filter-btn" onclick="filterMaps('Push',this)">Push</button>
+        <button class="filter-btn" onclick="filterMaps('Flashpoint',this)">Flashpoint</button>
+      </div>
+      <button class="icon-btn primary" onclick="openMapModal()">+ Добавить карту</button>
+    </div>
+    <div id="mapGrid" class="map-grid"></div>
+    <div id="mapDetail" class="map-detail"></div>
+  </div>
+
+  <!-- HEROES -->
+  <div id="view-heroes" class="view">
+    <div class="section-toolbar">
+      <div class="filter-row" id="heroFilters" style="margin:0">
+        <button class="filter-btn active" onclick="filterHeroes('all',this)">Все</button>
+        <button class="filter-btn" onclick="filterHeroes('Tank',this)">Tank</button>
+        <button class="filter-btn" onclick="filterHeroes('Damage',this)">Damage</button>
+        <button class="filter-btn" onclick="filterHeroes('Support',this)">Support</button>
+      </div>
+      <button class="icon-btn primary" onclick="openHeroModal()">+ Добавить героя</button>
+    </div>
+    <div id="heroPool"></div>
+  </div>
+
+  <!-- TIERS -->
+  <div id="view-tiers" class="view">
+    <div class="section-label">Карты по тиру</div>
+    <div id="tierList"></div>
+  </div>
+
+  <!-- BANS -->
+  <div id="view-bans" class="view">
+    <div class="section-label">Герои в текущем бане</div>
+    <div id="bansGrid" class="bans-grid"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- HERO MODAL -->
+<div class="modal-overlay hidden" id="heroModal">
+  <div class="modal">
+    <div class="modal-title" id="heroModalTitle">Добавить героя</div>
+    <input type="hidden" id="heroEditRow" value="">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Имя *</label>
+        <input class="form-input" id="hName" placeholder="Tracer">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Роль *</label>
+        <select class="form-select" id="hRole">
+          <option value="">— выбери —</option>
+          <option>Tank</option><option>Damage</option><option>Support</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Сабролл</label>
+        <input class="form-input" id="hSub" placeholder="Flanker">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Приоритет (1–10)</label>
+        <input class="form-input" id="hPrio" type="number" min="1" max="10" value="5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">
+        <input type="checkbox" id="hBanned" style="accent-color:var(--damage);margin-right:6px">
+        В текущем бане
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Заметки</label>
+      <textarea class="form-textarea" id="hNotes" placeholder="Комментарии о герое..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="icon-btn danger" id="heroDeleteBtn" onclick="deleteHero()" style="display:none">Удалить</button>
+      <button class="icon-btn" onclick="closeModal('heroModal')">Отмена</button>
+      <button class="icon-btn primary" onclick="saveHero()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div class="modal-overlay hidden" id="mapModal">
+  <div class="modal">
+    <div class="modal-title" id="mapModalTitle">Добавить карту</div>
+    <input type="hidden" id="mapEditRow" value="">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Название *</label>
+        <input class="form-input" id="mName" placeholder="King's Row">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Тип *</label>
+        <select class="form-select" id="mType">
+          <option value="">— выбери —</option>
+          <option>Hybrid</option><option>Escort</option><option>Control</option><option>Push</option><option>Flashpoint</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Тир</label>
+        <select class="form-select" id="mTier">
+          <option>S</option><option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Приоритет</label>
+        <input class="form-input" id="mPrio" type="number" min="1" value="5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">ATK рейтинг (1–5)</label>
+        <input class="form-input" id="mAtk" type="number" min="1" max="5" value="3">
+      </div>
+      <div class="form-group">
+        <label class="form-label">DEF рейтинг (1–5)</label>
+        <input class="form-input" id="mDef" type="number" min="1" max="5" value="3">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Заметки</label>
+      <textarea class="form-textarea" id="mNotes" placeholder="Особенности карты, тактики..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Предпочтительные герои</label>
+      <div class="form-checkbox-group" id="mPreferred"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Цели для банов</label>
+      <div class="form-checkbox-group" id="mBans"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Состав (отмечай в нужном порядке)</label>
+      <div class="form-checkbox-group" id="mComp"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="icon-btn danger" id="mapDeleteBtn" onclick="deleteMap()" style="display:none">Удалить</button>
+      <button class="icon-btn" onclick="closeModal('mapModal')">Отмена</button>
+      <button class="icon-btn primary" onclick="saveMap()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+
+let tokenClient = null;
+let gapiInited = false;
+let gisInited = false;
+let accessToken = null;
+
+let heroes = [];
+let maps = [];
+let heroMap = {};
+let mapFilter = 'all';
+let heroFilter = 'all';
+
+const roleColor = { Tank:'var(--tank)', Damage:'var(--damage)', Support:'var(--support)' };
+const tierStyle = {
+  S:{bg:'rgba(239,159,39,0.15)',color:'var(--tier-s)'},
+  A:{bg:'rgba(151,196,89,0.15)',color:'var(--tier-a)'},
+  B:{bg:'rgba(55,138,221,0.15)',color:'var(--tier-b)'},
+  C:{bg:'rgba(136,135,128,0.12)',color:'var(--tier-c)'},
+  D:{bg:'rgba(153,60,29,0.15)',color:'var(--tier-d)'},
+};
+
+function getClientId() { return localStorage.getItem('draft_client_id') || ''; }
+function getSheetId()  { return localStorage.getItem('draft_sheet_id') || ''; }
+
+function saveClientId() {
+  const v = document.getElementById('clientIdInput').value.trim();
+  if (!v) return;
+  localStorage.setItem('draft_client_id', v);
+  document.getElementById('authConfigBanner').style.display = 'none';
+  location.reload();
+}
+function saveSheetId() {
+  const v = document.getElementById('sheetIdInput').value.trim();
+  if (!v) return;
+  localStorage.setItem('draft_sheet_id', v);
+  document.getElementById('sheetConfigBanner').style.display = 'none';
+  loadAllData();
+}
+
+// ════════════════════════════════════════════
+// GOOGLE AUTH (GIS + GAPI)
+// ════════════════════════════════════════════
+function gapiLoaded() {
+  gapi.load('client', async () => {
+    await gapi.client.init({ discoveryDocs: [DISCOVERY] });
+    gapiInited = true;
+    maybeInit();
+  });
+}
+
+function gisLoaded() {
+  if (!getClientId()) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: getClientId(),
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { toast('Ошибка авторизации: ' + resp.error, 'err'); return; }
+      accessToken = resp.access_token;
+      gapi.client.setToken({ access_token: accessToken });
+      showApp();
+      loadAllData();
+    },
+  });
+  gisInited = true;
+  maybeInit();
+}
+
+function maybeInit() {
+  if (!gapiInited || !gisInited) return;
+  // Попробуем восстановить сессию из localStorage
+  const saved = localStorage.getItem('draft_token');
+  if (saved) {
+    try {
+      const t = JSON.parse(saved);
+      if (Date.now() < t.expires) {
+        accessToken = t.access_token;
+        gapi.client.setToken({ access_token: accessToken });
+        showApp();
+        loadAllData();
+        return;
+      }
+    } catch(e) {}
+  }
+}
+
+function signIn() {
+  if (!getClientId()) { document.getElementById('authConfigBanner').style.display = 'block'; return; }
+  if (!gisInited) { toast('Подождите, загрузка...', 'err'); return; }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function signOut() {
+  accessToken = null;
+  localStorage.removeItem('draft_token');
+  google.accounts.oauth2.revoke(gapi.client.getToken()?.access_token || '', () => {});
+  gapi.client.setToken(null);
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  if (!getSheetId()) document.getElementById('sheetConfigBanner').style.display = 'block';
+  // User info
+  try {
+    const profile = JSON.parse(atob(accessToken.split('.')[1] || '') || '{}');
+    if (profile.name) { document.getElementById('userName').textContent = profile.name.split(' ')[0]; document.getElementById('userInitial').textContent = profile.name[0]; }
+  } catch(e) {
+    document.getElementById('userName').textContent = 'Пользователь';
+  }
+}
+
+// ════════════════════════════════════════════
+// SHEETS API HELPERS
+// ════════════════════════════════════════════
+const SID = () => getSheetId();
+
+async function sheetsGet(range) {
+  const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SID(), range });
+  return res.result.values || [];
+}
+
+async function sheetsUpdate(range, values) {
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: SID(), range,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values },
+  });
+}
+
+async function sheetsAppend(sheetName, values) {
+  await gapi.client.sheets.spreadsheets.values.append({
+    spreadsheetId: SID(), range: sheetName + '!A1',
+    valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS',
+    resource: { values },
+  });
+}
+
+async function sheetsClearRange(range) {
+  await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SID(), range });
+}
+
+async function sheetsDeleteRow(sheetId, rowIndex) {
+  await gapi.client.sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SID(),
+    resource: {
+      requests: [{
+        deleteDimension: {
+          range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 }
+        }
+      }]
+    }
+  });
+}
+
+async function getSheetGid(name) {
+  const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId: SID() });
+  const sheet = (meta.result.sheets || []).find(s => s.properties.title === name);
+  return sheet ? sheet.properties.sheetId : null;
+}
+
+// ════════════════════════════════════════════
+// LOAD DATA
+// ════════════════════════════════════════════
+async function loadAllData() {
+  if (!SID()) return;
+  showLoading('mapGrid');
+  showLoading('heroPool');
+  try {
+    await Promise.all([loadHeroes(), loadMaps()]);
+    renderCurrentView();
+  } catch(e) {
+    showError('mapGrid', 'Ошибка загрузки: ' + e.message);
+    console.error(e);
+  }
+}
+
+async function loadHeroes() {
+  const rows = await sheetsGet('Heroes!A:G');
+  if (rows.length < 2) { heroes = []; return; }
+  const [header, ...data] = rows;
+  const idx = (f) => header.findIndex(h => h.toLowerCase() === f.toLowerCase());
+  const iName=idx('name'), iRole=idx('role'), iSub=idx('subrole'), iPrio=idx('priority'), iBan=idx('banned'), iNotes=idx('notes');
+  heroes = data.filter(r => r[iName]).map((r, i) => ({
+    rowIndex: i + 2, // 1-based, +1 for header
+    name: r[iName] || '',
+    role: r[iRole] || '',
+    subrole: r[iSub] || '',
+    priority: parseInt(r[iPrio]) || 5,
+    banned: (r[iBan] || '').toUpperCase() === 'TRUE',
+    notes: r[iNotes] || '',
+  }));
+  heroMap = {};
+  heroes.forEach(h => { heroMap[h.name] = h; });
+}
+
+async function loadMaps() {
+  const [mapRows, prefRows, banRows, compRows] = await Promise.all([
+    sheetsGet('Maps!A:G'),
+    sheetsGet('MapPreferred!A:B'),
+    sheetsGet('MapBans!A:B'),
+    sheetsGet('Compositions!A:C'),
+  ]);
+
+  const prefByMap = {}, banByMap = {}, compByMap = {};
+  prefRows.slice(1).forEach(r => { if(r[0]&&r[1]){if(!prefByMap[r[0]])prefByMap[r[0]]=[];prefByMap[r[0]].push(r[1]);} });
+  banRows.slice(1).forEach(r  => { if(r[0]&&r[1]){if(!banByMap[r[0]])banByMap[r[0]]=[];banByMap[r[0]].push(r[1]);} });
+  compRows.slice(1).forEach(r => { if(r[0]&&r[1]){if(!compByMap[r[0]])compByMap[r[0]]=[];compByMap[r[0]].push({hero:r[1],role:r[2]||''});} });
+
+  if (mapRows.length < 2) { maps = []; return; }
+  const [header, ...data] = mapRows;
+  const idx = (f) => header.findIndex(h => h.toLowerCase() === f.toLowerCase());
+  const iName=idx('name'), iType=idx('type'), iTier=idx('tier'), iPrio=idx('priority');
+  const iAtk=Math.max(idx('atk'),idx('attack'),idx('attackRating'));
+  const iDef=Math.max(idx('def'),idx('defense'),idx('defenseRating'));
+  const iNotes=idx('notes');
+
+  maps = data.filter(r => r[iName]).map((r, i) => ({
+    rowIndex: i + 2,
+    name: r[iName]||'', type: r[iType]||'', tier: r[iTier]||'B',
+    priority: parseInt(r[iPrio])||5,
+    atk: parseInt(r[iAtk])||3, def: parseInt(r[iDef])||3,
+    notes: r[iNotes]||'',
+    preferredHeroes: prefByMap[r[iName]]||[],
+    bans: banByMap[r[iName]]||[],
+    comp: compByMap[r[iName]]||[],
+  }));
+}
+
+// ════════════════════════════════════════════
+// WRITE HEROES
+// ════════════════════════════════════════════
+async function saveHero() {
+  const name = document.getElementById('hName').value.trim();
+  const role = document.getElementById('hRole').value;
+  if (!name || !role) { toast('Заполни имя и роль', 'err'); return; }
+
+  const row = [
+    name,
+    role,
+    document.getElementById('hSub').value.trim(),
+    document.getElementById('hPrio').value,
+    document.getElementById('hBanned').checked ? 'TRUE' : 'FALSE',
+    document.getElementById('hNotes').value.trim(),
+  ];
+
+  const editRow = document.getElementById('heroEditRow').value;
+  try {
+    if (editRow) {
+      await sheetsUpdate(`Heroes!A${editRow}:F${editRow}`, [row]);
+      toast('Герой обновлён ✓', 'ok');
+    } else {
+      await sheetsAppend('Heroes', [row]);
+      toast('Герой добавлен ✓', 'ok');
+    }
+    closeModal('heroModal');
+    await loadHeroes();
+    renderCurrentView();
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+
+async function deleteHero() {
+  const editRow = parseInt(document.getElementById('heroEditRow').value);
+  if (!editRow) return;
+  if (!confirm('Удалить героя?')) return;
+  try {
+    const gid = await getSheetGid('Heroes');
+    await sheetsDeleteRow(gid, editRow - 1);
+    toast('Герой удалён', 'ok');
+    closeModal('heroModal');
+    await loadHeroes();
+    renderCurrentView();
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+
+// ════════════════════════════════════════════
+// WRITE MAPS
+// ════════════════════════════════════════════
+async function saveMap() {
+  const name = document.getElementById('mName').value.trim();
+  const type = document.getElementById('mType').value;
+  if (!name || !type) { toast('Заполни название и тип', 'err'); return; }
+
+  const editRow = document.getElementById('mapEditRow').value;
+  const oldName = editRow ? (maps.find(m => m.rowIndex == editRow)||{}).name : null;
+  const effectiveName = name;
+
+  const row = [
+    effectiveName,
+    type,
+    document.getElementById('mTier').value,
+    document.getElementById('mPrio').value,
+    document.getElementById('mAtk').value,
+    document.getElementById('mDef').value,
+    document.getElementById('mNotes').value.trim(),
+  ];
+
+  // Собираем отмеченные герои
+  const preferred = [...document.querySelectorAll('#mPreferred input:checked')].map(el => el.value);
+  const bans      = [...document.querySelectorAll('#mBans input:checked')].map(el => el.value);
+  const compOrder = [...document.querySelectorAll('#mComp input:checked')].map(el => ({
+    hero: el.value,
+    role: (heroMap[el.value]||{}).role || '',
+  }));
+
+  try {
+    if (editRow) {
+      await sheetsUpdate(`Maps!A${editRow}:G${editRow}`, [row]);
+    } else {
+      await sheetsAppend('Maps', [row]);
+    }
+
+    // Перезаписываем relations — удаляем строки с этой картой и пишем заново
+    await rewriteRelations('MapPreferred', oldName || effectiveName, effectiveName, preferred.map(h => [effectiveName, h]));
+    await rewriteRelations('MapBans',      oldName || effectiveName, effectiveName, bans.map(h => [effectiveName, h]));
+    await rewriteRelations('Compositions', oldName || effectiveName, effectiveName, compOrder.map(c => [effectiveName, c.hero, c.role]));
+
+    toast(editRow ? 'Карта обновлена ✓' : 'Карта добавлена ✓', 'ok');
+    closeModal('mapModal');
+    await loadMaps();
+    renderCurrentView();
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+}
+
+async function rewriteRelations(sheetName, oldName, newName, newRows) {
+  // Читаем весь лист
+  const all = await sheetsGet(sheetName + '!A:C');
+  if (!all.length) {
+    if (newRows.length) await sheetsAppend(sheetName, newRows);
+    return;
+  }
+  // Фильтруем строки не относящиеся к этой карте
+  const header = all[0];
+  const others = all.slice(1).filter(r => r[0] !== oldName && r[0] !== newName);
+  const combined = [header, ...others, ...newRows];
+  // Перезаписываем весь лист
+  await sheetsUpdate(sheetName + '!A1:C' + combined.length, combined);
+  // Если строк стало меньше — очищаем остаток
+  const prevLen = all.length;
+  if (combined.length < prevLen) {
+    await sheetsClearRange(sheetName + '!A' + (combined.length+1) + ':C' + prevLen);
+  }
+}
+
+async function deleteMap() {
+  const editRow = parseInt(document.getElementById('mapEditRow').value);
+  const mapName = (maps.find(m => m.rowIndex == editRow)||{}).name;
+  if (!editRow || !mapName) return;
+  if (!confirm(`Удалить карту "${mapName}" и все её связи?`)) return;
+  try {
+    const gid = await getSheetGid('Maps');
+    await sheetsDeleteRow(gid, editRow - 1);
+    // Удаляем relations
+    await rewriteRelations('MapPreferred',  mapName, mapName, []);
+    await rewriteRelations('MapBans',       mapName, mapName, []);
+    await rewriteRelations('Compositions',  mapName, mapName, []);
+    toast('Карта удалена', 'ok');
+    closeModal('mapModal');
+    await loadMaps();
+    renderCurrentView();
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); }
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function openHeroModal(hero) {
+  document.getElementById('heroModalTitle').textContent = hero ? 'Редактировать героя' : 'Добавить героя';
+  document.getElementById('heroEditRow').value = hero ? hero.rowIndex : '';
+  document.getElementById('hName').value   = hero ? hero.name : '';
+  document.getElementById('hRole').value   = hero ? hero.role : '';
+  document.getElementById('hSub').value    = hero ? hero.subrole : '';
+  document.getElementById('hPrio').value   = hero ? hero.priority : '5';
+  document.getElementById('hBanned').checked = hero ? hero.banned : false;
+  document.getElementById('hNotes').value  = hero ? hero.notes : '';
+  document.getElementById('heroDeleteBtn').style.display = hero ? 'inline-flex' : 'none';
+  document.getElementById('heroModal').classList.remove('hidden');
+}
+
+function openMapModal(map) {
+  document.getElementById('mapModalTitle').textContent = map ? 'Редактировать карту' : 'Добавить карту';
+  document.getElementById('mapEditRow').value = map ? map.rowIndex : '';
+  document.getElementById('mName').value  = map ? map.name : '';
+  document.getElementById('mType').value  = map ? map.type : '';
+  document.getElementById('mTier').value  = map ? map.tier : 'B';
+  document.getElementById('mPrio').value  = map ? map.priority : '5';
+  document.getElementById('mAtk').value   = map ? map.atk : '3';
+  document.getElementById('mDef').value   = map ? map.def : '3';
+  document.getElementById('mNotes').value = map ? map.notes : '';
+  document.getElementById('mapDeleteBtn').style.display = map ? 'inline-flex' : 'none';
+
+  // Заполни чекбоксы героев
+  const sorted = [...heroes].sort((a,b) => b.priority - a.priority);
+  ['mPreferred','mBans','mComp'].forEach((containerId, ci) => {
+    const rel = ci === 0 ? (map?.preferredHeroes||[]) : ci === 1 ? (map?.bans||[]) : (map?.comp||[]).map(c=>c.hero);
+    document.getElementById(containerId).innerHTML = sorted.map(h => `
+      <label class="form-checkbox-label">
+        <input type="checkbox" value="${esc(h.name)}" ${rel.includes(h.name)?'checked':''}>
+        <span style="color:${roleColor[h.role]||''}">●</span> ${h.name} <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${h.subrole}</span>
+      </label>`).join('');
+  });
+
+  document.getElementById('mapModal').classList.remove('hidden');
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// Клик вне модала — закрыть
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden'); });
+});
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function renderCurrentView() {
+  const active = document.querySelector('.view.active');
+  if (!active) return;
+  const id = active.id;
+  if (id==='view-maps')   renderMaps();
+  if (id==='view-heroes') renderHeroes();
+  if (id==='view-tiers')  renderTiers();
+  if (id==='view-bans')   renderBans();
+}
+
+function dots(val, type) {
+  let h = '<div class="dots">';
+  for (let i=1;i<=5;i++) h += `<div class="dot ${i<=val?type:''}"></div>`;
+  return h + '</div>';
+}
+
+// MAPS
+function renderMaps() {
+  const grid = document.getElementById('mapGrid');
+  const detail = document.getElementById('mapDetail');
+  detail.classList.remove('show'); detail.innerHTML = '';
+  const filtered = maps.filter(m => mapFilter==='all' || m.type===mapFilter);
+  if (!filtered.length) { grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Добавить карту"</div>'; return; }
+  grid.innerHTML = filtered.map(m => `
+    <div class="map-card" onclick="showMapDetail('${esc(m.name)}')">
+      <div class="map-card-type">${m.type}</div>
+      <div class="map-card-name">${m.name}</div>
+      <div class="map-meta">
+        <div class="tier-badge tier-${m.tier}">${m.tier}</div>
+        <div class="ratings">
+          <div class="rating-row-sm"><span class="rating-lbl">ATK</span>${dots(m.atk,'atk')}</div>
+          <div class="rating-row-sm"><span class="rating-lbl">DEF</span>${dots(m.def,'def')}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function showMapDetail(name) {
+  const m = maps.find(x => x.name===name); if(!m) return;
+  document.getElementById('mapGrid').innerHTML='';
+  const detail = document.getElementById('mapDetail');
+  detail.classList.add('show');
+
+  const byRole = {Tank:[],Damage:[],Support:[]};
+  m.preferredHeroes.forEach(n => { const h=heroMap[n]; if(h&&byRole[h.role]) byRole[h.role].push(h); });
+  const heroRows = ['Tank','Damage','Support'].flatMap(role =>
+    byRole[role].map(h => `<div class="hero-row"><div class="role-dot" style="background:${roleColor[h.role]}"></div><span class="hero-name-sm">${h.name}</span><span class="hero-sub">${h.subrole}</span></div>`)
+  ).join('') || '<span class="empty">Не указаны</span>';
+
+  const banPills = m.bans.map(n=>`<span class="ban-pill">${n}</span>`).join('') || '<span class="empty">Не указаны</span>';
+  const compHeroes = m.comp.map(c=>`<span class="comp-hero ${c.role}">${c.hero}</span>`).join('') || '<span class="empty">Не указан</span>';
+  const noteLines = m.notes ? m.notes.split(/[.\n]/).filter(s=>s.trim()).map(s=>`<span class="notes-line">${s.trim()}</span>`).join('') : '<span class="empty">Нет заметок</span>';
+
+  detail.innerHTML = `
+    <div class="detail-header">
+      <button class="back-btn" onclick="backToMaps()">← Назад</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="detail-name">${m.name}</div>
+        <button class="icon-btn" onclick="openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
+      </div>
+      <div class="detail-meta" style="margin-top:8px">
+        <div class="meta-item"><span>Tier</span><span class="tier-badge tier-${m.tier}">${m.tier}</span></div>
+        <div class="meta-item"><span>Тип:</span><span class="meta-val">${m.type}</span></div>
+        <div class="meta-item"><span>Приоритет:</span><span class="meta-val">#${m.priority}</span></div>
+        <div class="meta-item"><span>ATK</span>${dots(m.atk,'atk')}</div>
+        <div class="meta-item"><span>DEF</span>${dots(m.def,'def')}</div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-card-title">Предпочтительные герои</div>
+      <div class="hero-list">${heroRows}</div>
+    </div>
+    <div class="detail-card">
+      <div class="detail-card-title">Цели для банов</div>
+      <div class="ban-list">${banPills}</div>
+      <div style="margin-top:1.25rem">
+        <div class="detail-card-title" style="border:none;padding:0;margin-bottom:8px">Предпочтительный состав</div>
+        <div class="comp-row">${compHeroes}</div>
+      </div>
+    </div>
+    <div class="detail-card full">
+      <div class="detail-card-title">Заметки о подготовке</div>
+      <div class="notes-text">${noteLines}</div>
+    </div>`;
+}
+
+function backToMaps() {
+  document.getElementById('mapDetail').classList.remove('show');
+  document.getElementById('mapDetail').innerHTML='';
+  renderMaps();
+}
+
+function filterMaps(type, btn) {
+  mapFilter = type;
+  document.querySelectorAll('#mapFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  backToMaps();
+}
+
+// HEROES
+function renderHeroes() {
+  const pool = document.getElementById('heroPool');
+  const roles = heroFilter==='all' ? ['Tank','Damage','Support'] : [heroFilter];
+  pool.innerHTML = roles.map(role => {
+    const h = heroes.filter(x=>x.role===role).sort((a,b)=>b.priority-a.priority);
+    if(!h.length) return '';
+    return `<div class="role-section">
+      <div class="role-header">
+        <div class="role-dot" style="background:${roleColor[role]};width:10px;height:10px"></div>
+        <span class="role-title">${role}</span>
+        <span class="role-count">${h.length} героев</span>
+      </div>
+      <div class="hero-grid">${h.map(hero=>`
+        <div class="hero-card ${hero.banned?'banned':''}" onclick="openHeroModal(heroes.find(x=>x.name==='${esc(hero.name)}'))">
+          <div class="hero-accent" style="background:${roleColor[hero.role]}"></div>
+          <div class="hero-card-name">${hero.name}${hero.banned?'<span class="banned-badge">БАН</span>':''}</div>
+          <div class="hero-card-sub">${hero.subrole}</div>
+          <div class="hero-prio">Приоритет: ${hero.priority}/10</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">Нет героев. Нажми "+ Добавить героя"</div>';
+}
+
+function filterHeroes(role, btn) {
+  heroFilter = role;
+  document.querySelectorAll('#heroFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHeroes();
+}
+
+// TIERS
+function renderTiers() {
+  const tl = document.getElementById('tierList');
+  const byTier = {};
+  maps.forEach(m => { if(!byTier[m.tier]) byTier[m.tier]=[]; byTier[m.tier].push(m); });
+  tl.innerHTML = ['S','A','B','C','D'].filter(t=>byTier[t]).map(t => {
+    const ts = tierStyle[t];
+    return `<div class="tier-section">
+      <div class="tier-box" style="background:${ts.bg};color:${ts.color}">${t}</div>
+      <div class="tier-maps-row">${byTier[t].map(m=>`
+        <div class="tier-map-pill" onclick="goToMap('${esc(m.name)}')">${m.name}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">Нет данных</div>';
+}
+
+function goToMap(name) {
+  showView('maps', document.querySelectorAll('.nav-btn')[0]);
+  mapFilter='all';
+  document.querySelectorAll('#mapFilters .filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  renderMaps();
+  setTimeout(()=>showMapDetail(name),30);
+}
+
+// BANS
+function renderBans() {
+  const bg = document.getElementById('bansGrid');
+  const banned = heroes.filter(h=>h.banned);
+  bg.innerHTML = banned.length
+    ? banned.map(h=>`<div class="ban-card">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <div class="role-dot" style="background:${roleColor[h.role]}"></div>
+          <div class="ban-card-name">${h.name}</div>
+        </div>
+        <div class="ban-card-role">${h.role} · ${h.subrole}</div>
+      </div>`).join('')
+    : '<div class="empty">Нет активных банов</div>';
+}
+
+// ════════════════════════════════════════════
+// NAV + UTILS
+// ════════════════════════════════════════════
+function showView(v, btn) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  if(btn) btn.classList.add('active');
+  renderCurrentView();
+}
+
+function showLoading(id) {
+  const el = document.getElementById(id);
+  if(el) el.innerHTML = '<div class="loading-state"><div class="spinner"></div><br>Загрузка...</div>';
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if(el) el.innerHTML = `<div class="error-state">⚠ ${msg}</div>`;
+}
+
+let toastTimer;
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+function esc(s) { return (s||'').replace(/'/g,"\\'"); }
+
+// ════════════════════════════════════════════
+// SEED DATA — актуальный пул 2026
+// ════════════════════════════════════════════
+const SEED_HEROES = [
+  ['name','role','subrole','priority','banned','notes'],
+  ['D.Va','Tank','Initiator',5,'FALSE',''],
+  ['Doomfist','Tank','Initiator',5,'FALSE',''],
+  ['Hazard','Tank','Initiator',5,'FALSE',''],
+  ['Winston','Tank','Initiator',5,'FALSE',''],
+  ['Wrecking Ball','Tank','Initiator',5,'FALSE',''],
+  ['Orisa','Tank','Bruiser',5,'FALSE',''],
+  ['Mauga','Tank','Bruiser',5,'FALSE',''],
+  ['Roadhog','Tank','Bruiser',5,'FALSE',''],
+  ['Zarya','Tank','Bruiser',5,'FALSE',''],
+  ['Domina','Tank','Stalwart',5,'FALSE',''],
+  ['Junker Queen','Tank','Stalwart',5,'FALSE',''],
+  ['Ramattra','Tank','Stalwart',5,'FALSE',''],
+  ['Reinhardt','Tank','Stalwart',5,'FALSE',''],
+  ['Sigma','Tank','Stalwart',5,'FALSE',''],
+  ['Bastion','Damage','Specialist',5,'FALSE',''],
+  ['Emre','Damage','Specialist',5,'FALSE',''],
+  ['Junkrat','Damage','Specialist',5,'FALSE',''],
+  ['Mei','Damage','Specialist',5,'FALSE',''],
+  ['Soldier: 76','Damage','Specialist',5,'FALSE',''],
+  ['Symmetra','Damage','Specialist',5,'FALSE',''],
+  ['Torbjörn','Damage','Specialist',5,'FALSE',''],
+  ['Ashe','Damage','Sharpshooter',5,'FALSE',''],
+  ['Cassidy','Damage','Sharpshooter',5,'FALSE',''],
+  ['Hanzo','Damage','Sharpshooter',5,'FALSE',''],
+  ['Widowmaker','Damage','Sharpshooter',5,'FALSE',''],
+  ['Sojourn','Damage','Sharpshooter',5,'FALSE',''],
+  ['Anran','Damage','Flanker',5,'FALSE',''],
+  ['Genji','Damage','Flanker',5,'FALSE',''],
+  ['Reaper','Damage','Flanker',5,'FALSE',''],
+  ['Tracer','Damage','Flanker',5,'FALSE',''],
+  ['Vendetta','Damage','Flanker',5,'FALSE',''],
+  ['Venture','Damage','Flanker',5,'FALSE',''],
+  ['Echo','Damage','Recon',5,'FALSE',''],
+  ['Freja','Damage','Recon',5,'FALSE',''],
+  ['Pharah','Damage','Recon',5,'FALSE',''],
+  ['Sierra','Damage','Recon',5,'FALSE',''],
+  ['Sombra','Damage','Recon',5,'FALSE',''],
+  ['Ana','Support','Tactician',5,'FALSE',''],
+  ['Baptiste','Support','Tactician',5,'FALSE',''],
+  ['Jetpack Cat','Support','Tactician',5,'FALSE',''],
+  ['Lucio','Support','Tactician',5,'FALSE',''],
+  ['Zenyatta','Support','Tactician',5,'FALSE',''],
+  ['Kiriko','Support','Medic',5,'FALSE',''],
+  ['Lifeweaver','Support','Medic',5,'FALSE',''],
+  ['Mercy','Support','Medic',5,'FALSE',''],
+  ['Moira','Support','Medic',5,'FALSE',''],
+  ['Brigitte','Support','Survivor',5,'FALSE',''],
+  ['Illari','Support','Survivor',5,'FALSE',''],
+  ['Juno','Support','Survivor',5,'FALSE',''],
+  ['Mizuki','Support','Survivor',5,'FALSE',''],
+  ['Wuyang','Support','Survivor',5,'FALSE',''],
+];
+
+const SEED_MAPS = [
+  ['name','type','tier','priority','atk','def','notes'],
+  ["Blizzard World",'Hybrid','B',1,3,3,''],
+  ["King's Row",'Hybrid','S',2,5,5,''],
+  ['Midtown','Hybrid','B',3,3,3,''],
+  ['Numbani','Hybrid','A',4,4,3,''],
+  ['Paraíso','Hybrid','B',5,3,3,''],
+  ['Eichenwalde','Hybrid','A',6,4,4,''],
+  ['Hollywood','Hybrid','B',7,3,3,''],
+  ['Dorado','Escort','B',8,3,3,''],
+  ['Havana','Escort','B',9,3,4,''],
+  ['Junkertown','Escort','A',10,4,3,''],
+  ['Circuit Royal','Escort','S',11,3,5,''],
+  ['Rialto','Escort','B',12,3,3,''],
+  ['Shambali Monastery','Escort','A',13,4,4,''],
+  ['Watchpoint: Gibraltar','Escort','B',14,3,3,''],
+  ['Route 66','Escort','C',15,2,3,''],
+  ['Antarctic Peninsula','Control','A',16,4,4,''],
+  ['Ilios','Control','S',17,4,4,''],
+  ['Lijiang Tower','Control','S',18,4,4,''],
+  ['Nepal','Control','A',19,4,4,''],
+  ['Oasis','Control','B',20,3,3,''],
+  ['Runasapi','Push','B',21,3,3,''],
+  ['New Queen Street','Push','A',22,4,3,''],
+  ['Esperança','Push','B',23,3,3,''],
+  ['Colosseo','Push','A',24,4,3,''],
+  ['Suravasa','Flashpoint','A',25,5,4,''],
+  ['New Junk City','Flashpoint','C',26,2,3,''],
+];
+
+// Заполнить Sheets начальными данными если таблица пустая
+async function seedSheets() {
+  if (!SID()) { toast('Сначала укажи Sheet ID', 'err'); return; }
+  if (!confirm('Заполнить таблицу стартовыми данными?\nСуществующие Heroes и Maps будут перезаписаны.')) return;
+  try {
+    await sheetsUpdate('Heroes!A1:F' + SEED_HEROES.length, SEED_HEROES);
+    await sheetsUpdate('Maps!A1:G' + SEED_MAPS.length, SEED_MAPS);
+    // Создаём заголовки для relation-листов если их нет
+    await sheetsUpdate('MapPreferred!A1:B1', [['map','hero']]);
+    await sheetsUpdate('MapBans!A1:B1', [['map','hero']]);
+    await sheetsUpdate('Compositions!A1:C1', [['map','hero','role']]);
+    toast('Таблица заполнена ✓', 'ok');
+    await loadAllData();
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+}
+
+// ════════════════════════════════════════════
+// INIT — проверяем Client ID при загрузке
+// ════════════════════════════════════════════
+if (!getClientId()) {
+  document.getElementById('authConfigBanner').style.display = 'block';
+}
+</script>
+
+<!-- Google API libraries -->
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+</body>
+</html>
