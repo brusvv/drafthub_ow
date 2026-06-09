@@ -39,13 +39,13 @@ async function saveMap(){
     document.getElementById('mNotes').value.trim()];
   const pref=pickerSelected.preferred;
   const bans=pickerSelected.bans;
-  const comp=pickerSelected.comp.map(n=>({hero:n,role:(heroMap[n]||{}).role||''}));
+  const comp=compSlots.filter(s=>s.hero).map(s=>({hero:s.hero,playerRole:s.role,role:(heroMap[s.hero]||{}).role||''}));
   const counters=(document.getElementById('mCounters').value||'').split(',').map(s=>s.trim()).filter(Boolean);
   try{
     if(er)await sUp(`Maps!A${er}:H${er}`,[row]);else await sApp('Maps',[row]);
     await rewrite('MapPreferred',oldName||name,name,pref.map(h=>[name,h]));
     await rewrite('MapBans',oldName||name,name,bans.map(h=>[name,h]));
-    await rewrite('Compositions',oldName||name,name,comp.map(c=>[name,c.hero,c.role]));
+    await rewrite('Compositions',oldName||name,name,comp.map(c=>[name,c.hero,c.role,c.playerRole||c.role]));
     await rewrite('MapCounters',oldName||name,name,counters.map(h=>[name,h]));
     toast(er?'Карта обновлена ✓':'Карта добавлена ✓','ok');closeModal('mapModal');await loadMaps();renderCurrentView();
   }catch(e){toast('Ошибка: '+e.message,'err');console.error(e)}
