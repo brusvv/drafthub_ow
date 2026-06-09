@@ -16,13 +16,6 @@ function dots5(val,type,max=5){
   return h+'</div>';
 }
 
-
-
-
-
-
-
-
 // ════ MAPS ════
 function renderMaps(){
   const grid=document.getElementById('mapGrid');
