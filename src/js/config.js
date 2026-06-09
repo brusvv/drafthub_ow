@@ -95,7 +95,13 @@ function mapKey(name){
   return name.toLowerCase()
     .replace(/['']/g,'')
     .replace(/[^a-z0-9]+/g,'_')
-    .replace(/^_|_$/g,'');
+    .replace(/^_|_$/g,'')
+    .replace(/_+/g,'_');  // collapse double underscores (e.g. "Soldier: 76" → "soldier_76")
+}
+
+// heroKey: strips punctuation entirely for heroes like "Soldier: 76" → "soldier76"
+function heroKey(name){
+  return name.toLowerCase().replace(/[^a-z0-9]/g,'');
 }
 
 // ════ PORTRAITS ════
@@ -106,6 +112,7 @@ async function loadPortraits(){
     data.forEach(h=>{
       heroPortraits[h.name.toLowerCase()]=h.portrait;
       heroPortraits[h.key]=h.portrait;
+      heroPortraits[heroKey(h.name)]=h.portrait;  // "Soldier: 76" → "soldier76"
     });
   }catch(e){console.warn('Portrait API error',e)}
 }
@@ -124,7 +131,7 @@ async function loadMapScreenshots(){
 function portrait(name){
   if(!name)return null;
   const k=name.toLowerCase();
-  return heroPortraits[k]||heroPortraits[mapKey(name)]||null;
+  return heroPortraits[k]||heroPortraits[mapKey(name)]||heroPortraits[heroKey(name)]||null;
 }
 function mapImg(name){
   if(!name)return null;
@@ -141,5 +148,5 @@ function imgH(src,cls,fallbackLetter,extra=''){
 }
 
 const ICON_ATK=`<svg class="ow-icon" style="color:#E05555;flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M2 2l6 6-1.5 1.5 1.4 1.4L9.4 9.4l4.7 4.7-1.5 1.5 1.4 1.4 1.5-1.5L22 22l-6-6 1.5-1.5-1.4-1.4-1.5 1.5-4.7-4.7 1.5-1.5-1.4-1.4L9 10.6 3.4 5 2 2z"/><path d="M14.6 2L22 9.4l-1.4 1.4-7.4-7.4 1.4-1.4zM2 14.6L9.4 22l1.4-1.4L3.4 13.2 2 14.6z"/><path d="M14.1 2.7l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4zM2.7 14.1l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4z"/></svg>`;
-const ICON_DEF=`<svg class="ow-icon" style="color:#4A9EE0;flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2L4 5.5V11c0 5.25 3.5 9.8 8 11 4.5-1.2 8-5.75 8-11V5.5L12 2z" fill="rgba(74,158,224,0.15)" stroke="currentColor"/><path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round"/></svg>`;
+const ICON_DEF=`<svg class="ow-icon" style="color:#4A9EE0;flex-shrink:0" width="13" height="13" viewBox="0 0 100 110" fill="currentColor"><path d="M50 4 L8 22 L8 52 C8 76 26 98 50 106 C74 98 92 76 92 52 L92 22 Z"/><path fill="white" d="M31 62 L31 82 L69 82 L69 62 L64 62 L64 44 L69 44 L69 34 L62 34 L62 38 L55 38 L55 34 L45 34 L45 38 L38 38 L38 34 L31 34 L31 44 L36 44 L36 62 Z"/></svg>`;
 const ICON_DIF=`<svg class="ow-icon" style="color:var(--accent);flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
