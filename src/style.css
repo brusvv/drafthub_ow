@@ -251,3 +251,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* OW icon base */
 .ow-icon{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
+
+/* ── PLAYER ROLE ICONS ── */
+.player-role-icon{display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0}
+.player-role-icon.flex{flex-direction:column;gap:2px}
+.player-role-icon.two{flex-direction:column;gap:3px}
+.player-role-icon.one{}
+
+/* ── COUNTER PICKER ── */
+#counterPickerOverlay .p-hero{position:relative}
+
+/* ── ROSTER ── */
+#view-roster .detail-grid{margin-top:0}

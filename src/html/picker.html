@@ -23,6 +23,28 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- COUNTER PICKER (for hero modal) -->
+<div class="picker-overlay hidden" id="counterPickerOverlay">
+  <div class="picker-box">
+    <div class="picker-header">
+      <div class="picker-title">Контрпики</div>
+      <div class="picker-count" id="counterPickerCount">0 выбрано</div>
+    </div>
+    <div class="picker-filters">
+      <button class="f-btn active" onclick="counterPickerFilter('all',this)">Все</button>
+      <button class="f-btn" onclick="counterPickerFilter('Tank',this)">Tank</button>
+      <button class="f-btn" onclick="counterPickerFilter('Damage',this)">Damage</button>
+      <button class="f-btn" onclick="counterPickerFilter('Support',this)">Support</button>
+    </div>
+    <div class="picker-grid-wrap">
+      <div class="picker-grid" id="counterPickerGrid"></div>
+    </div>
+    <div class="picker-footer">
+      <button class="btn" onclick="closeCounterPicker()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmCounterPicker()">Готово</button>
+    </div>
+  </div>
+</div>
 
 <!-- MAP PICKER (strong/weak maps for hero) -->
 <div class="picker-overlay hidden" id="mapPickerOverlay">

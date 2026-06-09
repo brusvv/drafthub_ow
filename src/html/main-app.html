@@ -26,6 +26,7 @@
     <button class="nav-btn" onclick="showView('tiers',this)">Tier List</button>
     <button class="nav-btn" onclick="showView('bans',this)">Текущие баны</button>
     <button class="nav-btn" onclick="showView('players',this)">Игроки</button>
+    <button class="nav-btn" onclick="showView('roster',this)">Состав</button>
   </nav>
 
   <div id="view-maps" class="view active">
@@ -75,6 +76,13 @@
     <div id="playerGrid" class="players-grid" style="margin-top:1rem"></div>
     <div id="playerDetail" class="player-detail"></div>
   </div>
-</div>
-</div>
 
+  <div id="view-roster" class="view">
+    <div class="toolbar">
+      <div class="section-lbl" style="margin:0">Сборка состава</div>
+      <button class="btn btn-primary" onclick="openRosterPlayerPicker()">+ Добавить игрока</button>
+    </div>
+    <div id="rosterContent" style="margin-top:1rem"></div>
+  </div>
+</div>
+</div>

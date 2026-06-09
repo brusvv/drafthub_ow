@@ -2,12 +2,14 @@
 async function saveHero(){
   const name=document.getElementById('hName').value.trim(),role=document.getElementById('hRole').value;
   if(!name||!role){toast('Заполни имя и роль','err');return}
+  // build counters string from counterPickerSelected
+  const countersStr=counterPickerSelected.map(c=>`${c.name}:${c.score}`).join(',');
   const row=[name,role,
     document.getElementById('hSub').value.trim(),
     document.getElementById('hPrio').value,
     document.getElementById('hBanned').checked?'TRUE':'FALSE',
     document.getElementById('hNotes').value.trim(),
-    document.getElementById('hCounters').value.trim(),
+    countersStr,
     mapPickerSelected.heroStrong.join(','),
     mapPickerSelected.heroWeak.join(',')
   ];
@@ -87,8 +89,25 @@ async function savePlayer(){
     document.getElementById('pRankSup').value.trim(),
     document.getElementById('pNotes').value.trim()
   ];
-  const mainH=pickerSelected.playerMain;
-  const poolH=pickerSelected.playerPool;
+
+  // collect heroes from per-role pools
+  const isFlex=mainRole==='Flex';
+  const offRole=document.getElementById('pOffRole').value;
+  let roles=isFlex?['Tank','Damage','Support']:[mainRole];
+  if(!isFlex&&offRole&&offRole!==mainRole)roles.push(offRole);
+
+  // mainHeroes = top-5 from main role (or combined top for Flex)
+  let mainH=[];
+  if(isFlex){
+    // first heroes from each role up to total 5
+    roles.forEach(r=>{const k=`playerRole_${r}`;(pickerSelected[k]||[]).forEach(h=>{if(!mainH.includes(h)&&mainH.length<5)mainH.push(h)});});
+  } else {
+    mainH=(pickerSelected[`playerRole_${mainRole}`]||[]).slice(0,5);
+  }
+  // poolH = all selected heroes from all roles
+  let poolH=[];
+  roles.forEach(r=>{const k=`playerRole_${r}`;(pickerSelected[k]||[]).forEach(h=>{if(!poolH.includes(h))poolH.push(h);});});
+
   try{
     if(er)await sUp(`Players!A${er}:H${er}`,[row]);else await sApp('Players',[row]);
     const allPH=await sGet('PlayerHeroes!A:C');

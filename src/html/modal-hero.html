@@ -15,9 +15,15 @@
     </div>
     <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="hBanned" style="accent-color:var(--damage)"> В текущем бане</label></div>
     <div class="form-group">
-      <label class="form-label">Контрпики (Имя:оценка через запятую)</label>
-      <input class="form-input" id="hCounters" placeholder="Zarya:9, Ana:7, Kiriko:6">
-      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px">Оценка ≥8 = рекомендация к бану</div>
+      <label class="form-label">Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(оценка ≥8 = рекомендация к бану)</span></label>
+      <div class="sel-heroes" id="selHeroCounters" onclick="openCounterPicker()">
+        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+      </div>
+      <!-- hidden inputs for scores, shown below selected heroes -->
+      <div id="counterScoresBlock" style="display:none;margin-top:6px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">Оценки контрпиков (1–10):</div>
+        <div id="counterScoresList" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Силён на картах</label>

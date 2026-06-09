@@ -9,13 +9,13 @@
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Основная роль *</label>
-        <select class="form-select" id="pMainRole">
+        <select class="form-select" id="pMainRole" onchange="onPlayerRoleChange()">
           <option value="">— роль —</option>
           <option>Tank</option><option>Damage</option><option>Support</option><option>Flex</option>
         </select>
       </div>
       <div class="form-group"><label class="form-label">Офф-роль</label>
-        <select class="form-select" id="pOffRole">
+        <select class="form-select" id="pOffRole" onchange="onPlayerRoleChange()">
           <option value="">— нет —</option>
           <option>Tank</option><option>Damage</option><option>Support</option>
         </select>
@@ -29,18 +29,12 @@
       <div class="form-group"><label class="form-label">Ранг Support</label><input class="form-input" id="pRankSup" placeholder="Diamond 1"></div>
       <div class="form-group"></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Топ-5 героев (основные)</label>
-      <div class="sel-heroes" id="selPlayerMain" onclick="openHeroPicker('playerMain',5)">
-        <span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>
-      </div>
+
+    <!-- Hero pools per role — shown dynamically -->
+    <div id="playerHeroPoolsBlock">
+      <!-- filled by onPlayerRoleChange() -->
     </div>
-    <div class="form-group">
-      <label class="form-label">Пул героев (все что играет)</label>
-      <div class="sel-heroes" id="selPlayerPool" onclick="openHeroPicker('playerPool',999)">
-        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
-      </div>
-    </div>
+
     <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="pNotes" placeholder="Сильные стороны, стиль игры..."></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="playerDeleteBtn" onclick="deletePlayer()" style="display:none">Удалить</button>
