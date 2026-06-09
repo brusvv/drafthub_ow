@@ -25,93 +25,69 @@ let mapPickerMode='heroStrong';
 let mapPickerSelected={heroStrong:[],heroWeak:[]};
 let mapPickerTypeFilter='all';
 
-// ════ ROLE & SUBROLE ICONS (Fandom Wiki) ════
-let wikiIconCache={};
+// ════ WIKI ICONS (hardcoded URLs — no API needed) ════
+const BASE='https://static.wikia.nocookie.net/overwatch_gamepedia/images';
 
-const WIKI_ICON_FILES=[
-  'File:Role_Tank_Circle.svg',
-  'File:Role_Damage_Circle.svg',
-  'File:Role_Support_Circle.svg',
-  'File:Flex_Icon.svg',
-  'File:Sub-Role_Tank_Initiator_Circle.svg',
-  'File:Sub-Role_Tank_Bruiser_Circle.svg',
-  'File:Sub-Role_Tank_Stalwart_Circle.svg',
-  'File:Sub-Role_Damage_Flanker_Circle.svg',
-  'File:Sub-Role_Damage_Sharpshooter_Circle.svg',
-  'File:Sub-Role_Damage_Specialist_Circle.svg',
-  'File:Sub-Role_Damage_Recon_Circle.svg',
-  'File:Sub-Role_Support_Medic_Circle.svg',
-  'File:Sub-Role_Support_Tactician_Circle.svg',
-  'File:Sub-Role_Support_Survivor_Circle.svg',
-];
+const WIKI_ROLE={
+  Tank:       `${BASE}/c/c8/Role_Tank_Circle.svg/revision/latest`,
+  Damage:     `${BASE}/8/80/Role_Damage_Circle.svg/revision/latest`,
+  Support:    `${BASE}/9/93/Role_Support_Circle.svg/revision/latest`,
+  Flex:       `${BASE}/d/da/Flex_Icon.svg/revision/latest`,
+};
+
+const WIKI_SUBROLE={
+  Tank:{
+    Initiator: `${BASE}/4/47/Sub-Role_Tank_Initiator_Circle.svg/revision/latest`,
+    Bruiser:   `${BASE}/a/a3/Sub-Role_Tank_Bruiser_Circle.svg/revision/latest`,
+    Stalwart:  `${BASE}/f/f5/Sub-Role_Tank_Stalwart_Circle.svg/revision/latest`,
+  },
+  Damage:{
+    Flanker:      `${BASE}/d/d2/Sub-Role_Damage_Flanker_Circle.svg/revision/latest`,
+    Sharpshooter: `${BASE}/5/58/Sub-Role_Damage_Sharpshooter_Circle.svg/revision/latest`,
+    Specialist:   `${BASE}/9/9b/Sub-Role_Damage_Specialist_Circle.svg/revision/latest`,
+    Recon:        `${BASE}/b/bc/Sub-Role_Damage_Recon_Circle.svg/revision/latest`,
+  },
+  Support:{
+    Medic:      `${BASE}/6/61/Sub-Role_Support_Medic_Circle.svg/revision/latest`,
+    Tactician:  `${BASE}/3/31/Sub-Role_Support_Tactician_Circle.svg/revision/latest`,
+    Survivor:   `${BASE}/2/22/Sub-Role_Support_Survivor_Circle.svg/revision/latest`,
+  },
+};
+
+// Map type icons
+const WIKI_MAPTYPE={
+  Control:    `${BASE}/e/e5/Control.png/revision/latest`,
+  Escort:     `${BASE}/d/d3/Escort.png/revision/latest`,
+  Hybrid:     `${BASE}/e/ed/Hybrid.png/revision/latest`,
+  Push:       `${BASE}/6/6a/Push.png/revision/latest`,
+  Flashpoint: `${BASE}/f/f2/Flashpoint.png/revision/latest`,
+  Clash:      `${BASE}/d/d1/Clash.svg/revision/latest`,
+};
 
 function _roleColor(role){
   return role==='Tank'?'var(--tank)':role==='Damage'?'var(--damage)':role==='Support'?'var(--support)':'var(--accent)';
 }
 
-function roleIconKey(role){
-  if(role==='Flex')return'File:Flex_Icon.svg';
-  return`File:Role_${role}_Circle.svg`;
-}
-function subroleIconKey(role,subrole){
-  if(!subrole)return null;
-  return`File:Sub-Role_${role}_${subrole}_Circle.svg`;
-}
-
-async function loadWikiIcons(){
-  try{
-    const titles=WIKI_ICON_FILES.join('|');
-    const url=`https://overwatch.fandom.com/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    const r=await fetch(url);
-    const data=await r.json();
-    const pages=data?.query?.pages||{};
-    Object.values(pages).forEach(page=>{
-      const imgUrl=page?.imageinfo?.[0]?.url;
-      if(imgUrl&&page.title){
-        const key='File:'+page.title.replace(/^File:/,'').replace(/ /g,'_');
-        wikiIconCache[key]=imgUrl;
-      }
-    });
-    console.log(`Wiki icons loaded: ${Object.keys(wikiIconCache).length}/${WIKI_ICON_FILES.length}`);
-  }catch(e){
-    console.warn('Wiki icon API error',e);
-  }
-}
-
-// SVG-фолбеки
-const _ROLE_SVG={
-  Tank:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 5v6c0 5.25 3.5 10.15 8 11.5C16.5 21.15 20 16.25 20 11V5l-8-3zm0 2.18l6 2.25V11c0 4.1-2.7 7.9-6 9.1-3.3-1.2-6-5-6-9.1V6.43l6-2.25z"/><rect x="10" y="9" width="4" height="7" rx="1"/><rect x="8" y="11" width="8" height="3" rx="1"/></svg>`,
-  Damage:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.5 7.5H22l-6.5 4.7 2.5 7.5L12 17.2l-6 4.5 2.5-7.5L2 9.5h7.5z"/></svg>`,
-  Support:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35z"/></svg>`,
-  Flex:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>`,
-};
-
-function roleIconSvgFallback(role,size=20){
-  const color=_roleColor(role);
-  const svg=_ROLE_SVG[role]||_ROLE_SVG.Flex;
-  return`<span style="display:inline-flex;width:${size}px;height:${size}px;color:${color};flex-shrink:0">${svg}</span>`;
-}
-
-// Главные функции — используют Wiki-иконки с SVG-фолбеком
+// <img> иконка роли
 function roleIcon(role,size=20){
-  const key=roleIconKey(role);
-  const url=wikiIconCache[key];
-  const color=_roleColor(role);
-  if(url){
-    return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;filter:drop-shadow(0 0 2px ${color}44)" alt="${role}" onerror="this.outerHTML=roleIconSvgFallback('${role}',${size})">`;
-  }
-  return roleIconSvgFallback(role,size);
+  const url=WIKI_ROLE[role];
+  if(!url)return'';
+  return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0" alt="${role}">`;
 }
 
-function subroleIcon(role,subrole,size=18){
-  if(!subrole)return'';
-  const key=subroleIconKey(role,subrole);
-  const url=wikiIconCache[key];
-  if(url){
-    const color=_roleColor(role);
-    return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;filter:drop-shadow(0 0 2px ${color}44)" alt="${subrole}">`;
-  }
-  return`<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${subrole}</span>`;
+// <img> иконка подкласса
+function subroleIcon(role,subrole,size=16){
+  if(!subrole||!role)return'';
+  const url=WIKI_SUBROLE[role]?.[subrole];
+  if(!url)return'';
+  return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0" alt="${subrole}">`;
+}
+
+// <img> иконка типа карты
+function mapTypeIcon(type,size=14){
+  const url=WIKI_MAPTYPE[type];
+  if(!url)return'';
+  return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0;opacity:.85" alt="${type}">`;
 }
 
 // ════ MAP KEY ════
