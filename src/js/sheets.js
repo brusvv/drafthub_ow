@@ -3,9 +3,26 @@ async function loadAllData(){
   if(!SID())return;
   showLoading('mapGrid');showLoading('heroPool');showLoading('playerGrid');
   try{
-    await Promise.all([loadPortraits(),loadMapScreenshots(),loadHeroes(),loadMaps(),loadPlayers()]);
+    await Promise.all([loadPortraits(),loadMapScreenshots(),loadHeroes(),loadMaps(),loadPlayers(),loadTiers()]);
     renderCurrentView();
   }catch(e){showError('mapGrid','Ошибка: '+e.message);console.error(e)}
+}
+
+async function loadTiers(){
+  let tm=[],th=[];
+  try{[tm,th]=await Promise.all([sGet('TierMaps!A:B'),sGet('TierHeroes!A:B')])}catch(e){return;}
+  // TierMaps
+  const rowsM=tm.slice(1).filter(r=>r[0]&&r[1]);
+  if(rowsM.length){
+    tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};
+    rowsM.forEach(r=>{const t=r[1];if(tierOrderMaps[t])tierOrderMaps[t].push(r[0]);});
+  }
+  // TierHeroes
+  const rowsH=th.slice(1).filter(r=>r[0]&&r[1]);
+  if(rowsH.length){
+    tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};
+    rowsH.forEach(r=>{const t=r[1];if(tierOrderHeroes[t])tierOrderHeroes[t].push(r[0]);});
+  }
 }
 
 async function loadHeroes(){
@@ -181,6 +198,8 @@ const REQUIRED_SHEETS=[
   {title:'MapCounters', headers:['map','hero']},
   {title:'Players',     headers:['name','btag','mainrole','offrole','ranktank','rankdmg','ranksup','notes']},
   {title:'PlayerHeroes',headers:['player','hero','type']},
+  {title:'TierMaps',    headers:['name','tier']},
+  {title:'TierHeroes',  headers:['name','tier']},
 ];
 
 async function ensureSheets(){

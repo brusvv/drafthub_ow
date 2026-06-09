@@ -299,6 +299,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .tier-pill{font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);cursor:grab;transition:all .1s;display:flex;align-items:center;gap:6px}
 .tier-pill:hover{border-color:var(--border2)}
 .tier-pill.dragging{opacity:.4;cursor:grabbing}
+.tier-pill-hidden{display:none!important}
+.tier-pill-type{font-family:var(--mono);font-size:8px;letter-spacing:.06em;color:var(--text3);background:var(--bg3);border-radius:3px;padding:1px 4px;flex-shrink:0}
 .tier-hero-pill{font-size:12px;font-weight:600;padding:5px 8px 5px 5px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);cursor:grab;transition:all .1s;display:flex;align-items:center;gap:5px}
 .tier-hero-pill:hover{border-color:var(--border2)}
 .tier-hero-pill.dragging{opacity:.4;cursor:grabbing}
@@ -317,7 +319,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
  
 /* ── HERO SUBROLE GROUPING ── */
 .subrole-group{margin-bottom:1rem}
-.subrole-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.subrole-lbl{font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text1);margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid var(--border)}
  
 /* ── COMP SLOTS ── */
 .comp-slots{display:flex;flex-direction:column;gap:8px}

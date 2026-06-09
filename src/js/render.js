@@ -222,7 +222,6 @@ function renderHeroes(){
             ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="banned-tag" style="background:var(--accent);top:auto;bottom:5px;font-size:8px">⚠ Контр</div>':''}
             <div class="h-card-body">
               <div class="h-card-name">${hero.name}</div>
-              <div class="h-card-sub">${subroleIcon(hero.role,hero.subrole,12)}<span>${hero.subrole}</span></div>
               <div class="h-card-prio">Приоритет: ${hero.priority}/10</div>
               ${hero.counters&&hero.counters.length?`<div class="h-card-prio" style="color:var(--damage);font-size:9px">▲ ${hero.counters.slice().sort((a,b)=>b.score-a.score).slice(0,2).map(c=>c.name).join(', ')}</div>`:''}
             </div>
@@ -246,66 +245,101 @@ function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#hero
 // ════ TIER LIST — D&D ════
  
 // Состояние тирлистов (сохраняется локально)
-let tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};    // mapName -> tier
-let tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};  // heroName -> tier
- 
+let tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};
+let tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};
+let tierMapTypeFilter='all';
+let tierHeroRoleFilter='all';
+
 function switchTierTab(tab,btn){
   document.querySelectorAll('.tier-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tierListMaps').style.display=tab==='maps'?'block':'none';
   document.getElementById('tierListHeroes').style.display=tab==='heroes'?'block':'none';
+  document.getElementById('tierMapFilters').style.display=tab==='maps'?'flex':'none';
+  document.getElementById('tierHeroFilters').style.display=tab==='heroes'?'flex':'none';
 }
- 
+
+function filterTierMaps(type,btn){
+  tierMapTypeFilter=type;
+  document.querySelectorAll('#tierMapFilters .f-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTierMaps();
+}
+function filterTierHeroes(role,btn){
+  tierHeroRoleFilter=role;
+  document.querySelectorAll('#tierHeroFilters .f-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTierHeroes();
+}
+
 function renderTiers(){
   renderTierMaps();
   renderTierHeroes();
 }
- 
+
 function initTierMaps(){
-  // Собираем из maps[], потом применяем локальные overrides
-  const saved=JSON.parse(localStorage.getItem('draft_tier_maps')||'null');
-  if(saved){
-    tierOrderMaps=saved;
-    // Добавляем карты которых нет в сохранённом
-    const allNames=maps.map(m=>m.name);
-    const inTiers=Object.values(tierOrderMaps).flat();
-    allNames.filter(n=>!inTiers.includes(n)).forEach(n=>{
-      const m=maps.find(x=>x.name===n);
-      const tier=m?m.tier:'C';
-      if(!tierOrderMaps[tier])tierOrderMaps[tier]=[];
-      tierOrderMaps[tier].push(n);
-    });
-  }else{
-    tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};
-    maps.forEach(m=>{
-      if(!tierOrderMaps[m.tier])tierOrderMaps[m.tier]=[];
-      tierOrderMaps[m.tier].push(m.name);
-    });
-  }
+  // Prefer Sheets data (loaded into tierOrderMaps by loadTiers), fallback to localStorage
+  const saved=Object.values(tierOrderMaps).some(a=>a.length)
+    ? null
+    : JSON.parse(localStorage.getItem('draft_tier_maps')||'null');
+  if(saved) tierOrderMaps=saved;
+  // Merge new maps not yet in any tier
+  const allNames=maps.map(m=>m.name);
+  const inTiers=new Set(Object.values(tierOrderMaps).flat());
+  allNames.filter(n=>!inTiers.has(n)).forEach(n=>{
+    const m=maps.find(x=>x.name===n);
+    const tier=m?m.tier:'B';
+    if(!tierOrderMaps[tier])tierOrderMaps[tier]=[];
+    tierOrderMaps[tier].push(n);
+  });
+  // Remove stale entries (maps deleted from sheet)
+  const nameSet=new Set(allNames);
+  ['S','A','B','C','D'].forEach(t=>{tierOrderMaps[t]=(tierOrderMaps[t]||[]).filter(n=>nameSet.has(n))});
 }
- 
+
 function initTierHeroes(){
-  const saved=JSON.parse(localStorage.getItem('draft_tier_heroes')||'null');
-  if(saved){
-    tierOrderHeroes=saved;
-    const allNames=heroes.map(h=>h.name);
-    const inTiers=Object.values(tierOrderHeroes).flat();
-    allNames.filter(n=>!inTiers.includes(n)).forEach(n=>{
-      tierOrderHeroes['C'].push(n);
-    });
-  }else{
-    tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};
-    heroes.forEach(h=>{
-      const tier=h.priority>=9?'S':h.priority>=7?'A':h.priority>=5?'B':h.priority>=3?'C':'D';
-      if(!tierOrderHeroes[tier])tierOrderHeroes[tier]=[];
-      tierOrderHeroes[tier].push(h.name);
-    });
-  }
+  const saved=Object.values(tierOrderHeroes).some(a=>a.length)
+    ? null
+    : JSON.parse(localStorage.getItem('draft_tier_heroes')||'null');
+  if(saved) tierOrderHeroes=saved;
+  const allNames=heroes.map(h=>h.name);
+  const inTiers=new Set(Object.values(tierOrderHeroes).flat());
+  allNames.filter(n=>!inTiers.has(n)).forEach(n=>{
+    const h=heroes.find(x=>x.name===n);
+    const tier=h?(h.priority>=9?'S':h.priority>=7?'A':h.priority>=5?'B':h.priority>=3?'C':'D'):'C';
+    if(!tierOrderHeroes[tier])tierOrderHeroes[tier]=[];
+    tierOrderHeroes[tier].push(n);
+  });
+  const nameSet=new Set(allNames);
+  ['S','A','B','C','D'].forEach(t=>{tierOrderHeroes[t]=(tierOrderHeroes[t]||[]).filter(n=>nameSet.has(n))});
 }
- 
-function saveTierMaps(){localStorage.setItem('draft_tier_maps',JSON.stringify(tierOrderMaps))}
-function saveTierHeroes(){localStorage.setItem('draft_tier_heroes',JSON.stringify(tierOrderHeroes))}
- 
+
+let _tmTimer=null,_thTimer=null;
+function saveTierMaps(){
+  localStorage.setItem('draft_tier_maps',JSON.stringify(tierOrderMaps));
+  clearTimeout(_tmTimer);_tmTimer=setTimeout(saveTierMapsSheets,1500);
+}
+function saveTierHeroes(){
+  localStorage.setItem('draft_tier_heroes',JSON.stringify(tierOrderHeroes));
+  clearTimeout(_thTimer);_thTimer=setTimeout(saveTierHeroesSheets,1500);
+}
+async function saveTierMapsSheets(){
+  if(!SID())return;
+  const rows=[['name','tier'],...Object.entries(tierOrderMaps).flatMap(([t,ns])=>ns.map(n=>[n,t]))];
+  try{
+    await sUp('TierMaps!A1:B'+rows.length,rows);
+    if(rows.length<500)await sClear('TierMaps!A'+(rows.length+1)+':B500');
+  }catch(e){console.warn('TierMaps save error:',e.message)}
+}
+async function saveTierHeroesSheets(){
+  if(!SID())return;
+  const rows=[['name','tier'],...Object.entries(tierOrderHeroes).flatMap(([t,ns])=>ns.map(n=>[n,t]))];
+  try{
+    await sUp('TierHeroes!A1:B'+rows.length,rows);
+    if(rows.length<500)await sClear('TierHeroes!A'+(rows.length+1)+':B500');
+  }catch(e){console.warn('TierHeroes save error:',e.message)}
+}
+
 // drag state
 let dragItem=null,dragType=null;
  
@@ -321,13 +355,18 @@ function renderTierMaps(){
         ondragover="onDragOver(event,'maps','${t}')"
         ondrop="onDrop(event,'maps','${t}')"
         ondragleave="onDragLeave(event)">
-        ${items.map(name=>`<div class="tier-pill" draggable="true"
-          data-name="${esc(name)}" data-tier="${t}" data-type="maps"
-          ondragstart="onDragStart(event,'maps','${t}')"
-          ondragend="onDragEnd(event)"
-          onclick="goToMap('${esc(name)}')">
-          ${name}
-        </div>`).join('')}
+        ${items.map((name,idx)=>{
+          const m=maps.find(x=>x.name===name);
+          const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
+          return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="true"
+            data-tier="${t}" data-type="maps"
+            ondragstart="onDragStart(event,'maps','${t}',${idx})"
+            ondragend="onDragEnd(event)"
+            onclick="goToMap('${esc(name)}')">
+            ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${m.type.slice(0,3).toUpperCase()}</span>`:''}
+            ${name}
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
   }).join('');
@@ -345,12 +384,13 @@ function renderTierHeroes(){
         ondragover="onDragOver(event,'heroes','${t}')"
         ondrop="onDrop(event,'heroes','${t}')"
         ondragleave="onDragLeave(event)">
-        ${items.map(name=>{
+        ${items.map((name,idx)=>{
           const h=heroMap[name];
           const src=portrait(name);
-          return`<div class="tier-hero-pill" draggable="true"
-            data-name="${esc(name)}" data-tier="${t}" data-type="heroes"
-            ondragstart="onDragStart(event,'heroes','${t}')"
+          const hidden=tierHeroRoleFilter!=='all'&&(!h||h.role!==tierHeroRoleFilter);
+          return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="true"
+            data-tier="${t}" data-type="heroes"
+            ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)">
             ${src?`<img src="${src}" width="22" height="22" style="border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
             ${name}
@@ -362,12 +402,14 @@ function renderTierHeroes(){
 }
  
 // ── Drag & Drop ──
-function onDragStart(e,type,fromTier){
-  dragItem={name:e.currentTarget.dataset.name,tier:fromTier};
+function onDragStart(e,type,fromTier,idx){
+  const order=type==='maps'?tierOrderMaps:tierOrderHeroes;
+  const name=(order[fromTier]||[])[idx];
+  dragItem={name,tier:fromTier};
   dragType=type;
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/plain',e.currentTarget.dataset.name);
+  e.dataTransfer.setData('text/plain',name||'');
 }
  
 function onDragEnd(e){

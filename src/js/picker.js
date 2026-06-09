@@ -157,15 +157,26 @@ function renderCounterScores(){
   if(!counterPickerSelected.length){block.style.display='none';return}
   block.style.display='block';
   list.innerHTML=counterPickerSelected.map((c,i)=>{
-    const color=c.score>=8?'var(--damage)':c.score>=6?'var(--accent)':'var(--text3)';
-    return`<div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;font-weight:600;flex:1">${c.name}</span>
-      <input type="range" min="1" max="10" value="${c.score}"
-        style="width:100px;accent-color:var(--accent)"
-        oninput="counterPickerSelected[${i}].score=parseInt(this.value);this.nextElementSibling.textContent=this.value;renderCounterSelPreview()">
-      <span style="font-family:var(--mono);font-size:11px;color:${color};min-width:14px">${c.score}</span>
+    const dots=Array.from({length:10},(_,k)=>{
+      const val=k+1;
+      const filled=val<=c.score;
+      const color=val>=8?'var(--damage)':val>=5?'var(--accent)':'var(--text3)';
+      return`<span onclick="setCounterScore(${i},${val})" title="${val}" style="cursor:pointer;font-size:14px;line-height:1;color:${filled?color:'var(--border2)'}">◆</span>`;
+    }).join('');
+    const labelColor=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
+    return`<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+      <span style="font-size:12px;font-weight:600;flex:1;min-width:80px">${c.name}</span>
+      <div style="display:flex;gap:2px;align-items:center">${dots}</div>
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${labelColor};min-width:16px;text-align:right">${c.score}</span>
     </div>`;
   }).join('');
+}
+
+function setCounterScore(idx,val){
+  if(!counterPickerSelected[idx])return;
+  counterPickerSelected[idx].score=val;
+  renderCounterScores();
+  renderCounterSelPreview();
 }
  
 // ════ MAP TYPE CHANGE ════
