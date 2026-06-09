@@ -1,12 +1,12 @@
-
 // ════ LOAD ════
 async function loadAllData(){
   if(!SID())return;
-  showLoading('mapGrid');showLoading('heroPool');showLoading('playerGrid');
+  showLoading('mapGrid');showLoading('heroPool');
   try{
-    await Promise.all([loadPortraits(),loadMapScreenshots(),loadHeroes(),loadMaps(),loadPlayers()]);
+    await Promise.all([loadPortraits(),loadMapScreenshots(),loadHeroes(),loadMaps()]);
+    await loadPlayers();
     renderCurrentView();
-  }catch(e){showError('mapGrid','Ошибка: '+e.message);console.error(e)}
+  }catch(e){showError('mapGrid','Ошибка: '+(e.message||e));console.error(e)}
 }
 
 async function loadHeroes(){
@@ -36,10 +36,11 @@ function parseCounters(str){
 }
 
 async function loadMaps(){
-  const[mr,pr,br,cr,mcr]=await Promise.all([
-    sGet('Maps!A:H'),sGet('MapPreferred!A:B'),sGet('MapBans!A:B'),
-    sGet('Compositions!A:C'),sGet('MapCounters!A:B')
+  const[mr,pr,br,cr]=await Promise.all([
+    sGet('Maps!A:H'),sGet('MapPreferred!A:B'),sGet('MapBans!A:B'),sGet('Compositions!A:C')
   ]);
+  let mcr=[];
+  try{mcr=await sGet('MapCounters!A:B')}catch(e){}
   const pf={},bn={},co={},mc={};
   pr.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!pf[r[0]])pf[r[0]]=[];pf[r[0]].push(r[1])}});
   br.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!bn[r[0]])bn[r[0]]=[];bn[r[0]].push(r[1])}});
@@ -61,7 +62,9 @@ async function loadMaps(){
 }
 
 async function loadPlayers(){
-  const[pr,ph]=await Promise.all([sGet('Players!A:H'),sGet('PlayerHeroes!A:C')]);
+  let pr=[],ph=[];
+  try{[pr,ph]=await Promise.all([sGet('Players!A:H'),sGet('PlayerHeroes!A:C')])}
+  catch(e){players=[];return;}
   const hm={main:{},pool:{}};
   ph.slice(1).forEach(r=>{
     if(!r[0]||!r[1])return;
