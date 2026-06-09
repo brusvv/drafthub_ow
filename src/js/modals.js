@@ -39,6 +39,7 @@ function openMapModal(map){
     comp:map?map.comp.map(c=>c.hero):[]
   };
   renderSelPreview();
+  initCompSlots(map);
   document.getElementById('mapModal').classList.remove('hidden');
 }
 
