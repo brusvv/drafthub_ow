@@ -41,10 +41,23 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Состав</label>
-      <div class="sel-heroes" id="selComp" onclick="openPicker('comp',5)">
-        <span class="sel-empty">Нажми чтобы выбрать</span>
-        <span class="sel-edit-hint">✎</span>
+      <label class="form-label">Состав — выбери героев и их роль</label>
+      <div id="compSlots" class="comp-slots">
+        <!-- 5 слотов: 1 Tank, 2 Damage, 2 Support -->
+        <div class="comp-slot-row">
+          <span class="comp-slot-role-lbl tank-lbl">Tank</span>
+          <div class="comp-slot" data-slot="0" onclick="openCompSlotPicker(0,'Tank')"><span class="sel-empty">Выбрать</span></div>
+        </div>
+        <div class="comp-slot-row">
+          <span class="comp-slot-role-lbl dmg-lbl">Damage</span>
+          <div class="comp-slot" data-slot="1" onclick="openCompSlotPicker(1,'Damage')"><span class="sel-empty">Выбрать</span></div>
+          <div class="comp-slot" data-slot="2" onclick="openCompSlotPicker(2,'Damage')"><span class="sel-empty">Выбрать</span></div>
+        </div>
+        <div class="comp-slot-row">
+          <span class="comp-slot-role-lbl sup-lbl">Support</span>
+          <div class="comp-slot" data-slot="3" onclick="openCompSlotPicker(3,'Support')"><span class="sel-empty">Выбрать</span></div>
+          <div class="comp-slot" data-slot="4" onclick="openCompSlotPicker(4,'Support')"><span class="sel-empty">Выбрать</span></div>
+        </div>
       </div>
     </div>
 
