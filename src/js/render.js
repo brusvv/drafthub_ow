@@ -199,7 +199,7 @@ function renderHeroes(){
   const pool=document.getElementById('heroPool');
   const roles=heroFilter==='all'?['Tank','Damage','Support']:[heroFilter];
   pool.innerHTML=roles.map(role=>{
-    const h=heroes.filter(x=>x.role===role).sort((a,b)=>b.priority-a.priority);
+    const h=heroes.filter(x=>x.role===role).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
     if(!h.length)return'';
  
     // Группировка по подклассу
@@ -219,24 +219,17 @@ function renderHeroes(){
  
     const subroleGroups=sortedSubs.map(sub=>`
       <div class="subrole-group">
-        <div class="subrole-lbl">${subroleIcon(role,sub,11)} ${sub}</div>
+        <div class="subrole-lbl">${subroleIcon(role,sub,14)} ${sub}</div>
         <div class="hero-grid">${bySubrole[sub].map(hero=>{
           const src=portrait(hero.name);
-          // Priority: 5 dots, filled = ceil(priority/2)
-          const filled=Math.round(hero.priority/2);
-          const prioDots=Array.from({length:5},(_,i)=>{
-            const on=i<filled;
-            const c=hero.priority>=9?'var(--tier-s)':hero.priority>=7?'var(--tier-a)':hero.priority>=5?'var(--tier-b)':'var(--text3)';
-            return`<span style="font-size:9px;color:${on?c:'var(--border2)'}">◆</span>`;
-          }).join('');
           // Top counters (up to 3) with portrait + score
           const topC=(hero.counters||[]).slice().sort((a,b)=>b.score-a.score).slice(0,3);
           const counterChips=topC.map(c=>{
             const csrc=portrait(c.name);
             const cc=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
-            return`<div style="position:relative;flex-shrink:0">
-              ${csrc?`<img src="${csrc}" style="width:18px;height:18px;border-radius:3px;object-fit:cover;display:block" onerror="this.style.display='none'">`:`<div style="width:18px;height:18px;border-radius:3px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800">${c.name[0]}</div>`}
-              <div style="position:absolute;bottom:-1px;right:-2px;font-family:var(--mono);font-size:7px;font-weight:800;color:${cc};background:var(--bg1);border-radius:2px;line-height:1;padding:0 1px">${c.score}</div>
+            return`<div class="h-counter-icon">
+              ${csrc?`<img src="${csrc}" alt="${c.name}" onerror="this.style.display='none'">`:`<div class="h-counter-icon-ph">${c.name[0]}</div>`}
+              <div class="h-counter-score" style="color:${cc}">${c.score}</div>
             </div>`;
           }).join('');
           return`<div class="h-card ${hero.banned?'banned':''}" onclick="openHeroModal(heroes.find(x=>x.name==='${esc(hero.name)}'))">
@@ -246,8 +239,7 @@ function renderHeroes(){
             ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="h-card-counter-badge">⚠</div>':''}
             <div class="h-card-body">
               <div class="h-card-name">${hero.name}</div>
-              <div style="display:flex;gap:1px;margin:3px 0 2px">${prioDots}</div>
-              ${topC.length?`<div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap">${counterChips}</div>`:''}
+              ${topC.length?`<div class="h-counter-list">${counterChips}</div>`:''}
             </div>
           </div>`;
         }).join('')}</div>
@@ -257,7 +249,7 @@ function renderHeroes(){
       <div class="role-header">
         ${roleIcon(role,18)}
         <span class="role-title">${role}</span>
-        <span class="role-cnt">${h.length} героев</span>
+        <span class="role-cnt">${heroesCountLabel(h.length)}</span>
       </div>
       ${subroleGroups}
     </div>`;
@@ -383,10 +375,10 @@ function renderTierMaps(){
           const m=maps.find(x=>x.name===name);
           const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="true"
-            data-tier="${t}" data-type="maps"
+            data-tier="${t}" data-type="maps" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
-            onclick="goToMap('${esc(name)}')">
+            onclick="openTierMapPreview('${esc(name)}')">
             ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${m.type.slice(0,3).toUpperCase()}</span>`:''}
             ${name}
           </div>`;
@@ -413,10 +405,10 @@ function renderTierHeroes(){
           const src=portrait(name);
           const hidden=tierHeroRoleFilter!=='all'&&(!h||h.role!==tierHeroRoleFilter);
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="true"
-            data-tier="${t}" data-type="heroes"
+            data-tier="${t}" data-type="heroes" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
-            ondragend="onDragEnd(event)">
-
+            ondragend="onDragEnd(event)"
+            onclick="openTierHeroPreview('${esc(name)}')">
             ${src?`<img src="${src}" width="22" height="22" style="border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
             ${name}
           </div>`;
@@ -480,53 +472,53 @@ function onDrop(e,type,toTier){
   else{saveTierHeroes();renderTierHeroes();}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function closeTierPreview(){const el=document.getElementById('tierPreviewOverlay');if(el)el.remove();}
+function openTierPreview(title,body,actions=''){
+  closeTierPreview();
+  document.body.insertAdjacentHTML('beforeend',`<div class="tier-preview-overlay" id="tierPreviewOverlay" onclick="if(event.target.id==='tierPreviewOverlay')closeTierPreview()">
+    <div class="tier-preview-box">
+      <div class="tier-preview-head">
+        <div class="tier-preview-title">${title}</div>
+        <button class="tier-preview-close" onclick="closeTierPreview()">×</button>
+      </div>
+      <div class="tier-preview-body">${body}</div>
+      ${actions?`<div class="tier-preview-actions">${actions}</div>`:''}
+    </div>
+  </div>`);
+}
+function openTierMapPreview(name){
+  const m=maps.find(x=>x.name===name);if(!m)return;
+  const src=mapImg(m.name);const noAD=NO_ATKDEF.includes(m.type);
+  const body=`
+    ${src?`<img src="${src}" class="tier-preview-banner" alt="${m.name}" onerror="this.outerHTML='<div class=tier-preview-banner-ph>${m.type}</div>'">`:`<div class="tier-preview-banner-ph">${m.type}</div>`}
+    <div class="tier-preview-meta">
+      <span class="tier-badge tier-${m.tier}">${m.tier}</span>
+      <span>${mapTypeIcon(m.type,14)} ${m.type}</span>
+      <span>Приоритет #${m.priority}</span>
+    </div>
+    <div class="tier-preview-stats">
+      ${noAD?`<div>${ICON_DIF}<span>Сложность</span>${dots5(m.dif,'dif')}</div>`:`<div>${ICON_ATK}<span>ATK</span>${dots5(m.atk,'atk')}</div><div>${ICON_DEF}<span>DEF</span>${dots5(m.def,'def')}</div>`}
+    </div>
+    ${m.notes?`<div class="tier-preview-notes">${m.notes}</div>`:''}`;
+  const actions=`<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`;
+  openTierPreview(m.name,body,actions);
+}
+function openTierHeroPreview(name){
+  const h=heroMap[name];if(!h)return;
+  const src=portrait(h.name);
+  const counters=(h.counters||[]).slice().sort((a,b)=>b.score-a.score).slice(0,5);
+  const counterHtml=counters.length?`<div class="tier-preview-section"><div class="tier-preview-section-title">Контрпики</div><div class="h-counter-list tier-preview-counters">${counters.map(c=>{const csrc=portrait(c.name);const cc=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';return`<div class="h-counter-icon" title="${c.name}">${csrc?`<img src="${csrc}" alt="${c.name}" onerror="this.style.display='none'">`:`<div class="h-counter-icon-ph">${c.name[0]}</div>`}<div class="h-counter-score" style="color:${cc}">${c.score}</div></div>`;}).join('')}</div></div>`:'';
+  const body=`<div class="tier-hero-preview-card">
+    ${src?`<img src="${src}" class="tier-hero-preview-img" alt="${h.name}" onerror="this.outerHTML='<div class=tier-hero-preview-ph>${h.name[0]}</div>'">`:`<div class="tier-hero-preview-ph">${h.name[0]}</div>`}
+    <div class="tier-hero-preview-info">
+      <div class="tier-preview-meta"><span>${roleIcon(h.role,16)} ${h.role}</span><span>${subroleIcon(h.role,h.subrole,14)} ${h.subrole||'Other'}</span><span>Приоритет #${h.priority}</span>${h.banned?'<span class="tier-preview-ban">БАН</span>':''}</div>
+      ${counterHtml}
+      ${h.notes?`<div class="tier-preview-notes">${h.notes}</div>`:''}
+    </div>
+  </div>`;
+  const actions=`<button class="btn btn-primary" onclick="closeTierPreview();openHeroModal(heroes.find(x=>x.name==='${esc(h.name)}'))">✎ Редактировать</button>`;
+  openTierPreview(h.name,body,actions);
+}
 
 function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30)}
 
@@ -830,7 +822,7 @@ function renderRoster(){
           <div style="font-size:14px;font-weight:700">${b.name}</div>
           ${h.role?`<div style="display:flex;align-items:center;gap:4px;margin-top:2px">${roleIcon(h.role,12)}<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${h.subrole||h.role}</span></div>`:''}
         </div>
-        <span style="font-family:var(--mono);font-size:10px;color:${color};flex-shrink:0">${b.count} игрок(ов)</span>
+        <span style="font-family:var(--mono);font-size:10px;color:${color};flex-shrink:0">${heroesCountLabel(b.count)}</span>
         <span style="font-size:12px;color:var(--text3);flex-shrink:0;transition:transform .15s;transform:rotate(${isOpen?'90':'0'}deg)">›</span>
       </div>
       ${isOpen?`<div style="padding:0 10px 10px">${detailHtml}</div>`:''}
