@@ -137,7 +137,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 /* ── HERO POOL ── */
 .role-section{margin-bottom:2rem}
 .role-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.role-title{font-size:16px;font-weight:800}
+.role-title{font-size:20px;font-weight:800}
 .role-cnt{font-family:var(--mono);font-size:10px;color:var(--text3)}
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 .h-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg2);cursor:pointer;transition:all .15s;position:relative}
@@ -147,10 +147,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-card-img-ph{width:100%;aspect-ratio:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--text3)}
 .h-card-accent{position:absolute;top:0;left:0;right:0;height:2px}
 .h-card-body{padding:7px 8px}
-.h-card-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.h-card-sub{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);display:flex;align-items:center;gap:3px}
+.h-card-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.h-card-sub{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);display:flex;align-items:center;gap:3px}
 .map-card-type{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);display:flex;align-items:center;gap:3px;margin-bottom:4px}
-.h-card-prio{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
+.h-card-prio{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:3px}
 .banned-tag{position:absolute;top:5px;right:5px;font-family:var(--mono);font-size:8px;text-transform:uppercase;background:var(--damage);color:#fff;padding:2px 5px;border-radius:3px}
 
 /* ── TIER LIST ── */
