@@ -1,0 +1,57 @@
+<!-- MAP MODAL -->
+<div class="modal-overlay hidden" id="mapModal">
+  <div class="modal">
+    <div class="modal-title" id="mapModalTitle">Добавить карту</div>
+    <input type="hidden" id="mapEditRow">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Название *</label><input class="form-input" id="mName" placeholder="King's Row"></div>
+      <div class="form-group"><label class="form-label">Тип *</label>
+        <select class="form-select" id="mType" onchange="onMapTypeChange()"><option value="">— тип —</option><option>Hybrid</option><option>Escort</option><option>Control</option><option>Push</option><option>Flashpoint</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Тир</label>
+        <select class="form-select" id="mTier"><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Приоритет</label><input class="form-input" id="mPrio" type="number" min="1" value="5"></div>
+    </div>
+    <!-- ATK/DEF (Hybrid/Escort/Push) -->
+    <div id="mAtkDefBlock" class="form-row">
+      <div class="form-group"><label class="form-label">ATK рейтинг (1–5)</label><input class="form-input" id="mAtk" type="number" min="1" max="5" value="3"></div>
+      <div class="form-group"><label class="form-label">DEF рейтинг (1–5)</label><input class="form-input" id="mDef" type="number" min="1" max="5" value="3"></div>
+    </div>
+    <!-- Difficulty (Control/Flashpoint) -->
+    <div id="mDifBlock" style="display:none">
+      <div class="form-group"><label class="form-label">Сложность (1–5)</label><input class="form-input" id="mDif" type="number" min="1" max="5" value="3"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="mNotes" placeholder="Особенности, тактики..."></textarea></div>
+
+    <div class="form-group">
+      <label class="form-label">Предпочтительные герои</label>
+      <div class="sel-heroes" id="selPreferred" onclick="openPicker('preferred')">
+        <span class="sel-empty">Нажми чтобы выбрать</span>
+        <span class="sel-edit-hint">✎</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Цели для банов</label>
+      <div class="sel-heroes" id="selBans" onclick="openPicker('bans')">
+        <span class="sel-empty">Нажми чтобы выбрать</span>
+        <span class="sel-edit-hint">✎</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Состав</label>
+      <div class="sel-heroes" id="selComp" onclick="openPicker('comp')">
+        <span class="sel-empty">Нажми чтобы выбрать</span>
+        <span class="sel-edit-hint">✎</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="mapDeleteBtn" onclick="deleteMap()" style="display:none">Удалить</button>
+      <button class="btn" onclick="closeModal('mapModal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveMap()">Сохранить</button>
+    </div>
+  </div>
+</div>

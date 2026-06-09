@@ -1,0 +1,25 @@
+<!-- HERO PICKER -->
+<div class="picker-overlay hidden" id="pickerOverlay">
+  <div class="picker-box">
+    <div class="picker-header">
+      <div class="picker-title" id="pickerTitle">Выбери героев</div>
+      <div class="picker-count" id="pickerCount">0 выбрано</div>
+    </div>
+    <div class="picker-filters">
+      <button class="f-btn active" onclick="pickerFilter('all',this)">Все</button>
+      <button class="f-btn" onclick="pickerFilter('Tank',this)">Tank</button>
+      <button class="f-btn" onclick="pickerFilter('Damage',this)">Damage</button>
+      <button class="f-btn" onclick="pickerFilter('Support',this)">Support</button>
+    </div>
+    <div class="picker-grid-wrap">
+      <div class="picker-grid" id="pickerGrid"></div>
+    </div>
+    <div class="picker-footer">
+      <button class="btn" onclick="closePicker()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmPicker()">Готово</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+

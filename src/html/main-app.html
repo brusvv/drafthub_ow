@@ -1,0 +1,70 @@
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+<div class="app">
+  <div class="header">
+    <div class="header-brand">
+      <span class="header-tag">Draft Hub</span>
+      <span class="header-title">Team Analyst</span>
+    </div>
+    <div class="header-right">
+      <button class="btn" onclick="seedSheets()" title="Заполнить таблицу стартовыми данными">⬇ Seed</button>
+      <button class="btn" onclick="loadAllData()">↻ Обновить</button>
+      <div class="user-chip"><div class="user-av" id="userInitial">U</div><span id="userName">Пользователь</span></div>
+      <button class="btn btn-danger" onclick="signOut()">Выйти</button>
+    </div>
+  </div>
+
+  <div id="sheetConfigBanner" class="config-banner" style="display:none">
+    <h3>⚙ Укажи Sheet ID</h3>
+    <p>URL таблицы: <code>spreadsheets/d/<b>ВОТ_ЭТО</b>/edit</code></p>
+    <div class="config-row"><input class="config-input" id="sheetIdInput" placeholder="Sheet ID..."/><button class="config-save" onclick="saveSheetId()">Сохранить</button></div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showView('maps',this)">Карты</button>
+    <button class="nav-btn" onclick="showView('heroes',this)">Пул героев</button>
+    <button class="nav-btn" onclick="showView('tiers',this)">Tier List</button>
+    <button class="nav-btn" onclick="showView('bans',this)">Текущие баны</button>
+  </nav>
+
+  <div id="view-maps" class="view active">
+    <div class="toolbar">
+      <div class="filters" id="mapFilters">
+        <button class="f-btn active" onclick="filterMaps('all',this)">Все</button>
+        <button class="f-btn" onclick="filterMaps('Hybrid',this)">Hybrid</button>
+        <button class="f-btn" onclick="filterMaps('Escort',this)">Escort</button>
+        <button class="f-btn" onclick="filterMaps('Control',this)">Control</button>
+        <button class="f-btn" onclick="filterMaps('Push',this)">Push</button>
+        <button class="f-btn" onclick="filterMaps('Flashpoint',this)">Flashpoint</button>
+      </div>
+      <button class="btn btn-primary" onclick="openMapModal()">+ Карта</button>
+    </div>
+    <div id="mapGrid" class="map-grid"></div>
+    <div id="mapDetail" class="map-detail"></div>
+  </div>
+
+  <div id="view-heroes" class="view">
+    <div class="toolbar">
+      <div class="filters" id="heroFilters">
+        <button class="f-btn active" onclick="filterHeroes('all',this)">Все</button>
+        <button class="f-btn" onclick="filterHeroes('Tank',this)">Tank</button>
+        <button class="f-btn" onclick="filterHeroes('Damage',this)">Damage</button>
+        <button class="f-btn" onclick="filterHeroes('Support',this)">Support</button>
+      </div>
+      <button class="btn btn-primary" onclick="openHeroModal()">+ Герой</button>
+    </div>
+    <div id="heroPool"></div>
+  </div>
+
+  <div id="view-tiers" class="view">
+    <div class="section-lbl">Карты по тиру</div>
+    <div id="tierList"></div>
+  </div>
+
+  <div id="view-bans" class="view">
+    <div class="section-lbl">Герои в текущем бане</div>
+    <div id="bansGrid" class="bans-grid"></div>
+  </div>
+</div>
+</div>
+
