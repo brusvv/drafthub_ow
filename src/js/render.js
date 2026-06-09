@@ -237,11 +237,7 @@ if(!getClientId())document.getElementById('authConfigBanner').style.display='blo
 
 
 // ════ HELPERS ════
-function roleIcon(role,size=20){
-  const svg=ROLE_ICONS[role];if(!svg)return'';
-  const color=role==='Tank'?'var(--tank)':role==='Damage'?'var(--damage)':role==='Support'?'var(--support)':'var(--accent)';
-  return`<span style="display:inline-flex;width:${size}px;height:${size}px;color:${color};flex-shrink:0">${svg}</span>`;
-}
+// roleIcon() и subroleIcon() определены в config.js (Wiki-иконки с SVG-фолбеком)
 
 // ════ PLAYER RECOMMENDATIONS ════
 function computePlayerRecs(p){
@@ -350,17 +346,17 @@ function showPlayerDetail(name){
   let roleIconHtml='';
   if(isFlex){
     roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div style="display:inline-flex;width:56px;height:56px;color:var(--accent)">${ROLE_ICONS.Flex}</div>
+      ${roleIcon('Flex',56)}
       <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--accent)">Flex</span>
     </div>`;
   } else if(hasOff){
     roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      <div style="display:inline-flex;width:40px;height:40px;color:${rc[p.mainRole]||'var(--accent)'}">${ROLE_ICONS[p.mainRole]||''}</div>
-      <div style="display:inline-flex;width:28px;height:28px;color:${rc[p.offRole]||'var(--text3)'}">${ROLE_ICONS[p.offRole]||''}</div>
+      ${roleIcon(p.mainRole,40)}
+      ${roleIcon(p.offRole,28)}
     </div>`;
   } else if(p.mainRole){
     roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div style="display:inline-flex;width:44px;height:44px;color:${rc[p.mainRole]||'var(--accent)'}">${ROLE_ICONS[p.mainRole]||''}</div>
+      ${roleIcon(p.mainRole,44)}
       <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:${rc[p.mainRole]||'var(--accent)'}">${p.mainRole}</span>
     </div>`;
   }
@@ -460,9 +456,8 @@ function renderRoster(){
     const isFlex=p.mainRole==='Flex';
     const hasOff=p.offRole&&p.offRole!==p.mainRole;
     let roleBlock='';
-    if(isFlex) roleBlock=`<div style="display:inline-flex;width:20px;height:20px;color:var(--accent)">${ROLE_ICONS.Flex}</div>`;
-    else if(p.mainRole) roleBlock=`<div style="display:inline-flex;width:16px;height:16px;color:${rc[p.mainRole]||'var(--accent)'}">${ROLE_ICONS[p.mainRole]||''}</div>${hasOff?`<div style="display:inline-flex;width:12px;height:12px;color:${rc[p.offRole]||'var(--text3)'}">${ROLE_ICONS[p.offRole]||''}</div>`:''}`;
-    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px">
+    if(isFlex) roleBlock=roleIcon('Flex',20);
+    else if(p.mainRole) roleBlock=roleIcon(p.mainRole,16)+(hasOff?roleIcon(p.offRole,12):'');    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="display:flex;gap:3px;align-items:center">${roleBlock}</div>
         <span style="font-weight:700;font-size:13px">${p.name}</span>
