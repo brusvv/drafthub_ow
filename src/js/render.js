@@ -59,7 +59,7 @@ function showMapDetail(name){
     byRole[role].map(h=>{const ps=portrait(h.name);return`<div class="hero-row">
       <div class="role-dot" style="background:${rc[h.role]}"></div>
       ${ps?`<img src="${ps}" class="hero-row-av" onerror="this.outerHTML='<div class=hero-row-av-ph>${h.name[0]}</div>'">`:`<div class="hero-row-av-ph">${h.name[0]}</div>`}
-      <div class="hero-row-info"><div class="hero-row-name">${h.name}</div><div class="hero-row-sub">${roleIcon(h.role,11)}${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
+      <div class="hero-row-info"><div class="hero-row-name">${h.name}</div><div class="hero-row-sub">${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
     </div>`})
   ).join('')||'<div class="empty">Не указаны</div>';
 
@@ -148,7 +148,7 @@ function renderHeroes(){
     if(!h.length)return'';
     return`<div class="role-section">
       <div class="role-header">
-        <div class="role-dot" style="background:${rc[role]};width:8px;height:8px"></div>
+        ${roleIcon(role,16)}
         <span class="role-title">${role}</span>
         <span class="role-cnt">${h.length} героев</span>
       </div>
@@ -161,7 +161,7 @@ function renderHeroes(){
           ${hero.counters.some(c=>c.score>=8)?'<div class="banned-tag" style="background:var(--accent);top:auto;bottom:5px;font-size:8px">⚠ Контр</div>':''}
           <div class="h-card-body">
             <div class="h-card-name">${hero.name}</div>
-            <div class="h-card-sub">${roleIcon(hero.role,12)}${subroleIcon(hero.role,hero.subrole,12)}<span>${hero.subrole}</span></div>
+            <div class="h-card-sub">${subroleIcon(hero.role,hero.subrole,12)}<span>${hero.subrole}</span></div>
             <div class="h-card-prio">Приоритет: ${hero.priority}/10</div>
             ${hero.counters.length?`<div class="h-card-prio" style="color:var(--damage);font-size:9px">▲ ${hero.counters.slice().sort((a,b)=>b.score-a.score).slice(0,2).map(c=>c.name).join(', ')}</div>`:''}
           </div>
@@ -197,7 +197,7 @@ function renderBans(){
       const src=portrait(h.name);
       return`<div class="ban-card">
         ${src?`<img src="${src}" class="ban-card-img" alt="${h.name}" onerror="this.outerHTML='<div class=ban-card-img-ph>${h.name[0]}</div>'">`:`<div class="ban-card-img-ph">${h.name[0]}</div>`}
-        <div class="ban-card-body"><div class="ban-card-name">${h.name}</div><div class="ban-card-role">${roleIcon(h.role,11)}${subroleIcon(h.role,h.subrole,11)}<span>${h.role} · ${h.subrole}</span></div></div>
+        <div class="ban-card-body"><div class="ban-card-name">${h.name}</div><div class="ban-card-role">${roleIcon(h.role,11)}<span>${h.role}</span>${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
       </div>`;
     }).join('');
   }
