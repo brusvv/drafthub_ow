@@ -236,7 +236,6 @@ function renderHeroes(){
             <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
             ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
             ${hero.banned?'<div class="banned-tag">БАН</div>':''}
-            ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="h-card-counter-badge">⚠</div>':''}
             <div class="h-card-body">
               <div class="h-card-name">${hero.name}</div>
               ${topC.length?`<div class="h-counter-list">${counterChips}</div>`:''}
@@ -489,6 +488,27 @@ function openTierPreview(title,body,actions=''){
 function openTierMapPreview(name){
   const m=maps.find(x=>x.name===name);if(!m)return;
   const src=mapImg(m.name);const noAD=NO_ATKDEF.includes(m.type);
+
+  // Preferred heroes (up to 5)
+  const prefHtml=(m.preferredHeroes||[]).slice(0,5).map(n=>{
+    const ps=portrait(n);const h=heroMap[n];
+    return`<div style="display:flex;align-items:center;gap:6px;padding:4px 0">
+      ${ps?`<img src="${ps}" style="width:24px;height:24px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:24px;height:24px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${n[0]}</div>`}
+      ${h?`<span style="display:flex;align-items:center;gap:3px">${roleIcon(h.role,11)}</span>`:''}
+      <span style="font-size:11px;font-weight:600">${n}</span>
+    </div>`;
+  }).join('')||'<div style="font-size:11px;color:var(--text3)">—</div>';
+
+  // Ban targets (up to 5)
+  const bansHtml=(m.bans||[]).slice(0,5).map(n=>{
+    const ps=portrait(n);const h=heroMap[n];
+    return`<div style="display:flex;align-items:center;gap:6px;padding:4px 0">
+      ${ps?`<img src="${ps}" style="width:24px;height:24px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:24px;height:24px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${n[0]}</div>`}
+      ${h?`<span style="display:flex;align-items:center;gap:3px">${roleIcon(h.role,11)}</span>`:''}
+      <span style="font-size:11px;font-weight:600;color:var(--damage)">${n}</span>
+    </div>`;
+  }).join('')||'<div style="font-size:11px;color:var(--text3)">—</div>';
+
   const body=`
     ${src?`<img src="${src}" class="tier-preview-banner" alt="${m.name}" onerror="this.outerHTML='<div class=tier-preview-banner-ph>${m.type}</div>'">`:`<div class="tier-preview-banner-ph">${m.type}</div>`}
     <div class="tier-preview-meta">
@@ -499,7 +519,17 @@ function openTierMapPreview(name){
     <div class="tier-preview-stats">
       ${noAD?`<div>${ICON_DIF}<span>Сложность</span>${dots5(m.dif,'dif')}</div>`:`<div>${ICON_ATK}<span>ATK</span>${dots5(m.atk,'atk')}</div><div>${ICON_DEF}<span>DEF</span>${dots5(m.def,'def')}</div>`}
     </div>
-    ${m.notes?`<div class="tier-preview-notes">${m.notes}</div>`:''}`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--support);margin-bottom:4px">Предпочтительные</div>
+        ${prefHtml}
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--damage);margin-bottom:4px">Баны</div>
+        ${bansHtml}
+      </div>
+    </div>
+    ${m.notes?`<div class="tier-preview-notes" style="margin-top:10px">${m.notes}</div>`:''}`;
   const actions=`<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`;
   openTierPreview(m.name,body,actions);
 }
