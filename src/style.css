@@ -137,7 +137,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 /* ── HERO POOL ── */
 .role-section{margin-bottom:2rem}
 .role-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.role-title{font-size:16px;font-weight:800}
+.role-title{font-size:20px;font-weight:800}
 .role-cnt{font-family:var(--mono);font-size:10px;color:var(--text3)}
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 .h-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg2);cursor:pointer;transition:all .15s;position:relative}
@@ -147,7 +147,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-card-img-ph{width:100%;aspect-ratio:1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--text3)}
 .h-card-accent{position:absolute;top:0;left:0;right:0;height:2px}
 .h-card-body{padding:7px 8px}
-.h-card-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.h-card-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .h-card-sub{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);display:flex;align-items:center;gap:3px}
 .map-card-type{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:flex;align-items:center;gap:3px;margin-bottom:5px}
 .h-card-prio{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
@@ -315,7 +315,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .ban-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 4px;border-radius:7px;background:rgba(224,85,85,.08);border:1px solid rgba(224,85,85,.2);cursor:default}
 .ban-chip img{width:20px;height:20px;border-radius:4px;object-fit:cover;flex-shrink:0}
 .ban-chip-ph{width:20px;height:20px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3);flex-shrink:0}
-.ban-chip-name{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage)}
+.ban-chip-name{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage);word-break:break-word;overflow-wrap:anywhere;white-space:normal}
  
 /* ── HERO SUBROLE GROUPING ── */
 .subrole-group{margin-bottom:1rem}
@@ -342,9 +342,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* ── HERO CARD COUNTERS ── */
 .h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
-.h-counter-icon{position:relative;flex-shrink:0;width:26px;height:26px}
-.h-counter-icon img{width:26px;height:26px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
-.h-counter-icon-ph{width:26px;height:26px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
+.h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
+.h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
+.h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
 .h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
 
 /* ── TIER PREVIEW POPUP ── */
