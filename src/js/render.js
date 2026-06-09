@@ -16,6 +16,13 @@ function dots5(val,type,max=5){
   return h+'</div>';
 }
 
+const ruPluralRules=new Intl.PluralRules('ru-RU');
+function pluralRu(count,forms){
+  const category=ruPluralRules.select(Math.abs(count));
+  return forms[category]||forms.other;
+}
+function heroesCountLabel(count){return `${count} ${pluralRu(count,{one:'герой',few:'героя',many:'героев',other:'героя'})}`}
+
 // ════ MAPS ════
 function renderMaps(){
   const grid=document.getElementById('mapGrid');
@@ -125,7 +132,7 @@ function showMapDetail(name){
             <button class="back-btn" onclick="backToMaps()">← Назад</button>
             <div class="detail-name">${m.name}</div>
           </div>
-          <button class="btn" style="margin-top:2.5rem" onclick="openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
+          <button class="btn" style="margin-top:2.5rem" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
         </div>
         <div class="detail-meta">
           <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier}" style="margin-left:4px">${m.tier}</span></div>
