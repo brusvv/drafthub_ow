@@ -46,7 +46,11 @@ async function loadHeroes(){
 
 function parseCounters(str){
   return str.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{
-    const p=s.split(':');return{name:p[0].trim(),score:parseInt(p[1])||5};
+    const sep=s.lastIndexOf(':');
+    const scoreText=sep>=0?s.slice(sep+1).trim():'';
+    const score=parseInt(scoreText,10);
+    if(sep>=0&&Number.isFinite(score)&&score>=1&&score<=10)return{name:s.slice(0,sep).trim(),score};
+    return{name:s.trim(),score:5};
   });
 }
 
