@@ -30,6 +30,7 @@ function renderMaps(){
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
+        <div class="map-card-type">${mapTypeIcon(m.type,12)}<span>${m.type}</span></div>
         <div class="map-card-meta">
           <div class="tier-badge tier-${m.tier}">${m.tier}</div>
           <div class="ratings">
@@ -57,7 +58,7 @@ function showMapDetail(name){
   m.preferredHeroes.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(h)});
   const heroRows=['Tank','Damage','Support'].flatMap(role=>
     byRole[role].map(h=>{const ps=portrait(h.name);return`<div class="hero-row">
-      <div class="role-dot" style="background:${rc[h.role]}"></div>
+      ${roleIcon(h.role,14)}
       ${ps?`<img src="${ps}" class="hero-row-av" onerror="this.outerHTML='<div class=hero-row-av-ph>${h.name[0]}</div>'">`:`<div class="hero-row-av-ph">${h.name[0]}</div>`}
       <div class="hero-row-info"><div class="hero-row-name">${h.name}</div><div class="hero-row-sub">${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
     </div>`})
@@ -84,7 +85,7 @@ function showMapDetail(name){
     return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg3)">
       ${ps?`<img src="${ps}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" onerror="this.outerHTML='<div style=width:24px;height:24px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800>${n[0]}</div>'">`:`<div style="width:24px;height:24px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">${n[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${n}</span>
-      ${h.role?`<div class="role-dot" style="background:${rc[h.role]||'var(--text3)'}"></div>`:''}
+      ${h.role?`<div style="display:flex;align-items:center;gap:3px">${roleIcon(h.role,13)}${subroleIcon(h.role,h.subrole,13)}</div>`:''}
       ${banRec}
     </div>`;
   }).join('')||'<div class="empty">Не указаны</div>';
@@ -102,7 +103,7 @@ function showMapDetail(name){
         </div>
         <div class="detail-meta">
           <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier}" style="margin-left:4px">${m.tier}</span></div>
-          <div class="m-item"><span>Тип:</span><span class="m-val">${m.type}</span></div>
+          <div class="m-item"><span>Тип:</span>${mapTypeIcon(m.type,14)}<span class="m-val">${m.type}</span></div>
           <div class="m-item"><span>Приоритет:</span><span class="m-val">#${m.priority}</span></div>
           ${noAD
             ?`<div class="m-item">${ICON_DIF}<span style="margin-left:4px">Сложность</span>${dots5(m.dif,'dif')}</div>`
@@ -148,7 +149,7 @@ function renderHeroes(){
     if(!h.length)return'';
     return`<div class="role-section">
       <div class="role-header">
-        ${roleIcon(role,16)}
+        ${roleIcon(role,18)}
         <span class="role-title">${role}</span>
         <span class="role-cnt">${h.length} героев</span>
       </div>
@@ -382,7 +383,7 @@ function showPlayerDetail(name){
     return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${avg>=8?'rgba(224,85,85,.3)':'var(--border)'}">
       ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
-      ${h.role?`<div class="role-dot" style="background:${rc[h.role]||'var(--text3)'}"></div>`:''}
+      ${h.role?`<div style="display:flex;align-items:center;gap:2px">${roleIcon(h.role,13)}${subroleIcon(h.role,h.subrole,13)}</div>`:""}
       <span style="font-family:var(--mono);font-size:9px;color:${color}">${avg>=8?'🔴 БАН':'⚠ КОНТР'}</span>
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
@@ -473,7 +474,7 @@ function renderRoster(){
     return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${b.avg>=8?'rgba(224,85,85,.3)':'rgba(240,160,48,.2)'}">
       ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
-      ${h.role?`<div class="role-dot" style="background:${rc[h.role]||'var(--text3)'}"></div>`:''}
+      ${h.role?`<div style="display:flex;align-items:center;gap:2px">${roleIcon(h.role,13)}${subroleIcon(h.role,h.subrole,13)}</div>`:""}
       <span style="font-family:var(--mono);font-size:9px;color:${color}">${b.count} игрок(ов)</span>
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
