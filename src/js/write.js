@@ -2,10 +2,18 @@
 async function saveHero(){
   const name=document.getElementById('hName').value.trim(),role=document.getElementById('hRole').value;
   if(!name||!role){toast('Заполни имя и роль','err');return}
-  const row=[name,role,document.getElementById('hSub').value.trim(),document.getElementById('hPrio').value,document.getElementById('hBanned').checked?'TRUE':'FALSE',document.getElementById('hNotes').value.trim()];
+  const row=[name,role,
+    document.getElementById('hSub').value.trim(),
+    document.getElementById('hPrio').value,
+    document.getElementById('hBanned').checked?'TRUE':'FALSE',
+    document.getElementById('hNotes').value.trim(),
+    document.getElementById('hCounters').value.trim(),
+    mapPickerSelected.heroStrong.join(','),
+    mapPickerSelected.heroWeak.join(',')
+  ];
   const er=document.getElementById('heroEditRow').value;
   try{
-    if(er)await sUp(`Heroes!A${er}:F${er}`,[row]);else await sApp('Heroes',[row]);
+    if(er)await sUp(`Heroes!A${er}:I${er}`,[row]);else await sApp('Heroes',[row]);
     toast(er?'Обновлено ✓':'Добавлено ✓','ok');closeModal('heroModal');await loadHeroes();renderCurrentView();
   }catch(e){toast('Ошибка: '+e.message,'err')}
 }
@@ -30,11 +38,13 @@ async function saveMap(){
   const pref=pickerSelected.preferred;
   const bans=pickerSelected.bans;
   const comp=pickerSelected.comp.map(n=>({hero:n,role:(heroMap[n]||{}).role||''}));
+  const counters=(document.getElementById('mCounters').value||'').split(',').map(s=>s.trim()).filter(Boolean);
   try{
     if(er)await sUp(`Maps!A${er}:H${er}`,[row]);else await sApp('Maps',[row]);
     await rewrite('MapPreferred',oldName||name,name,pref.map(h=>[name,h]));
     await rewrite('MapBans',oldName||name,name,bans.map(h=>[name,h]));
     await rewrite('Compositions',oldName||name,name,comp.map(c=>[name,c.hero,c.role]));
+    await rewrite('MapCounters',oldName||name,name,counters.map(h=>[name,h]));
     toast(er?'Карта обновлена ✓':'Карта добавлена ✓','ok');closeModal('mapModal');await loadMaps();renderCurrentView();
   }catch(e){toast('Ошибка: '+e.message,'err');console.error(e)}
 }
@@ -55,7 +65,51 @@ async function deleteMap(){
   if(!confirm(`Удалить "${mn}"?`))return;
   try{
     const g=await sGid('Maps');await sDelRow(g,er-1);
-    await rewrite('MapPreferred',mn,mn,[]);await rewrite('MapBans',mn,mn,[]);await rewrite('Compositions',mn,mn,[]);
+    await rewrite('MapPreferred',mn,mn,[]);await rewrite('MapBans',mn,mn,[]);
+    await rewrite('Compositions',mn,mn,[]);await rewrite('MapCounters',mn,mn,[]);
     toast('Удалено','ok');closeModal('mapModal');await loadMaps();renderCurrentView();
+  }catch(e){toast('Ошибка: '+e.message,'err')}
+}
+
+// ════ WRITE PLAYERS ════
+async function savePlayer(){
+  const name=document.getElementById('pName').value.trim();
+  const mainRole=document.getElementById('pMainRole').value;
+  if(!name||!mainRole){toast('Заполни никнейм и основную роль','err');return}
+  const er=document.getElementById('playerEditRow').value;
+  const oldName=er?(players.find(p=>p.rowIndex==er)||{}).name:null;
+  const row=[name,
+    document.getElementById('pBtag').value.trim(),
+    mainRole,
+    document.getElementById('pOffRole').value,
+    document.getElementById('pRankTank').value.trim(),
+    document.getElementById('pRankDmg').value.trim(),
+    document.getElementById('pRankSup').value.trim(),
+    document.getElementById('pNotes').value.trim()
+  ];
+  const mainH=pickerSelected.playerMain;
+  const poolH=pickerSelected.playerPool;
+  try{
+    if(er)await sUp(`Players!A${er}:H${er}`,[row]);else await sApp('Players',[row]);
+    const allPH=await sGet('PlayerHeroes!A:C');
+    const header=allPH.length?allPH[0]:[['player','hero','type']];
+    const others=allPH.length>1?allPH.slice(1).filter(r=>r[0]!==oldName&&r[0]!==name):[];
+    const newRows=[
+      ...mainH.map(h=>[name,h,'main']),
+      ...poolH.filter(h=>!mainH.includes(h)).map(h=>[name,h,'pool'])
+    ];
+    const combined=[header,...others,...newRows];
+    await sUp('PlayerHeroes!A1:C'+combined.length,combined);
+    if(combined.length<allPH.length)await sClear('PlayerHeroes!A'+(combined.length+1)+':C'+allPH.length);
+    toast(er?'Игрок обновлён ✓':'Игрок добавлен ✓','ok');closeModal('playerModal');await loadPlayers();renderCurrentView();
+  }catch(e){toast('Ошибка: '+e.message,'err');console.error(e)}
+}
+
+async function deletePlayer(){
+  const er=parseInt(document.getElementById('playerEditRow').value);if(!er)return;
+  if(!confirm('Удалить игрока?'))return;
+  try{
+    const g=await sGid('Players');await sDelRow(g,er-1);
+    toast('Удалено','ok');closeModal('playerModal');await loadPlayers();renderCurrentView();
   }catch(e){toast('Ошибка: '+e.message,'err')}
 }

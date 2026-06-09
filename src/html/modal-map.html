@@ -42,10 +42,15 @@
     </div>
     <div class="form-group">
       <label class="form-label">Состав</label>
-      <div class="sel-heroes" id="selComp" onclick="openPicker('comp')">
+      <div class="sel-heroes" id="selComp" onclick="openPicker('comp',5)">
         <span class="sel-empty">Нажми чтобы выбрать</span>
         <span class="sel-edit-hint">✎</span>
       </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Контрпики на этой карте (через запятую)</label>
+      <input class="form-input" id="mCounters" placeholder="Zarya, Ana, Kiriko">
     </div>
 
     <div class="modal-footer">

@@ -32,7 +32,7 @@ cat >> "$OUT" <<'AFTER_CSS'
 AFTER_CSS
 
 # HTML-части
-for part in auth main-app modal-hero modal-map picker; do
+for part in auth main-app modal-hero modal-map modal-player picker; do
   cat "$SRC/html/${part}.html"        >> "$OUT"
 done
 

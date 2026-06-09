@@ -14,6 +14,23 @@
       <div class="form-group"><label class="form-label">Приоритет (1–10)</label><input class="form-input" id="hPrio" type="number" min="1" max="10" value="5"></div>
     </div>
     <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="hBanned" style="accent-color:var(--damage)"> В текущем бане</label></div>
+    <div class="form-group">
+      <label class="form-label">Контрпики (Имя:оценка через запятую)</label>
+      <input class="form-input" id="hCounters" placeholder="Zarya:9, Ana:7, Kiriko:6">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px">Оценка ≥8 = рекомендация к бану</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Силён на картах</label>
+      <div class="sel-heroes" id="selHeroStrong" onclick="openMapPicker('heroStrong')">
+        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Слаб на картах</label>
+      <div class="sel-heroes" id="selHeroWeak" onclick="openMapPicker('heroWeak')">
+        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+      </div>
+    </div>
     <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="hNotes" placeholder="Комментарии..."></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="heroDeleteBtn" onclick="deleteHero()" style="display:none">Удалить</button>

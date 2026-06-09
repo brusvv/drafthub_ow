@@ -5,7 +5,7 @@
       <div class="picker-title" id="pickerTitle">Выбери героев</div>
       <div class="picker-count" id="pickerCount">0 выбрано</div>
     </div>
-    <div class="picker-filters">
+    <div class="picker-filters" id="pickerFilters">
       <button class="f-btn active" onclick="pickerFilter('all',this)">Все</button>
       <button class="f-btn" onclick="pickerFilter('Tank',this)">Tank</button>
       <button class="f-btn" onclick="pickerFilter('Damage',this)">Damage</button>
@@ -23,3 +23,28 @@
 
 <div class="toast" id="toast"></div>
 
+
+<!-- MAP PICKER (strong/weak maps for hero) -->
+<div class="picker-overlay hidden" id="mapPickerOverlay">
+  <div class="picker-box">
+    <div class="picker-header">
+      <div class="picker-title" id="mapPickerTitle">Выбери карты</div>
+      <div class="picker-count" id="mapPickerCount">0 выбрано</div>
+    </div>
+    <div class="picker-filters">
+      <button class="f-btn active" onclick="mapPickerFilter('all',this)">Все</button>
+      <button class="f-btn" onclick="mapPickerFilter('Hybrid',this)">Hybrid</button>
+      <button class="f-btn" onclick="mapPickerFilter('Escort',this)">Escort</button>
+      <button class="f-btn" onclick="mapPickerFilter('Control',this)">Control</button>
+      <button class="f-btn" onclick="mapPickerFilter('Push',this)">Push</button>
+      <button class="f-btn" onclick="mapPickerFilter('Flashpoint',this)">Flashpoint</button>
+    </div>
+    <div class="picker-grid-wrap">
+      <div id="mapPickerGrid" style="display:flex;flex-direction:column;gap:4px;padding:4px 0"></div>
+    </div>
+    <div class="picker-footer">
+      <button class="btn" onclick="closeMapPicker()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmMapPicker()">Готово</button>
+    </div>
+  </div>
+</div>

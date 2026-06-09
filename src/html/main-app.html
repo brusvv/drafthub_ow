@@ -22,9 +22,10 @@
 
   <nav class="nav">
     <button class="nav-btn active" onclick="showView('maps',this)">Карты</button>
-    <button class="nav-btn" onclick="showView('heroes',this)">Пул героев</button>
+    <button class="nav-btn" onclick="showView('heroes',this)">Герои</button>
     <button class="nav-btn" onclick="showView('tiers',this)">Tier List</button>
     <button class="nav-btn" onclick="showView('bans',this)">Текущие баны</button>
+    <button class="nav-btn" onclick="showView('players',this)">Игроки</button>
   </nav>
 
   <div id="view-maps" class="view active">
@@ -64,6 +65,15 @@
   <div id="view-bans" class="view">
     <div class="section-lbl">Герои в текущем бане</div>
     <div id="bansGrid" class="bans-grid"></div>
+  </div>
+
+  <div id="view-players" class="view">
+    <div class="toolbar">
+      <div class="section-lbl" style="margin:0">Состав команды</div>
+      <button class="btn btn-primary" onclick="openPlayerModal()">+ Игрок</button>
+    </div>
+    <div id="playerGrid" class="players-grid" style="margin-top:1rem"></div>
+    <div id="playerDetail" class="player-detail"></div>
   </div>
 </div>
 </div>
