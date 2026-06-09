@@ -140,6 +140,6 @@ function imgH(src,cls,fallbackLetter,extra=''){
   return`<div class="${cls}-ph">${fallbackLetter}</div>`;
 }
 
-const ICON_ATK=`<svg class="ow-icon" style="color:#E05555;flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 2L2 6.5l11 11L6.5 20H9l3.5-3.5L21 21l-4-14.5L6.5 2zm8.6 13.1L8.9 9 18 12l-2.9 3.1z"/></svg>`;
+const ICON_ATK=`<svg class="ow-icon" style="color:#E05555;flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M2 2l6 6-1.5 1.5 1.4 1.4L9.4 9.4l4.7 4.7-1.5 1.5 1.4 1.4 1.5-1.5L22 22l-6-6 1.5-1.5-1.4-1.4-1.5 1.5-4.7-4.7 1.5-1.5-1.4-1.4L9 10.6 3.4 5 2 2z"/><path d="M14.6 2L22 9.4l-1.4 1.4-7.4-7.4 1.4-1.4zM2 14.6L9.4 22l1.4-1.4L3.4 13.2 2 14.6z"/><path d="M14.1 2.7l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4zM2.7 14.1l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4z"/></svg>`;
 const ICON_DEF=`<svg class="ow-icon" style="color:#4A9EE0;flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.67V11c0 3.86-2.57 7.45-6 8.83C8.57 18.45 6 14.86 6 11V7.67L12 5z"/></svg>`;
 const ICON_DIF=`<svg class="ow-icon" style="color:var(--accent);flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
