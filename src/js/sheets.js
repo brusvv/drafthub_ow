@@ -36,12 +36,12 @@ function parseCounters(str){
 async function loadMaps(){
   const[mr,pr,br,cr,mcr]=await Promise.all([
     sGet('Maps!A:H'),sGet('MapPreferred!A:B'),sGet('MapBans!A:B'),
-    sGet('Compositions!A:C'),sGet('MapCounters!A:B')
+    sGet('Compositions!A:D'),sGet('MapCounters!A:B')
   ]);
   const pf={},bn={},co={},mc={};
   pr.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!pf[r[0]])pf[r[0]]=[];pf[r[0]].push(r[1])}});
   br.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!bn[r[0]])bn[r[0]]=[];bn[r[0]].push(r[1])}});
-  cr.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!co[r[0]])co[r[0]]=[];co[r[0]].push({hero:r[1],role:r[2]||''})}});
+  cr.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!co[r[0]])co[r[0]]=[];co[r[0]].push({hero:r[1],role:r[2]||'',playerRole:r[3]||r[2]||''})}});
   mcr.slice(1).forEach(r=>{if(r[0]&&r[1]){if(!mc[r[0]])mc[r[0]]=[];mc[r[0]].push(r[1])}});
   if(mr.length<2){maps=[];return}
   const[h,...d]=mr;
