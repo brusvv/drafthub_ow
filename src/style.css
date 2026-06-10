@@ -1,6 +1,8 @@
-/* ════════════════════════════════════════════════
-   BASE RESET & CSS VARIABLES
-   ════════════════════════════════════════════════ */
+/* ════ BASE RESET & CSS VARIABLES ════
+   Edit --tank/--damage/--support to change role colors
+   Edit --bg/--bg2/--bg3/--bg4/--bg5 to change background shades
+   Edit --tier-s/a/b/c/d for tier badge colors
+*/
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --tank:#4A9EE0;--damage:#E05555;--support:#2BBD8E;
@@ -62,15 +64,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .section-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
 .view{display:none}.view.active{display:block}
  
-/* ════════════════════════════════════════════════
-   MAPS VIEW — grid of map cards
-   ─ .map-grid           — CSS grid container
-   ─ .map-card           — single map card (clickable)
-   ─ .map-card-img       — map thumbnail image
-   ─ .map-card-name      — map name text
-   ─ .tier-badge         — tier letter badge (S/A/B/C/D)
-   ─ .dots / .dot        — ATK/DEF/difficulty dot indicators
-   ════════════════════════════════════════════════ */
+/* ════ MAPS VIEW ════
+   .map-grid           — CSS grid container
+   .map-card           — single map card (thumbnail + name + badges)
+   .tier-badge         — S/A/B/C/D tier letter badge
+   .dots / .dot        — ATK/DEF/difficulty dot row
+*/
 /* ── MAP GRID ── */
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .map-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s;background:var(--bg2)}
@@ -95,16 +94,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .dot.def{background:var(--support)}
 .dot.dif{background:var(--accent)}
  
-/* ════════════════════════════════════════════════
-   MAP DETAIL VIEW (expanded after clicking a map card)
-   ─ .map-detail         — full detail panel (hidden by default)
-   ─ .detail-banner      — wide banner image at top
-   ─ .detail-header-body — title + meta below the banner
-   ─ .detail-grid        — 2-col grid for info cards
-   ─ .d-card             — individual info card (heroes / bans / comp / notes)
-   ─ .d-card-title       — card section heading
-   ─ .hero-row           — a single hero row in preferred heroes list
-   ════════════════════════════════════════════════ */
+/* ════ MAP DETAIL VIEW ════
+   .map-detail         — full detail panel
+   .detail-banner      — wide banner image
+   .detail-grid        — 2-col grid layout for info cards
+   .d-card             — info card (heroes / bans / comp / notes)
+   .d-card-title       — card section heading
+*/
 /* ── MAP DETAIL ── */
 .map-detail{display:none}
 .map-detail.show{display:flex;flex-direction:column;gap:12px;margin-top:1rem}
@@ -156,17 +152,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .note-line{display:block;margin-bottom:3px}
 .note-line::before{content:'→ ';color:var(--text3)}
  
-/* ════════════════════════════════════════════════
-   HEROES VIEW
-   ─ .role-section     — container per role (Tank/Damage/Support)
-   ─ .role-header       — role title row (icon + label + count)
-   ─ .role-title        — big role name text (Tank / Damage / Support)
-   ─ .subrole-group     — grouping by sub-role within a role
-   ─ .h-card            — individual hero card
-   ─ .h-card-name       — hero name inside card
-   ═ Adjust .role-title font-size to change role heading size
-   ═ Adjust .h-card-name font-size to change hero name size
-   ════════════════════════════════════════════════ */
+/* ════ HEROES VIEW ════
+   .role-title         — "Tank / Damage / Support" heading (font-size here)
+   .h-card             — individual hero card
+   .h-card-name        — hero name text inside card (font-size here)
+   .h-card-portrait    — hero portrait image
+   .h-card-body        — card content below portrait
+*/
 /* ── HERO POOL ── */
 .role-section{margin-bottom:2rem}
 .role-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
@@ -186,15 +178,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-card-prio{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
 .banned-tag{position:absolute;top:5px;right:5px;font-family:var(--mono);font-size:8px;text-transform:uppercase;background:var(--damage);color:#fff;padding:2px 5px;border-radius:3px}
  
-/* ════════════════════════════════════════════════
-   TIER LIST (Drag & Drop)
-   ─ .tier-row          — one horizontal tier row (S / A / B / C / D)
-   ─ .tier-lbl          — the colored tier letter badge on the left
-   ─ .tier-maps         — drop zone / flex container for pills
-   ─ .tier-pill         — map name pill (draggable)
-   ─ .tier-hero-pill    — hero portrait + name pill (draggable)
-   ═ .tier-S/A/B/C/D colors defined via --tier-s/a/b/c/d variables in :root
-   ════════════════════════════════════════════════ */
+/* ════ TIER LIST ════
+   .tier-row           — one full tier row (S/A/B/C/D)
+   .tier-lbl           — colored tier letter on the left
+   .tier-pill          — map name draggable pill
+   .tier-hero-pill     — hero portrait+name draggable pill
+*/
 /* ── TIER LIST ── */
 .tier-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
 .tier-lbl{font-family:var(--mono);font-size:15px;font-weight:700;width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
@@ -271,15 +260,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   .hero-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
 }
  
-/* ════════════════════════════════════════════════
-   PLAYERS VIEW
-   ─ .player-card        — compact player card in grid
-   ─ .player-name        — player name in card
-   ─ .player-av          — avatar circle (initials)
-   ─ .player-btag        — Battle.net tag subtitle
-   ─ .mini-av            — small hero portrait in card
-   ─ .role-tag           — colored role label pill
-   ════════════════════════════════════════════════ */
+/* ════ PLAYERS VIEW ════
+   .player-card        — compact player grid card
+   .player-av          — avatar circle (initials)
+   .player-name        — player name
+   .player-btag        — Battle.net tag subtitle
+   .mini-av            — small hero portrait icon
+   .role-tag           — colored role label pill
+*/
 /* ── PLAYERS ── */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .player-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s}
@@ -313,11 +301,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 /* ── COUNTER PICKER ── */
 #counterPickerOverlay .p-hero{position:relative}
  
-/* ════════════════════════════════════════════════
-   ROSTER / TEAM ANALYSIS VIEW
-   Contains player rows + recommended bans + map suggestions.
-   Styles mostly inline in render.js; this section covers shared chips.
-   ════════════════════════════════════════════════ */
+/* ════ ROSTER / TEAM ANALYSIS VIEW ════
+   Player rows + recommended bans + map suggestions.
+   Role selector per player: click role icon to filter heroes.
+   Most layout is inline in render.js; shared chips below.
+*/
 /* ── ROSTER ── */
 #view-roster .detail-grid{margin-top:0}
  
@@ -363,15 +351,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .tier-hero-pill img{width:22px;height:22px;border-radius:4px;object-fit:cover;flex-shrink:0}
 .tier-hero-pill-ph{width:22px;height:22px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3);flex-shrink:0}
  
-/* ════════════════════════════════════════════════
-   BANS VIEW — hero chips grouped by role
-   ─ .ban-role-group    — one role block (Tank / Damage / Support)
-   ─ .ban-role-header   — role icon + colored role name
-   ─ .ban-chip          — a single hero chip (portrait + name)
-   ─ .ban-chip-name     — hero name inside chip
-   ─ .ban-chip-ph       — placeholder when no portrait available
-   ═ word-break on .ban-chip-name prevents "Soldier: 76" from breaking oddly
-   ════════════════════════════════════════════════ */
+/* ════ BANS VIEW — chips grouped by role ════
+   .ban-chip           — single hero chip (portrait + name)
+   .ban-chip-name      — name text (word-break prevents "Soldier: 76" splitting)
+   .ban-chip-ph        — placeholder avatar when no portrait
+   .ban-role-group     — one role section block
+*/
 /* ── BAN GRID BY ROLE ── */
 .ban-role-group{margin-bottom:1.25rem}
 .ban-role-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -405,13 +390,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 /* ── HERO SORTING NOTE ── */
 .hero-sort-note{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:14px}
 
-/* ════════════════════════════════════════════════
-   HERO CARD COUNTER ICONS (small portraits in hero cards)
-   ─ .h-counter-icon    — wrapper for one counter portrait
-   ─ .h-counter-score   — score badge overlaid on portrait
-   ─ .h-counter-list    — flex row of counter icons inside a hero card
-   ═ Change width/height on .h-counter-icon & img to resize icons
-   ════════════════════════════════════════════════ */
+/* ════ HERO CARD COUNTER ICONS ════
+   .h-counter-icon     — wrapper; change width/height to resize icons
+   .h-counter-score    — score badge overlaid bottom-right
+   .h-counter-list     — flex row of counter icons
+*/
 /* ── HERO CARD COUNTERS ── */
 .h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
 .h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
@@ -419,17 +402,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
 .h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
 
-/* ════════════════════════════════════════════════
-   TIER PREVIEW POPUP (click on tier pill → overlay card)
-   ─ .tier-preview-overlay — full-screen dim backdrop
-   ─ .tier-preview-box     — the popup card itself
-   ─ .tier-preview-head    — title + close button row
-   ─ .tier-preview-banner  — map screenshot at top of popup
-   ─ .tier-preview-meta    — tier badge / type / priority row
-   ─ .tier-preview-stats   — ATK/DEF or difficulty dots
-   ─ .tier-preview-notes   — notes text block
-   ─ .tier-hero-preview-*  — hero-specific popup layout
-   ════════════════════════════════════════════════ */
+/* ════ TIER PREVIEW POPUP ════
+   .tier-preview-overlay  — full-screen backdrop
+   .tier-preview-box      — the floating card
+   .tier-preview-banner   — map/hero screenshot at top
+   .tier-preview-meta     — tier badge, type, priority row
+   .tier-preview-stats    — ATK/DEF or difficulty dots
+   .tier-preview-notes    — notes paragraph
+*/
 /* ── TIER PREVIEW POPUP ── */
 .tier-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:1rem}
 .tier-preview-box{width:100%;max-width:620px;max-height:88vh;overflow:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
