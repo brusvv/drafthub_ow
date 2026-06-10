@@ -7,28 +7,52 @@
 ```
 draft-hub/
 ├── src/
-│   ├── style.css          # Все стили
+│
+│   ├── css/
+│   │   ├── base.css            # Header, navigation, filters, auth, buttons
+│   │   ├── maps.css            # Map cards, map details, map layouts
+│   │   ├── heroes.css          # Hero pool, hero cards, hero views
+│   │   ├── bans.css            # Hero bans, counter picks, ban displays
+│   │   ├── modals.css          # All modals, DOT rating controls
+│   │   ├── players.css         # Player cards, player profiles
+│   │   ├── subroles.css        # Tank/DPS/Support subrole styling
+│   │   └── tiers.css           # Tier list board, tier preview popup
+│
 │   ├── html/
-│   │   ├── auth.html      # Экран авторизации
-│   │   ├── main-app.html  # Основное приложение (навигация, вьюхи)
-│   │   ├── modal-hero.html  # Модальное окно героя
-│   │   ├── modal-map.html   # Модальное окно карты
-│   │   └── picker.html      # Hero picker overlay
+│   │   ├── auth.html           # Login screen and OAuth UI
+│   │   ├── main-app.html       # Main application shell and views
+│   │   ├── modal-hero.html     # Hero editor modal
+│   │   ├── modal-map.html      # Map editor modal with DOT difficulty rating
+│   │   └── picker.html         # Hero picker overlay
+│
 │   └── js/
-│       ├── config.js      # Константы, стейт, portrait/mapImg helpers
-│       ├── auth.js        # Google OAuth, вход/выход
-│       ├── sheets.js      # Sheets API + loadHeroes/loadMaps/seed
-│       ├── write.js       # saveHero / saveMap / deleteHero / deleteMap
-│       ├── picker.js      # Hero picker логика
-│       ├── modals.js      # openHeroModal / openMapModal
-│       └── render.js      # renderMaps/Heroes/Tiers/Bans + утилиты
-├── dist/                  # Генерируется при сборке (не коммитить)
-│   └── index.html
-├── build.sh               # Локальная сборка
+│       ├── config.js           # Global constants, state, helpers, image URLs
+│       ├── auth.js             # Google OAuth login/logout logic
+│       ├── sheets.js           # Sheets API, loading, parsing, seed logic
+│       ├── write.js            # Save, update, delete operations
+│       ├── picker.js           # Hero picker interactions and filtering
+│       ├── modals.js           # Modal logic, DOT rating handlers
+│
+│       ├── render-utils.js     # Shared render helpers and utility functions
+│       ├── render-nav.js       # Navigation rendering and view switching
+│
+│       ├── render-maps.js      # Map list, map cards, map details
+│       ├── render-heroes.js    # Hero pool rendering and filters
+│       ├── render-bans.js      # Ban board and counter rendering
+│       ├── render-tiers.js     # Tier list rendering and preview popup
+│       ├── render-players.js   # Players page rendering
+│       └── render-roster.js    # Team roster builder and role limits
+│
+├── dist/
+│   └── index.html              # Generated production build (auto-created)
+│
+├── build.sh                    # Build script: bundles HTML/CSS/JS into dist
+│
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml     # Автодеплой на GitHub Pages при пуше в main
-└── .gitignore
+│       └── deploy.yml          # GitHub Pages auto-deploy workflow
+│
+└── .gitignore                  # Ignored files and build artifacts
 ```
 
 ## Локальная разработка
