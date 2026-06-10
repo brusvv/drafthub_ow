@@ -234,12 +234,10 @@ function addRosterPlayer(name){
   const getPlayerActiveRoles=(pl)=>{
     const sel=getRosterRole(pl.name);
     if(sel)return[sel];
-    // если роль не выбрана — берём основную + офф
-    const roles=[];
-    if(pl.mainRole&&pl.mainRole!=='Flex')roles.push(pl.mainRole);
-    if(pl.offRole&&pl.offRole!==pl.mainRole)roles.push(pl.offRole);
-    if(!roles.length&&pl.mainRole==='Flex')roles.push('Tank','Damage','Support');
-    return roles;
+    // если роль не выбрана — считаем только основную (не офф)
+    if(pl.mainRole&&pl.mainRole!=='Flex')return[pl.mainRole];
+    if(pl.mainRole==='Flex')return['Tank','Damage','Support'];
+    return[];
   };
   // Count current roles
   const roleCounts={Tank:0,Damage:0,Support:0};
