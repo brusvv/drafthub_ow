@@ -49,17 +49,8 @@ function clearRosterRole(pname){
 
 // Кто из наших героев уязвим к данному бан-герою
 function getBanVictims(banName){
-  const victims=[];
-  rosterPlayers.forEach(p=>{
-    // Учитываем только героев активной роли
-    const allH=getHeroesForRoster(p);
-    allH.forEach(hn=>{
-      const h=heroMap[hn];if(!h)return;
-      const c=(h.counters||[]).find(x=>x.name===banName);
-      if(c)victims.push({player:p.name,hero:hn,score:c.score,isMain:p.mainHeroes.includes(hn)});
-    });
-  });
-  return victims.sort((a,b)=>b.score-a.score);
+  // Делегируем в scoring.js
+  return getBanVictims_scoring(banName, rosterPlayers, getHeroesForRoster, heroMap);
 }
 function toggleBanDetail(name){openBanDetail=openBanDetail===name?null:name;renderRoster();}
 function renderRoster(){
@@ -203,19 +194,8 @@ function getHeroesForRoster(p){
   return allH.filter(hn=>{const h=heroMap[hn];return h&&h.role===sel;});
 }
 function computeRosterRecs(){
-  const banMap={};
-  rosterPlayers.forEach(p=>{
-    const allH=getHeroesForRoster(p);
-    allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.counters||[]).forEach(c=>{if(!banMap[c.name])banMap[c.name]={name:c.name,totalScore:0,count:0};banMap[c.name].totalScore+=c.score;banMap[c.name].count++;});});
-  });
-  const bans=Object.values(banMap).map(b=>({...b,avg:Math.round(b.totalScore/b.count)})).filter(b=>b.avg>=6&&b.count>=1).sort((a,b)=>b.count-a.count||b.avg-a.avg).slice(0,8);
-  const mapScores={};
-  rosterPlayers.forEach(p=>{
-    const allH=getHeroesForRoster(p);
-    allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.strongMaps||[]).forEach(mn=>{const m=maps.find(x=>x.name===mn);if(!m)return;if(!mapScores[mn])mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};mapScores[mn].score+=p.mainHeroes.includes(hn)?2:1;});(h.weakMaps||[]).forEach(mn=>{if(!mapScores[mn]){const m=maps.find(x=>x.name===mn);if(!m)return;mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};}mapScores[mn].score-=p.mainHeroes.includes(hn)?2:1;});});
-  });
-  const mapArr=Object.values(mapScores);
-  return{bans,maps:sortMaps(mapArr.filter(m=>m.score>0)).slice(0,8),avoid:mapArr.filter(m=>m.score<0).sort((a,b)=>a.score-b.score).slice(0,4)};
+  // Делегируем в scoring.js
+  return computeRosterRecs_scoring(rosterPlayers, getHeroesForRoster, maps, heroMap);
 }
 function openRosterPlayerPicker(){
   const avail=players.filter(p=>!rosterPlayers.find(r=>r.name===p.name));

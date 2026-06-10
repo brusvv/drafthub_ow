@@ -1,45 +1,10 @@
 // ════ HELPERS ════
 
-const TIER_WEIGHT={S:5,A:4,B:3,C:2,D:1};
-function sortMaps(arr){
-  return arr.slice().sort((a,b)=>{
-    if(b.score!==a.score)return b.score-a.score;
-    return (TIER_WEIGHT[b.tier]||0)-(TIER_WEIGHT[a.tier]||0);
-  });
-}
+// [scoring] TIER_WEIGHT → scoring.js
+// [scoring] sortMaps → sortMapsByScore() in scoring.js
 function computePlayerRecs(p){
-  const allHeroes=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-  const banScores={};
-  allHeroes.forEach(hn=>{
-    const h=heroMap[hn];if(!h)return;
-    (h.counters||[]).forEach(c=>{
-      if(!banScores[c.name])banScores[c.name]={name:c.name,score:0,count:0};
-      banScores[c.name].score+=c.score;banScores[c.name].count++;
-    });
-  });
-  const recBans=Object.values(banScores).filter(b=>b.score/b.count>=6).sort((a,b)=>b.score-a.score).slice(0,6);
-  const mapScores={};
-  maps.forEach(m=>{
-    let score=0;
-    allHeroes.forEach(hn=>{
-      const h=heroMap[hn];if(!h)return;
-      if((h.strongMaps||[]).includes(m.name))score+=p.mainHeroes.includes(hn)?2:1;
-      if((h.weakMaps||[]).includes(m.name))score-=1;
-    });
-    if(score>0)mapScores[m.name]={name:m.name,score,type:m.type,tier:m.tier};
-  });
-  const recMaps=sortMaps(Object.values(mapScores)).slice(0,6);
-  const avoidScores={};
-  maps.forEach(m=>{
-    let score=0;
-    allHeroes.forEach(hn=>{
-      const h=heroMap[hn];if(!h)return;
-      if((h.weakMaps||[]).includes(m.name))score+=p.mainHeroes.includes(hn)?2:1;
-    });
-    if(score>0)avoidScores[m.name]={name:m.name,score,type:m.type,tier:m.tier};
-  });
-  const avoidMaps=Object.values(avoidScores).sort((a,b)=>b.score-a.score).slice(0,4);
-  return{recBans,recMaps:sortMaps(Object.values(mapScores)),avoidMaps};
+  // Делегируем в scoring.js
+  return computePlayerRecs_scoring(p, maps, heroMap);
 }
  
 // ── Парсинг и сравнение рангов ──
