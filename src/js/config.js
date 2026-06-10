@@ -93,13 +93,12 @@ function mapTypeIcon(type,size=14){
 // ════ MAP KEY ════
 function mapKey(name){
   return name.toLowerCase()
-    .replace(/['']/g,'')
+    .replace(/['’]/g,'')
     .replace(/[^a-z0-9]+/g,'_')
     .replace(/^_|_$/g,'')
-    .replace(/_+/g,'_');  // collapse double underscores (e.g. "Soldier: 76" → "soldier_76")
+    .replace(/_+/g,'_');
 }
-
-// heroKey: strips punctuation entirely for heroes like "Soldier: 76" → "soldier76"
+// heroKey: strips ALL punctuation for lookup (e.g. "Soldier: 76" → "soldier76")
 function heroKey(name){
   return name.toLowerCase().replace(/[^a-z0-9]/g,'');
 }
@@ -112,7 +111,7 @@ async function loadPortraits(){
     data.forEach(h=>{
       heroPortraits[h.name.toLowerCase()]=h.portrait;
       heroPortraits[h.key]=h.portrait;
-      heroPortraits[heroKey(h.name)]=h.portrait;  // "Soldier: 76" → "soldier76"
+      heroPortraits[heroKey(h.name)]=h.portrait;
     });
   }catch(e){console.warn('Portrait API error',e)}
 }
@@ -147,6 +146,29 @@ function imgH(src,cls,fallbackLetter,extra=''){
   return`<div class="${cls}-ph">${fallbackLetter}</div>`;
 }
 
-const ICON_ATK=`<svg class="ow-icon" style="color:#E05555;flex-shrink:0" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M2 2l6 6-1.5 1.5 1.4 1.4L9.4 9.4l4.7 4.7-1.5 1.5 1.4 1.4 1.5-1.5L22 22l-6-6 1.5-1.5-1.4-1.4-1.5 1.5-4.7-4.7 1.5-1.5-1.4-1.4L9 10.6 3.4 5 2 2z"/><path d="M14.6 2L22 9.4l-1.4 1.4-7.4-7.4 1.4-1.4zM2 14.6L9.4 22l1.4-1.4L3.4 13.2 2 14.6z"/><path d="M14.1 2.7l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4zM2.7 14.1l7.2 7.2-1.4 1.4-7.2-7.2 1.4-1.4z"/></svg>`;
-const ICON_DEF=`<svg class="ow-icon" style="color:#4A9EE0;flex-shrink:0" width="15" height="15" viewBox="0 0 100 110" fill="currentColor"><path d="M50 4 L8 22 L8 52 C8 76 26 98 50 106 C74 98 92 76 92 52 L92 22 Z"/><path fill="white" d="M31 78 L31 82 L69 82 L69 78 L64 78 L64 44 L69 44 L69 34 L62 34 L62 38 L55 38 L55 34 L45 34 L45 38 L38 38 L38 34 L31 34 L31 44 L36 44 L36 78 Z"/></svg>`;
-const ICON_DIF=`<svg class="ow-icon" style="color:var(--accent);flex-shrink:0" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+const ICON_ATK=`<svg class="ow-icon" style="color:#E05555;flex-shrink:0" width="13" height="13" viewBox="0 0 100 100" fill="currentColor">
+  <!-- Sword 1: bottom-left handle → top-right blade -->
+  <g transform="rotate(-45 50 50)">
+    <rect x="46" y="4" width="8" height="54" rx="2"/>
+    <polygon points="50,2 43,14 57,14"/>
+    <rect x="32" y="55" width="36" height="7" rx="3"/>
+    <rect x="45" y="62" width="10" height="18" rx="3"/>
+    <circle cx="50" cy="86" r="7"/>
+  </g>
+  <!-- Sword 2: bottom-right handle → top-left blade -->
+  <g transform="rotate(45 50 50)">
+    <rect x="46" y="4" width="8" height="54" rx="2"/>
+    <polygon points="50,2 43,14 57,14"/>
+    <rect x="32" y="55" width="36" height="7" rx="3"/>
+    <rect x="45" y="62" width="10" height="18" rx="3"/>
+    <circle cx="50" cy="86" r="7"/>
+  </g>
+</svg>`;
+const ICON_DEF=`<svg class="ow-icon" style="color:#4A9EE0;flex-shrink:0" width="13" height="13" viewBox="0 0 100 112" fill="currentColor">
+  <path d="M50 3 L7 22 L7 54 C7 79 26 101 50 109 C74 101 93 79 93 54 L93 22 Z"/>
+  <path fill="white" d="
+    M33 87 L67 87 L67 78 L62 78 L62 47 L68 47 L68 36 L60 36 L60 41 L55 41 L55 36 L45 36 L45 41 L40 41 L40 36 L32 36 L32 47 L38 47 L38 78 L33 78 Z
+    M36 90 L64 90 L64 87 L36 87 Z
+  "/>
+</svg>`;
+const ICON_DIF=`<svg class="ow-icon" style="color:var(--accent);flex-shrink:0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
