@@ -1,4 +1,3 @@
-
 // ── Store proxies ──
 Object.defineProperties(window, {
   compSlots:    { get(){ return store.get('compSlots'); },    set(v){ store.set('compSlots',v); },    configurable:true },
@@ -40,11 +39,13 @@ function pickerFilter(role,btn){
 }
  
 function togglePickerHero(name){
-  const sel=pickerSelected[pickerMode];
+  const _ps=store.get('pickerSelected');
+  const sel=_ps[pickerMode];
   const idx=sel.indexOf(name);
   if(idx>=0)sel.splice(idx,1);
   else if(sel.length<pickerMax)sel.push(name);
   else{toast(`Максимум ${pickerMax} героев`,'err');return}
+  store.set('pickerSelected',_ps);
   renderPickerGrid();
 }
  
@@ -213,9 +214,11 @@ function mapPickerFilter(type,btn){
 }
  
 function toggleMapPicker(name){
-  const sel=mapPickerSelected[mapPickerMode];
+  const obj=store.get('mapPickerSelected');
+  const sel=obj[mapPickerMode];
   const idx=sel.indexOf(name);
   if(idx>=0)sel.splice(idx,1);else sel.push(name);
+  store.set('mapPickerSelected',obj);
   renderMapPickerGrid();
 }
  
@@ -385,12 +388,19 @@ function renderCompSlotPickerGrid(role){
  
 function selectCompSlotHero(name){
   if(activeSlotIdx===null)return;
-  const current=compSlots[activeSlotIdx].hero;
-  compSlots[activeSlotIdx].hero=current===name?null:name;
-  renderCompSlotPickerGrid(compSlots[activeSlotIdx].role);
+  const slots=store.get('compSlots');
+  const current=slots[activeSlotIdx].hero;
+  slots[activeSlotIdx].hero=current===name?null:name;
+  store.set('compSlots',slots);
+  renderCompSlotPickerGrid(slots[activeSlotIdx].role);
 }
  
-function clearCompSlot(idx){compSlots[idx].hero=null;renderCompSlots()}
+function clearCompSlot(idx){
+  const slots=store.get('compSlots');
+  slots[idx].hero=null;
+  store.set('compSlots',slots);
+  renderCompSlots();
+}
  
 // Override confirmPicker to handle comp_slot
 const _origConfirm=confirmPicker;
