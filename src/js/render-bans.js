@@ -229,8 +229,15 @@ const TOURN_MODE_STEPS = {
   Clash:      [{t:'ban',team:'B'},{t:'pick',team:'A'},{t:'side',team:'B'}],
 };
 
-// Порядок режимов в FT3
-const TOURN_MODE_ORDER = ['Control','Hybrid','Push','Flashpoint','Escort'];
+// Порядок режимов по форматам матча
+const TOURN_FORMAT_MODES = {
+  1: ['Control'],
+  2: ['Control','Hybrid'],
+  3: ['Control','Hybrid','Push'],
+  5: ['Control','Hybrid','Push','Flashpoint','Escort'],
+  7: ['Control','Hybrid','Push','Flashpoint','Escort','Control','Escort'],
+};
+const ATTACK_DEFENSE_MODES = ['Hybrid','Escort'];
 
 // Состояние турнирного драфта
 let tDraft = {
@@ -241,12 +248,13 @@ let tDraft = {
   pickedMaps: [],  // [{mode, name, sideTeam}]
   currentMapIdx: 0,
   heroBans: [],    // [{mapName, banA:null, banB:null, step:0}]
+  format: 5,       // формат серии: Bo1/Bo2/Bo3/Bo5/Bo7
 };
 
 function resetTournDraft(){
   tDraft = {
     phase:'pool', mapPool:{}, mapDraftSteps:[], stepIndex:0,
-    pickedMaps:[], currentMapIdx:0, heroBans:[]
+    pickedMaps:[], currentMapIdx:0, heroBans:[], format: 5
   };
   renderBans();
 }
@@ -261,14 +269,18 @@ function _renderTournamentMode(){
 // ── Шаг 1: настройка пула карт ──
 function _renderTournPoolSetup(){
   const modes = ['Control','Hybrid','Push','Flashpoint','Escort'];
-  const mapsForMode = mode => maps.filter(m=>m.type===mode||
-    (mode==='Hybrid'&&m.type==='Flashpoint'&&false)); // Hybrid и Flashpoint отдельно по OWCS
 
   return `
     <div class="ban-panel">
       <div class="ban-panel-head">
         <div class="ban-panel-title">Турнирный драфт — Пул карт</div>
-        <div class="ban-panel-hint">Укажи доступные карты для каждого режима. Обычно 3–4 карты на Control/Hybrid/Escort, 2–3 на Push, 2 на Flashpoint</div>
+        <div class="ban-panel-hint">Выбери формат встречи и доступные карты для каждого режима. Bo5 использует Control → Hybrid → Push → Flashpoint → Escort; Bo7 добавляет Control и Escort.</div>
+      </div>
+      <div class="tourn-format-block">
+        <div class="ban-draft-lbl">Формат встречи</div>
+        <div class="tourn-format-picker">
+          ${[1,2,3,5,7].map(fmt=>`<button class="tourn-format-btn${tDraft.format===fmt?' active':''}" onclick="setTournFormat(${fmt})">Bo${fmt}</button>`).join('')}
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:16px">
         ${modes.map(mode=>{
@@ -300,6 +312,11 @@ function _renderTournPoolSetup(){
     </div>`;
 }
 
+function setTournFormat(format){
+  tDraft.format = format;
+  renderBans();
+}
+
 function toggleTournPoolMap(mode, name){
   if(!tDraft.mapPool[mode]) tDraft.mapPool[mode] = [];
   const arr = tDraft.mapPool[mode];
@@ -309,20 +326,22 @@ function toggleTournPoolMap(mode, name){
 }
 
 function startTournMapDraft(){
-  // Проверяем что есть хотя бы 1 карта на Control (обязательный режим)
-  const hasAny = Object.values(tDraft.mapPool).some(a=>a.length>0);
-  if(!hasAny){ toast('Добавь хотя бы одну карту в пул','err'); return; }
+  const modeOrder = TOURN_FORMAT_MODES[tDraft.format] || TOURN_FORMAT_MODES[5];
+  const requiredModes = [...new Set(modeOrder)];
+  const missingModes = requiredModes.filter(mode=>!(tDraft.mapPool[mode] || []).length);
+  if(missingModes.length){ toast(`Для Bo${tDraft.format} добавь карты: ${missingModes.join(', ')}`,'err'); return; }
   // Строим список шагов
   const steps = [];
-  TOURN_MODE_ORDER.forEach(mode=>{
+  modeOrder.forEach((mode, idx)=>{
     const pool = tDraft.mapPool[mode] || [];
     if(!pool.length) return;
-    const scheme = TOURN_MODE_STEPS[mode] || TOURN_MODE_STEPS.Control;
-    scheme.forEach(s=>steps.push({...s, mode, done:false, value:null, pool:[...pool]}));
+    const scheme = _getTournModeSteps(mode, idx + 1);
+    scheme.forEach(s=>steps.push({...s, mode, mapNo: idx + 1, done:false, value:null, pool:[...pool]}));
   });
   tDraft.mapDraftSteps = steps;
   tDraft.stepIndex = 0;
   tDraft.pickedMaps = [];
+  if(!steps.length){ toast('Для выбранного формата нет карт в пуле','err'); return; }
   tDraft.phase = 'mapDraft';
   renderBans();
 }
@@ -348,7 +367,7 @@ function _renderTournMapDraft(){
               ${src?`<img src="${src}" style="width:48px;height:30px;object-fit:cover;border-radius:5px" onerror="this.style.display='none'">`:'' }
               <span style="font-weight:700;flex:1">${pm.name}</span>
               ${mapTypeIcon(pm.mode||m?.type||'',13)}
-              <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${pm.sideTeam?`Сторону выбирает команда ${pm.sideTeam}`:''}</span>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${pm.sideTeam?`Сторона: команда ${pm.sideTeam}`:''}</span>
             </div>`;
           }).join('')}
         </div>
@@ -364,13 +383,10 @@ function _renderTournMapDraft(){
   const teamColor = step.team==='A'?'var(--tank)':'var(--damage)';
   const remainingInPool = (step.pool||[]).filter(n=>!steps.slice(0,si).some(s=>s.done&&s.value===n&&s.t==='ban'));
 
-  // Группируем выполненные шаги по режимам
-  const doneSteps = steps.filter(s=>s.done);
-
   return `
     <div class="ban-panel">
       <div class="ban-panel-head">
-        <div class="ban-panel-title">Драфт карт — шаг ${si+1}/${steps.length}</div>
+        <div class="ban-panel-title">Драфт карт Bo${tDraft.format} — шаг ${si+1}/${steps.length}</div>
         <button class="btn" onclick="tDraft.phase='pool';renderBans()" style="font-size:10px">← Пул карт</button>
       </div>
 
@@ -382,9 +398,7 @@ function _renderTournMapDraft(){
           const border = i===si?col:'var(--border)';
           const label = s.t==='ban'?'БАН':s.t==='pick'?'ПИК':'СТОРОНА';
           return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:6px;background:${bg === 'var(--bg3)'?'var(--bg3)':bg+'22'};border:1px solid ${border};opacity:${i>si?0.4:1}">
-            <span style="font-family:var(--mono);font-size:7px;text-transform:uppercase;color:${col}">${label}</span>
-            <span style="font-family:var(--mono);font-size:8px;color:var(--text2)">${s.team} · ${s.mode.slice(0,3).toUpperCase()}</span>
-            ${s.done&&s.value?`<span style="font-size:9px;font-weight:600;color:var(--text);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.value}</span>`:''}
+          ? _renderTournSideOptions(step)
           </div>`;
         }).join('')}
       </div>
@@ -416,6 +430,44 @@ function _renderTournMapDraft(){
     </div>`;
 }
 
+function _getTournModeSteps(mode, mapNo){
+  // FT4/Bo7 официально добавляет упрощённые Map 6/7 шаги поверх Bo5.
+  if(mapNo === 6 && mode === 'Control') return [{t:'ban',team:'A'},{t:'pick',team:'B'},{t:'side',team:'A'}];
+  if(mapNo === 7 && mode === 'Escort') return [{t:'ban',team:'B'},{t:'pick',team:'A'},{t:'side',team:'B'}];
+  return TOURN_MODE_STEPS[mode] || TOURN_MODE_STEPS.Control;
+}
+
+function _getTournSideOptions(mode){
+  if(ATTACK_DEFENSE_MODES.includes(mode)){
+    return [
+      {value:'Атака', label:'⚔ Атака'},
+      {value:'Защита', label:'🛡 Защита'},
+    ];
+  }
+  return [
+    {value:'Сторона 1 / левый спавн', label:'⬅ Сторона 1'},
+    {value:'Сторона 2 / правый спавн', label:'➡ Сторона 2'},
+  ];
+}
+
+function _renderTournSideOptions(step){
+  const hint = ATTACK_DEFENSE_MODES.includes(step.mode)
+    ? 'Для Escort/Hybrid выбирается атака или защита.'
+    : 'Для Control/Push/Flashpoint нет атаки и защиты — выбирается стартовая сторона/спавн.';
+  return `<div class="tourn-side-options">
+    <div class="tourn-side-hint">${hint}</div>
+    <div class="tourn-side-buttons">
+      ${_getTournSideOptions(step.mode).map(opt=>`<button class="btn" onclick="tournDraftAction('${esc(opt.value)}')">${opt.label}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function _getTournSeriesBannedHeroes(currentHb){
+  return [...new Set(tDraft.heroBans
+    .filter(hb=>hb!==currentHb)
+    .flatMap(hb=>[hb.banA,hb.banB].filter(Boolean)) )];
+}
+
 function tournDraftAction(value){
   const steps = tDraft.mapDraftSteps;
   const si = tDraft.stepIndex;
@@ -423,7 +475,7 @@ function tournDraftAction(value){
   step.done = true;
   step.value = value;
   if(step.t === 'pick'){
-    tDraft.pickedMaps.push({name:value, mode:step.mode, sideTeam:null});
+    tDraft.pickedMaps.push({name:value, mode:step.mode, mapNo:step.mapNo, sideTeam:null});
   }
   if(step.t === 'side' && tDraft.pickedMaps.length){
     tDraft.pickedMaps[tDraft.pickedMaps.length-1].sideTeam = step.team + ' → ' + value;
@@ -456,7 +508,7 @@ function _renderTournHeroBans(){
     <div class="ban-panel">
       <div class="ban-panel-head">
         <div class="ban-panel-title">Баны героев по картам</div>
-        <div class="ban-panel-hint">Каждая команда банит 1 героя на карту. Нельзя банить двух героев одной роли подряд (OWCS: каждая команда — по 1 бану)</div>
+        <div class="ban-panel-hint">Каждая команда банит 1 героя на карту. На одной карте нельзя повторять роль бана соперника, а один и тот же герой не может быть забанен повторно в рамках всей встречи.</div>
         <button class="btn" onclick="tDraft.phase='mapDraft';renderBans()" style="font-size:10px;margin-top:6px">← Драфт карт</button>
       </div>
 
@@ -503,12 +555,13 @@ function _renderCurrentMapHeroBan(){
     return `<div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:6px 0">Ожидание...</div>`;
   };
 
-  // Какие герои недоступны (уже банили эту роль)
+  // Какие герои недоступны: роль уже использована на карте, герой уже банился в серии
   const currentTeam = hb.step===0?'A':'B';
   const bannedRoles = [...new Set([...(hb.bannedRoles.A||[]),...(hb.bannedRoles.B||[])])];
+  const seriesBannedHeroes = _getTournSeriesBannedHeroes(hb);
 
   // Рекомендации для текущего бана
-  const recs = hb.step<2 ? _computeTournBanRecs(m, bannedRoles) : [];
+  const recs = hb.step<2 ? _computeTournBanRecs(m, bannedRoles, seriesBannedHeroes) : [];
 
   return `
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
@@ -525,12 +578,13 @@ function _renderCurrentMapHeroBan(){
     ${hb.step<2 ? `
       <div class="ban-draft-lbl" style="margin-bottom:8px">
         Команда <span style="color:${currentTeam==='A'?'var(--tank)':'var(--damage)'}">${currentTeam}</span> банит героя
-        ${bannedRoles.length?`<span style="opacity:.5">(роль ${bannedRoles.join(', ')} уже использована)</span>`:''}
+        ${bannedRoles.length?`<span style="opacity:.5">(роль ${bannedRoles.join(', ')} уже использована на этой карте)</span>`:''}
+        ${seriesBannedHeroes.length?`<span style="opacity:.5"> · уже банили в серии: ${seriesBannedHeroes.join(', ')}</span>`:''}
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
         ${['Tank','Damage','Support'].map(role=>{
           const roleDisabled = bannedRoles.includes(role);
-          const hs = heroes.filter(h=>!h.banned&&h.role===role);
+          const hs = heroes.filter(h=>!h.banned&&h.role===role&&!seriesBannedHeroes.includes(h.name));
           return `<div style="${roleDisabled?'opacity:.3;pointer-events:none':''}">
             <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${rc[role]};margin-bottom:5px;display:flex;align-items:center;gap:3px">
               ${roleIcon(role,11)} ${role}${roleDisabled?' (заблокирована)':''}
@@ -557,17 +611,18 @@ function doTournHeroBan(mapName, heroName){
   if(!hb||hb.step>=2)return;
   const h = heroMap[heroName]; if(!h)return;
   const team = hb.step===0?'A':'B';
-  // Проверяем что роль ещё не забанена в этом матче
+  // Проверяем что роль ещё не забанена на этой карте, а герой — во всей встрече
   const allBannedRoles=[...(hb.bannedRoles.A||[]),...(hb.bannedRoles.B||[])];
   if(allBannedRoles.includes(h.role)){toast(`Роль ${h.role} уже забанена на этой карте`,'err');return;}
+  if(_getTournSeriesBannedHeroes(hb).includes(heroName)){toast(`${heroName} уже банили в этой встрече`,'err');return;}
   if(team==='A') hb.banA=heroName; else hb.banB=heroName;
   hb.bannedRoles[team]=[...(hb.bannedRoles[team]||[]),h.role]; // записываем роль
   hb.step++;
   renderBans();
 }
 
-function _computeTournBanRecs(mapObj, excludeRoles){
-  return heroes.filter(h=>!h.banned&&!excludeRoles.includes(h.role))
+function _computeTournBanRecs(mapObj, excludeRoles, excludeHeroes=[]){
+  return heroes.filter(h=>!h.banned&&!excludeRoles.includes(h.role)&&!excludeHeroes.includes(h.name))
     .map(h=>{ let score=0;const reasons=[];
       if(mapObj){
         if((h.strongMaps||[]).includes(mapObj.name)){score+=6;reasons.push({type:'mapStrong',text:`Силён: ${mapObj.name}`});}
