@@ -119,7 +119,7 @@ function renderTierMaps(){
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierMapPreview('${esc(name)}')">
-            ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${m.type.slice(0,3).toUpperCase()}</span>`:''}
+            ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${mapTypeIcon(m.type,14)}</span>`:''}
             ${name}
           </div>`;
         }).join('')}
