@@ -1,4 +1,3 @@
- 
 /* ── HERO PICKER MODAL ── */
 .picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1rem}
 .picker-overlay.hidden{display:none}
@@ -52,3 +51,47 @@
 .subrole-group{margin-bottom:1rem}
 .subrole-lbl{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text1);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px}
  
+
+/* ── DRAFT BAN ASSIST ── */
+.ban-draft-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.ban-draft-header{margin-bottom:1.25rem}
+.ban-draft-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.ban-draft-hint{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6}
+
+.ban-draft-controls{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
+.ban-draft-ctrl{display:flex;flex-direction:column;gap:6px;min-width:160px}
+.ban-draft-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+
+.ban-hero-selector{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:40px;transition:border-color .15s}
+.ban-hero-selector:hover{border-color:var(--border3)}
+.ban-hero-placeholder{font-size:12px;color:var(--text3)}
+.ban-hero-edit{margin-left:auto;color:var(--text3);font-size:12px}
+
+.ban-draft-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:2px 6px 2px 3px;font-size:11px;font-weight:600}
+.ban-draft-chip img{width:20px;height:20px;border-radius:3px;object-fit:cover}
+.ban-draft-chip-ph{width:20px;height:20px;border-radius:3px;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3)}
+.ban-draft-chip-remove{margin-left:2px;color:var(--text3);cursor:pointer;font-size:13px;line-height:1}
+.ban-draft-chip-remove:hover{color:var(--damage)}
+
+/* Результаты */
+.ban-recs-empty{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:2rem 0}
+.ban-recs-header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ban-recs-title{font-size:13px;font-weight:700}
+.ban-recs-algo-hint{font-family:var(--mono);font-size:9px;color:var(--text3)}
+
+.ban-recs-grid{display:flex;flex-direction:column;gap:6px}
+
+.ban-rec-card{display:flex;align-items:flex-start;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 12px;transition:border-color .15s}
+.ban-rec-card.ban-rec-high{border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.04)}
+.ban-rec-rank{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text3);min-width:14px;margin-top:3px}
+.ban-rec-portrait{width:44px;height:44px;border-radius:7px;overflow:hidden;flex-shrink:0;background:var(--bg4)}
+.ban-rec-portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.ban-rec-ph{width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
+.ban-rec-body{flex:1;min-width:0}
+.ban-rec-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.ban-rec-sub{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:5px}
+.ban-rec-bar-wrap{height:3px;background:var(--bg5);border-radius:2px;margin-bottom:6px;overflow:hidden}
+.ban-rec-bar{height:100%;border-radius:2px;transition:width .3s ease}
+.ban-rec-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ban-rec-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid transparent;line-height:1.5}
+.ban-rec-urgency{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;flex-shrink:0;margin-top:4px}
