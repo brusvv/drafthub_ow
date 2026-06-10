@@ -14,6 +14,19 @@ function toggleRosterRolePicker(name){
   renderRoster();
 }
 function setRosterRole(pname,role){
+  const roleLimits={Tank:1,Damage:2,Support:2};
+  // Считаем текущее использование роли без учёта этого игрока
+  const usedByOthers={Tank:0,Damage:0,Support:0};
+  rosterPlayers.forEach(pl=>{
+    if(pl.name===pname)return; // себя не считаем
+    const r=getRosterRole(pl.name);
+    if(r&&usedByOthers[r]!==undefined)usedByOthers[r]++;
+  });
+  const limit=roleLimits[role];
+  if(limit!==undefined&&usedByOthers[role]>=limit){
+    toast(`Роль ${role} уже занята (лимит ${limit})`,'err');
+    return;
+  }
   rosterRoles[pname]=role;
   rosterRoleOpen[pname]=false;
   renderRoster();
@@ -30,7 +43,8 @@ let openBanDetail=null;
 function getBanVictims(banName){
   const victims=[];
   rosterPlayers.forEach(p=>{
-    const allH=[...new Set([...p.mainHeroes,...p.poolHeroes])];
+    // Учитываем только героев активной роли
+    const allH=getHeroesForRoster(p);
     allH.forEach(hn=>{
       const h=heroMap[hn];if(!h)return;
       const c=(h.counters||[]).find(x=>x.name===banName);
