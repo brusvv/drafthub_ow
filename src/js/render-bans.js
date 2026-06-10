@@ -1,18 +1,27 @@
+// ── Store proxies ──
+Object.defineProperties(window, {
+  compBanVotes:  { get(){ return store.get('compBanVotes'); },  set(v){ store.set('compBanVotes',v); },  configurable:true },
+  compBanMap:    { get(){ return store.get('compBanMap'); },    set(v){ store.set('compBanMap',v); },    configurable:true },
+  banDraftMap:   { get(){ return store.get('banDraftMap'); },   set(v){ store.set('banDraftMap',v); },   configurable:true },
+  banDraftHeroes:{ get(){ return store.get('banDraftHeroes'); },set(v){ store.set('banDraftHeroes',v); },configurable:true },
+  tDraft:        { get(){ return store.get('tDraft'); },        set(v){ store.set('tDraft',v); },        configurable:true },
+});
+
 // ════ BANS — MODE SELECTOR ════
 
 let banMode = 'competitive'; // 'competitive' | 'tournament'
 
 // ── Competitive state ──
-let compBanVotes = {}; // { heroName: { p1: [choice1,choice2,choice3], ... } }
-let compBanMap = '';
+// [store] compBanVotes → store.state // { heroName: { p1: [choice1,choice2,choice3], ... } }
+// [store] compBanMap → store.state
 
 // ── Tournament state ──
 let tournMapPool = [];       // выбранный пул карт [{name,type}]
 let tournCurrentMap = null;  // карта текущего матча
 let tournHeroBans = { A: [], B: [] }; // забаненные герои по командам
 let tournSide = 'A';         // чья очередь банить
-let banDraftMap = '';
-let banDraftHeroes = [];
+// [store] banDraftMap → store.state
+// [store] banDraftHeroes → store.state
 
 const _confirmPickerPreBans = window.confirmPicker || (()=>{});
 window.confirmPicker = function(){
