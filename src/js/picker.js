@@ -2,6 +2,7 @@
 function openPicker(mode,max=999){
   pickerMode=mode;pickerMax=max;
   pickerRoleFilter='all';
+  document.querySelectorAll('#pickerOverlay .f-btn').forEach(b=>{b.style.display='';});
   const titles={preferred:'Предпочтительные герои',bans:'Цели для банов',comp:'Состав (до 5)',playerMain:'Топ-5 героев',playerPool:'Пул героев'};
   document.getElementById('pickerTitle').textContent=titles[mode]||'Выбери героев';
   document.querySelectorAll('#pickerOverlay .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
@@ -271,13 +272,17 @@ function onPlayerRoleChange(){
 function openRoleHeroPicker(role){
   const key=`playerRole_${role}`;
   if(!pickerSelected[key])pickerSelected[key]=[];
-  // temporarily set mode to this key
   pickerMode=key;pickerMax=5;
   pickerRoleFilter=role;
+  // lock filter buttons to only show the relevant role
   document.getElementById('pickerTitle').textContent=`Топ-5 героев — ${role}`;
   document.querySelectorAll('#pickerOverlay .f-btn').forEach(b=>{
     const r=b.getAttribute('onclick')||'';
-    b.classList.toggle('active',r.includes(`'${role}'`)||r.includes(`"${role}"`));
+    const isThisRole=r.includes(`'${role}'`)||r.includes(`"${role}"`);
+    const isAll=r.includes("'all'")||r.includes('"all"');
+    // hide other role buttons, show only All + this role
+    b.style.display=(isAll||isThisRole)?'':'none';
+    b.classList.toggle('active',isThisRole);
   });
   renderPickerGrid();
   document.getElementById('pickerOverlay').classList.remove('hidden');
