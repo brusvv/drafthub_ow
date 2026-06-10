@@ -42,6 +42,60 @@ function computePlayerRecs(p){
   return{recBans,recMaps:sortMaps(Object.values(mapScores)),avoidMaps};
 }
  
+// ── Парсинг и сравнение рангов ──
+const RANK_ORDER=['Bronze','Silver','Gold','Platinum','Diamond','Master','Grandmaster','Champion'];
+const DIV_ORDER=[5,4,3,2,1]; // 5 — низший, 1 — высший
+
+function parseRank(str){
+  if(!str)return -1;
+  const parts=str.trim().split(/\s+/);
+  const tier=RANK_ORDER.indexOf(parts[0]);
+  if(tier<0)return -1;
+  const div=parseInt(parts[1]);
+  const divScore=Number.isFinite(div)?DIV_ORDER.indexOf(div):0;
+  return tier*10+(divScore>=0?divScore:0);
+}
+
+// Для Flex-игрока выбирает топ-5 по формуле 2+2+1
+// Первые 2 — роль с наибольшим рангом, следующие 2 — вторая роль, 1 — третья
+// Если ранги равны — берём по тир-листу героев
+function flexTop5(p){
+  const roles=['Tank','Damage','Support'];
+  const rankScores={
+    Tank: parseRank(p.rankTank),
+    Damage: parseRank(p.rankDmg),
+    Support: parseRank(p.rankSup),
+  };
+
+  // Сортируем роли по рангу (убывание), при равенстве — порядок не меняем
+  const sorted=[...roles].sort((a,b)=>rankScores[b]-rankScores[a]);
+
+  // Пул героев игрока по ролям, отсортированных по тиру
+  function heroesForRole(role){
+    const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
+    return pool
+      .filter(n=>{const h=heroMap[n];return h&&h.role===role;})
+      .sort((a,b)=>{
+        // S>A>B>C>D по tierOrderHeroes
+        const tierVal={S:5,A:4,B:3,C:2,D:1};
+        const tierOf=name=>{
+          for(const [t,ns] of Object.entries(tierOrderHeroes)){if(ns.includes(name))return tierVal[t]||0;}
+          return 0;
+        };
+        return tierOf(b)-tierOf(a);
+      });
+  }
+
+  const quotas=[2,2,1];
+  const result=[];
+  sorted.forEach((role,i)=>{
+    const need=quotas[i]||0;
+    const candidates=heroesForRole(role);
+    result.push(...candidates.slice(0,need));
+  });
+  return result.slice(0,5);
+}
+
 function renderPlayers(){
   const grid=document.getElementById('playerGrid');
   if(!grid)return;
@@ -49,8 +103,8 @@ function renderPlayers(){
   detail.classList.remove('show');detail.innerHTML='';
   if(!players.length){grid.innerHTML='<div class="empty">Нет игроков. Нажми "+ Игрок".</div>';return}
   grid.innerHTML=players.map(p=>{
-    const mainH=p.mainHeroes.slice(0,5);
     const isFlex=p.mainRole==='Flex';
+    const mainH=isFlex ? flexTop5(p) : p.mainHeroes.slice(0,5);
     const hasOff=p.offRole&&p.offRole!==p.mainRole;
     let roleBlock='';
     if(isFlex)roleBlock=`<div class="player-role-icon flex">${roleIcon(p.mainRole,48)}</div>`;
@@ -81,7 +135,7 @@ function showPlayerDetail(name){
   if(p.rankSup)ranks.push({role:'Support',val:p.rankSup});
   const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
   const byRole={Tank:[],Damage:[],Support:[]};
-  pool.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push({name:n,isMain:p.mainHeroes.includes(n)})});
+  pool.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push({name:n,isMain:!isFlex&&p.mainHeroes.includes(n)})});
   const isFlex=p.mainRole==='Flex';
   const hasOff=p.offRole&&p.offRole!==p.mainRole;
   let roleIconHtml='';
