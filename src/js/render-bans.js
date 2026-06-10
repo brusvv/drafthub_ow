@@ -1,32 +1,23 @@
-// ── Store proxies ──
-Object.defineProperties(window, {
-  compBanVotes:  { get(){ return store.get('compBanVotes'); },  set(v){ store.set('compBanVotes',v); },  configurable:true },
-  compBanMap:    { get(){ return store.get('compBanMap'); },    set(v){ store.set('compBanMap',v); },    configurable:true },
-  banDraftMap:   { get(){ return store.get('banDraftMap'); },   set(v){ store.set('banDraftMap',v); },   configurable:true },
-  banDraftHeroes:{ get(){ return store.get('banDraftHeroes'); },set(v){ store.set('banDraftHeroes',v); },configurable:true },
-  tDraft:        { get(){ return store.get('tDraft'); },        set(v){ store.set('tDraft',v); },        configurable:true },
-});
 // ════ BANS — MODE SELECTOR ════
 
 let banMode = 'competitive'; // 'competitive' | 'tournament'
 
 // ── Competitive state ──
-// [store] compBanVotes → store.state // { heroName: { p1: [choice1,choice2,choice3], ... } }
-// [store] compBanMap → store.state
+let compBanVotes = {}; // { heroName: { p1: [choice1,choice2,choice3], ... } }
+let compBanMap = '';
 
 // ── Tournament state ──
 let tournMapPool = [];       // выбранный пул карт [{name,type}]
 let tournCurrentMap = null;  // карта текущего матча
 let tournHeroBans = { A: [], B: [] }; // забаненные герои по командам
 let tournSide = 'A';         // чья очередь банить
-// [store] banDraftMap → store.state
-// [store] banDraftHeroes → store.state
+let banDraftMap = '';
+let banDraftHeroes = [];
 
 const _confirmPickerPreBans = window.confirmPicker || (()=>{});
 window.confirmPicker = function(){
   if(pickerMode === 'banHeroes'){
-    const _ps=store.get('pickerSelected');
-    store.set('banDraftHeroes', [...(_ps.banHeroes || [])]);
+    banDraftHeroes = [...(pickerSelected.banHeroes || [])];
     closePicker();
     _refreshBanAssist();
   } else if(pickerMode === 'tournMapPool'){
@@ -151,19 +142,19 @@ function _getCompPriority(name){
 }
 
 function toggleCompBan(name){
-  let votes = {...store.get('compBanVotes')};
-  const existing = votes[name];
+  const vals = Object.values(compBanVotes);
+  const existing = compBanVotes[name];
   if(existing){
-    delete votes[name];
-    const reordered = Object.entries(votes).sort((a,b)=>a[1]-b[1]);
-    votes = {};
-    reordered.forEach(([n,p],i)=>{ votes[n]=i+1; });
+    delete compBanVotes[name];
+    // Сдвигаем приоритеты
+    const reordered = Object.entries(compBanVotes).sort((a,b)=>a[1]-b[1]);
+    compBanVotes = {};
+    reordered.forEach(([n,p],i)=>{ compBanVotes[n]=i+1; });
   } else {
-    const count = Object.keys(votes).length;
+    const count = Object.keys(compBanVotes).length;
     if(count >= 3){ toast('Максимум 3 приоритета','err'); return; }
-    votes[name] = count + 1;
+    compBanVotes[name] = count + 1;
   }
-  store.set('compBanVotes', votes);
   renderBans();
 }
 
@@ -406,8 +397,10 @@ function _renderTournMapDraft(){
           const bg = s.done?col:'var(--bg3)';
           const border = i===si?col:'var(--border)';
           const label = s.t==='ban'?'БАН':s.t==='pick'?'ПИК':'СТОРОНА';
-          return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:6px;background:${bg === 'var(--bg3)'?'var(--bg3)':bg+'22'};border:1px solid ${border};opacity:${i>si?0.4:1}">
-          ? _renderTournSideOptions(step)
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:6px;background:${s.done?col+'22':'var(--bg3)'};border:1px solid ${border};opacity:${i>si?0.45:1};min-width:52px;text-align:center;cursor:default">
+            <span style="font-family:var(--mono);font-size:8px;font-weight:700;text-transform:uppercase;color:${col}">${label}</span>
+            <span style="font-family:var(--mono);font-size:8px;color:${i===si?col:'var(--text3)'}">${s.team} · ${s.mode.slice(0,3).toUpperCase()}</span>
+            ${s.done&&s.value?`<span style="font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px;display:block;color:var(--text2)">${s.value.length>9?s.value.slice(0,9)+'…':s.value}</span>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -699,11 +692,8 @@ function _buildHeroChips(){
 }
 
 function removeBanDraftHero(name){
-  const heroes=store.get('banDraftHeroes').filter(n=>n!==name);
-  store.set('banDraftHeroes', heroes);
-  const ps=store.get('pickerSelected');
-  ps.banHeroes=[...heroes];
-  store.set('pickerSelected', ps);
+  banDraftHeroes=banDraftHeroes.filter(n=>n!==name);
+  pickerSelected.banHeroes=[...banDraftHeroes];
   renderBans();
 }
 
