@@ -133,11 +133,11 @@ function showPlayerDetail(name){
   if(p.rankTank)ranks.push({role:'Tank',val:p.rankTank});
   if(p.rankDmg)ranks.push({role:'Damage',val:p.rankDmg});
   if(p.rankSup)ranks.push({role:'Support',val:p.rankSup});
+  const isFlex=p.mainRole==='Flex';
+  const hasOff=p.offRole&&p.offRole!==p.mainRole;
   const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
   const byRole={Tank:[],Damage:[],Support:[]};
   pool.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push({name:n,isMain:!isFlex&&p.mainHeroes.includes(n)})});
-  const isFlex=p.mainRole==='Flex';
-  const hasOff=p.offRole&&p.offRole!==p.mainRole;
   let roleIconHtml='';
   if(isFlex)roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px">${roleIcon('Flex',56)}<span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--accent)">Flex</span></div>`;
   else if(hasOff)roleIconHtml=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px">${roleIcon(p.mainRole,40)}${roleIcon(p.offRole,28)}</div>`;
