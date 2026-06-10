@@ -77,7 +77,6 @@ function renderRoster(){
     let roleBlock='';
     if(isFlex)roleBlock=roleIcon('Flex',22);
     else if(p.mainRole)roleBlock=roleIcon(p.mainRole,18)+(hasOff?`<span style="margin-left:1px">${roleIcon(p.offRole,13)}</span>`:'');
-    const selRole=getRosterRole(p.name);
     const isOpen=rosterRoleOpen[p.name]||false;
     const availRoles=['Tank','Damage','Support'].filter(r=>{
       const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
