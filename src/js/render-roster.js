@@ -61,8 +61,19 @@ function renderRoster(){
 
   // ── Player rows ──
   const playerCards=rosterPlayers.map(p=>{
-    const mainH=p.mainHeroes.slice(0,5);
+    const selRole=getRosterRole(p.name);
     const isFlex=p.mainRole==='Flex';const hasOff=p.offRole&&p.offRole!==p.mainRole;
+    // Герои для отображения: если роль выбрана — только герои этой роли, иначе main
+    const displayH=(()=>{
+      if(selRole){
+        const roleHeroes=[
+          ...p.mainHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===selRole;}),
+          ...p.poolHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===selRole&&!p.mainHeroes.includes(n);})
+        ];
+        return roleHeroes.slice(0,5);
+      }
+      return p.mainHeroes.slice(0,5);
+    })();
     let roleBlock='';
     if(isFlex)roleBlock=roleIcon('Flex',22);
     else if(p.mainRole)roleBlock=roleIcon(p.mainRole,18)+(hasOff?`<span style="margin-left:1px">${roleIcon(p.offRole,13)}</span>`:'');
@@ -85,7 +96,7 @@ function renderRoster(){
         ${rolePickerHtml}
         <span style="font-weight:700;font-size:16px">${p.name}</span>
       </div>
-      <div style="display:flex;gap:5px;flex:1;justify-content:center">${mainH.map(n=>{const src=portrait(n);return src
+      <div style="display:flex;gap:5px;flex:1;justify-content:center">${displayH.map(n=>{const src=portrait(n);return src
         ?`<img src="${src}" title="${n}" style="width:38px;height:38px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">`
         :`<div style="width:38px;height:38px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${n[0]}</div>`;
       }).join('')}</div>
