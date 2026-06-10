@@ -141,3 +141,38 @@
   .tourn-map-chip{min-width:72px;max-width:88px;padding:4px 6px}
   .tourn-map-chip img{width:72px;height:40px}
 }
+
+/* ════ BANS VIEW LAYOUT OVERRIDE ════
+   The #bansGrid container inherits a tile-grid from tiers.css.
+   For the bans view, we need a single full-width column layout.
+   This overrides the grid so ban-panel and mode-switcher span full width.
+*/
+#view-bans .bans-grid,
+#bansGrid{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+
+/* ════ TOURNAMENT DRAFT STEP CHIPS ════
+   Progress bar of steps in the map draft phase.
+   Each chip shows label (БАН/ПИК/СТР), team, mode abbreviation,
+   and the chosen value once the step is done.
+*/
+.tourn-step-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  min-width:56px;
+  padding:5px 7px;
+  border-radius:6px;
+  cursor:default;
+}
+
+/* ════ COMP MAP POPUP ════
+   Full-screen overlay for selecting the match map in competitive mode.
+   Opened by openCompMapPopup(), closed by closeCompMapPopup() or clicking backdrop.
+*/
+/* Styles are mostly inline since the popup is dynamically created.
+   Only the thumbnail grid sizing is defined here for easy tweaking. */
