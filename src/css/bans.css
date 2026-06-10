@@ -1,0 +1,54 @@
+ 
+/* ── HERO PICKER MODAL ── */
+.picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1rem}
+.picker-overlay.hidden{display:none}
+.picker-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column}
+.picker-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.picker-title{font-size:15px;font-weight:700}
+.picker-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.picker-filters{display:flex;gap:4px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.picker-grid-wrap{overflow-y:auto;padding:1rem 1.25rem;flex:1}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.p-hero{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .1s;background:var(--bg3);position:relative}
+.p-hero:hover{border-color:var(--border2)}
+.p-hero.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.p-hero.selected::after{content:'✓';position:absolute;top:4px;right:4px;background:var(--accent);color:#000;font-size:9px;font-weight:800;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
+.p-hero-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg4)}
+.p-hero-img-ph{width:100%;aspect-ratio:1;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
+.p-hero-name{font-size:9px;font-weight:600;text-align:center;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-footer{padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;flex-shrink:0}
+ 
+/* ── COUNTER GRID (heroes grouped by role) ── */
+.counter-role-group{margin-bottom:8px}
+.counter-role-label{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:5px}
+.counter-chips{display:flex;flex-wrap:wrap;gap:5px}
+.counter-chip{display:flex;align-items:center;gap:4px;padding:3px 7px 3px 4px;border-radius:6px;background:var(--bg3);border:1px solid var(--border2);cursor:default}
+.counter-chip.ban-rec{border-color:rgba(224,85,85,.4);background:rgba(224,85,85,.06)}
+.counter-chip img{width:18px;height:18px;border-radius:3px;object-fit:cover;flex-shrink:0}
+.counter-chip-ph{width:18px;height:18px;border-radius:3px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--text3);flex-shrink:0}
+.counter-chip-name{font-size:11px;font-weight:600}
+.counter-chip-ban{font-family:var(--mono);font-size:7px;text-transform:uppercase;background:rgba(224,85,85,.2);color:var(--damage);border-radius:3px;padding:1px 4px;margin-left:2px}
+ 
+/* ── ROSTER PLAYER ROLE SELECTOR ── */
+.roster-role-select{display:flex;gap:4px;align-items:center}
+.roster-role-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
+.roster-role-btn:hover{border-color:var(--border3)}
+.roster-role-btn.active-Tank{border-color:var(--tank);background:rgba(74,158,224,.12)}
+.roster-role-btn.active-Damage{border-color:var(--damage);background:rgba(224,85,85,.12)}
+.roster-role-btn.active-Support{border-color:var(--support);background:rgba(43,189,142,.12)}
+.roster-role-btn.active-Flex{border-color:var(--accent);background:rgba(240,160,48,.12)}
+ 
+/* ── BAN GRID BY ROLE ── */
+.ban-role-group{margin-bottom:1.25rem}
+.ban-role-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ban-role-title{font-size:13px;font-weight:700}
+.ban-role-heroes{display:flex;flex-wrap:wrap;gap:6px}
+.ban-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 4px;border-radius:7px;background:rgba(224,85,85,.08);border:1px solid rgba(224,85,85,.2);cursor:default}
+.ban-chip img{width:20px;height:20px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.ban-chip-ph{width:20px;height:20px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3);flex-shrink:0}
+.ban-chip-name{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage);word-break:break-word;overflow-wrap:anywhere;white-space:normal}
+ 
+/* ── HERO SUBROLE GROUPING ── */
+.subrole-group{margin-bottom:1rem}
+.subrole-lbl{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text1);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px}
+ 

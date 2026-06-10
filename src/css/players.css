@@ -1,0 +1,40 @@
+/* ── PLAYERS ── */
+.players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.player-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s}
+.player-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.player-card-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.player-av{width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2);flex-shrink:0}
+.player-name{font-size:14px;font-weight:700}
+.player-btag{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.player-card-roles{display:flex;gap:5px;padding:9px 14px;flex-wrap:wrap;align-items:center}
+.role-tag{display:inline-flex;align-items:center;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)}
+.role-tag.Tank{border-color:rgba(74,158,224,.35);color:var(--tank)}
+.role-tag.Damage{border-color:rgba(224,85,85,.35);color:var(--damage)}
+.role-tag.Support{border-color:rgba(43,189,142,.35);color:var(--support)}
+.role-tag.Flex{border-color:rgba(240,160,48,.35);color:var(--accent)}
+.rank-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text2)}
+.player-card-heroes{display:flex;gap:4px;padding:10px 14px;flex-wrap:wrap}
+.mini-av{width:28px;height:28px;border-radius:5px;object-fit:cover;background:var(--bg3)}
+.mini-av-ph{width:28px;height:28px;border-radius:5px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text3)}
+.player-detail{display:none}
+.player-detail.show{display:flex;flex-direction:column;gap:0}
+ 
+/* OW icon base */
+.ow-icon{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex-shrink:0}
+ 
+/* ── PLAYER ROLE ICONS ── */
+.player-role-icon{display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0}
+.player-role-icon.flex{flex-direction:column;gap:2px}
+.player-role-icon.two{flex-direction:column;gap:3px}
+.player-role-icon.one{}
+ 
+/* ── COUNTER PICKER ── */
+#counterPickerOverlay .p-hero{position:relative}
+ 
+/* ════ ROSTER / TEAM ANALYSIS VIEW ════
+   Role selector per player row — inline in render.js
+   Shared chips + d-card padding here
+*/
+/* ── ROSTER ── */
+#view-roster .detail-grid{margin-top:0}
+ 

@@ -1,3 +1,18 @@
+
+// ════ DOT RATING ════
+function setDotRating(inputId, dotsId, val){
+  document.getElementById(inputId).value=val;
+  const dots=document.querySelectorAll(`#${dotsId} .dot-rating-dot`);
+  dots.forEach(d=>{
+    const dv=parseInt(d.dataset.v);
+    d.classList.toggle('filled',dv<=val);
+  });
+}
+function initDotRating(inputId, dotsId){
+  const val=parseInt(document.getElementById(inputId).value)||3;
+  setDotRating(inputId, dotsId, val);
+}
+
 // ════ MODALS ════
 function openHeroModal(hero){
   document.getElementById('heroModalTitle').textContent=hero?'Редактировать героя':'Добавить героя';
@@ -40,6 +55,7 @@ function openMapModal(map){
   };
   renderSelPreview();
   initCompSlots(map);
+  setTimeout(()=>initDotRating('mDif','mDifDots'),0);
   document.getElementById('mapModal').classList.remove('hidden');
 }
 

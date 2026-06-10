@@ -1,0 +1,84 @@
+/* ── MAP GRID ── */
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.map-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s;background:var(--bg2)}
+.map-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.map-card-img{width:100%;height:90px;object-fit:cover;display:block;background:var(--bg3)}
+.map-card-img-ph{width:100%;height:90px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.map-card-body{padding:9px 11px}
+.map-card-name{font-size:15px;font-weight:700;margin-bottom:5px}
+.map-card-meta{display:flex;align-items:center;gap:6px}
+.tier-badge{font-family:var(--mono);font-size:10px;font-weight:700;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tier-S{background:rgba(240,160,48,.15);color:var(--tier-s)}
+.tier-A{background:rgba(139,195,74,.15);color:var(--tier-a)}
+.tier-B{background:rgba(91,155,213,.15);color:var(--tier-b)}
+.tier-C{background:rgba(136,136,136,.1);color:var(--tier-c)}
+.tier-D{background:rgba(160,64,48,.15);color:var(--tier-d)}
+.ratings{display:flex;flex-direction:column;gap:2px;flex:1}
+.r-row{display:flex;align-items:center;gap:4px}
+.r-lbl{font-family:var(--mono);font-size:8px;color:var(--text3);width:18px}
+.dots{display:flex;gap:2px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--bg4)}
+.dot.atk{background:var(--damage)}
+.dot.def{background:var(--support)}
+.dot.dif{background:var(--accent)}
+ 
+/* ════ MAP DETAIL VIEW ════
+   .detail-banner / .detail-grid / .d-card / .d-card-title
+   .d-card padding controls card size in roster/player views
+*/
+/* ── MAP DETAIL ── */
+.map-detail{display:none}
+.map-detail.show{display:flex;flex-direction:column;gap:12px;margin-top:1rem}
+.detail-header{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.detail-banner{width:100%;height:180px;object-fit:cover;display:block;background:var(--bg3)}
+.detail-banner-ph{width:100%;height:180px;display:flex;align-items:center;justify-content:center}
+.detail-banner-ph-inner{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--text3)}
+.detail-header-body{padding:1.25rem 1.5rem}
+.back-btn{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:4px 9px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--text2);cursor:pointer;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:5px}
+.back-btn:hover{color:var(--text)}
+.detail-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.detail-name{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.detail-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.m-item{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--text2)}
+.m-val{color:var(--text);font-weight:600}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.d-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem}
+.d-card.full{grid-column:1/-1}
+.d-card-title{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+ 
+/* hero rows */
+.hero-list{display:flex;flex-direction:column;gap:5px}
+.hero-row{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:7px;background:var(--bg3)}
+.hero-row-av{width:30px;height:30px;border-radius:6px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+.hero-row-av-ph{width:30px;height:30px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--text3);flex-shrink:0}
+.hero-row-info{flex:1}
+.hero-row-name{font-size:12px;font-weight:600}
+.hero-row-sub{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:3px}
+.role-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+ 
+/* bans */
+.ban-grid{display:flex;flex-wrap:wrap;gap:6px}
+.ban-item{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 5px;border-radius:7px;background:rgba(224,85,85,.08);border:1px solid rgba(224,85,85,.2)}
+.ban-item-av{width:22px;height:22px;border-radius:4px;object-fit:cover;background:var(--bg3);flex-shrink:0}
+.ban-item-av-ph{width:22px;height:22px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3);flex-shrink:0}
+.ban-item-name{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage)}
+ 
+/* comp */
+.comp-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.comp-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)}
+.comp-card.Tank{border-top:2px solid var(--tank)}
+.comp-card.Damage{border-top:2px solid var(--damage)}
+.comp-card.Support{border-top:2px solid var(--support)}
+.comp-av{width:34px;height:34px;border-radius:5px;object-fit:cover;background:var(--bg4)}
+.comp-av-ph{width:34px;height:34px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--text3)}
+.comp-name{font-size:10px;font-weight:600;text-align:center;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ 
+.notes-text{font-size:12px;line-height:1.7;color:var(--text2)}
+.note-line{display:block;margin-bottom:3px}
+.note-line::before{content:'→ ';color:var(--text3)}
+ 
+/* ════ HEROES VIEW ════
+   .role-title   — "Tank/Damage/Support" heading font-size here
+   .h-card       — individual hero card
+   .h-card-name  — hero name (font-size here)
+*/

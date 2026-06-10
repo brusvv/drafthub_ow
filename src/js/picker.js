@@ -279,9 +279,8 @@ function openRoleHeroPicker(role){
   document.querySelectorAll('#pickerOverlay .f-btn').forEach(b=>{
     const r=b.getAttribute('onclick')||'';
     const isThisRole=r.includes(`'${role}'`)||r.includes(`"${role}"`);
-    const isAll=r.includes("'all'")||r.includes('"all"');
-    // hide other role buttons, show only All + this role
-    b.style.display=(isAll||isThisRole)?'':'none';
+    // скрываем ALL и другие роли — показываем только нужную роль
+    b.style.display=isThisRole?'':'none';
     b.classList.toggle('active',isThisRole);
   });
   renderPickerGrid();
