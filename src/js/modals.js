@@ -1,4 +1,3 @@
-
 // ════ DOT RATING ════
 function setDotRating(inputId, dotsId, val){
   document.getElementById(inputId).value=val;
@@ -69,6 +68,7 @@ function openPlayerModal(player){
   document.getElementById('pBtag').value=player?player.btag:'';
   document.getElementById('pMainRole').value=player?player.mainRole:'';
   document.getElementById('pOffRole').value=player?player.offRole:'';
+  _syncOffRoleVisibility();
   document.getElementById('pRankTank').value=player?player.rankTank:'';
   document.getElementById('pRankDmg').value=player?player.rankDmg:'';
   document.getElementById('pRankSup').value=player?player.rankSup:'';
