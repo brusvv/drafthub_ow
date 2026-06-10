@@ -240,7 +240,21 @@ function renderMapSelPreview(){
 }
  
 // ════ PLAYER ROLE CHANGE — dynamic per-role hero pool blocks ════
+// Скрывает/показывает поле Офф-роль в зависимости от выбранной основной роли
+function _syncOffRoleVisibility(){
+  const mainRole=document.getElementById('pMainRole')?.value;
+  const offGroup=document.getElementById('pOffRole')?.closest('.form-group');
+  if(!offGroup)return;
+  if(mainRole==='Flex'){
+    offGroup.style.display='none';
+    document.getElementById('pOffRole').value='';
+  } else {
+    offGroup.style.display='';
+  }
+}
+
 function onPlayerRoleChange(){
+  _syncOffRoleVisibility();
   const mainRole=document.getElementById('pMainRole').value;
   const offRole=document.getElementById('pOffRole').value;
   const block=document.getElementById('playerHeroPoolsBlock');
