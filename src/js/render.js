@@ -236,7 +236,6 @@ function renderHeroes(){
             <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
             ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
             ${hero.banned?'<div class="banned-tag">БАН</div>':''}
-            ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="h-card-counter-badge">⚠</div>':''}
             <div class="h-card-body">
               <div class="h-card-name">${hero.name}</div>
               ${topC.length?`<div class="h-counter-list">${counterChips}</div>`:''}
