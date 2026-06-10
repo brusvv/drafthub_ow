@@ -236,7 +236,7 @@ function renderHeroes(){
             <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
             ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
             ${hero.banned?'<div class="banned-tag">БАН</div>':''}
-            ${hero.counters&&hero.counters.some(c=>c.score>=8)?'<div class="h-card-counter-badge">⚠</div>':''}
+
             <div class="h-card-body">
               <div class="h-card-name">${hero.name}</div>
               ${topC.length?`<div class="h-counter-list">${counterChips}</div>`:''}
@@ -489,6 +489,15 @@ function openTierPreview(title,body,actions=''){
 function openTierMapPreview(name){
   const m=maps.find(x=>x.name===name);if(!m)return;
   const src=mapImg(m.name);const noAD=NO_ATKDEF.includes(m.type);
+  const prefHtml=(m.preferredHeroes||[]).slice(0,6).map(n=>{
+    const ps=portrait(n);const h=heroMap[n];
+    return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0">${ps?`<img src="${ps}" style="width:22px;height:22px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:22px;height:22px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${n[0]}</div>`}${h?roleIcon(h.role,11):''}<span style="font-size:11px;font-weight:600">${n}</span></div>`;
+  }).join('')||`<div style="font-size:11px;color:var(--text3)">—</div>`;
+  const bansHtml=(m.bans||[]).slice(0,6).map(n=>{
+    const ps=portrait(n);const h=heroMap[n];
+    return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0">${ps?`<img src="${ps}" style="width:22px;height:22px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:22px;height:22px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${n[0]}</div>`}${h?roleIcon(h.role,11):''}<span style="font-size:11px;font-weight:600;color:var(--damage)">${n}</span></div>`;
+  }).join('')||`<div style="font-size:11px;color:var(--text3)">—</div>`;
+  const hasPrefOrBans=(m.preferredHeroes||[]).length||(m.bans||[]).length;
   const body=`
     ${src?`<img src="${src}" class="tier-preview-banner" alt="${m.name}" onerror="this.outerHTML='<div class=tier-preview-banner-ph>${m.type}</div>'">`:`<div class="tier-preview-banner-ph">${m.type}</div>`}
     <div class="tier-preview-meta">
@@ -499,7 +508,11 @@ function openTierMapPreview(name){
     <div class="tier-preview-stats">
       ${noAD?`<div>${ICON_DIF}<span>Сложность</span>${dots5(m.dif,'dif')}</div>`:`<div>${ICON_ATK}<span>ATK</span>${dots5(m.atk,'atk')}</div><div>${ICON_DEF}<span>DEF</span>${dots5(m.def,'def')}</div>`}
     </div>
-    ${m.notes?`<div class="tier-preview-notes">${m.notes}</div>`:''}`;
+    ${hasPrefOrBans?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px"><div><div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--support);margin-bottom:4px">Предпочтительные</div>${prefHtml}</div><div><div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--damage);margin-bottom:4px">Баны</div>${bansHtml}</div></div>`:''}
+    ${m.notes?`<div class="tier-preview-notes" style="margin-top:10px">${m.notes}</div>`:''}`;
+  const actions=`<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`;
+  openTierPreview(m.name,body,actions);
+}
   const actions=`<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`;
   openTierPreview(m.name,body,actions);
 }
@@ -580,13 +593,18 @@ function esc(s){return(s||'').replace(/'/g,"\\'")}
 if(!getClientId())document.getElementById('authConfigBanner').style.display='block';
  
 // ════ HELPERS ════
+// Sort maps: primary score, secondary tier weight
+const TIER_WEIGHT={S:5,A:4,B:3,C:2,D:1};
+function sortMaps(arr){
+  return arr.slice().sort((a,b)=>b.score!==a.score?b.score-a.score:(TIER_WEIGHT[b.tier]||0)-(TIER_WEIGHT[a.tier]||0));
+}
 function computePlayerRecs(p){
-  // Only use heroes matching the player's mainRole (not off-role) for ban recommendations
-  const mainRoleHeroes=p.mainRole&&p.mainRole!=='Flex'
+  // Only main-role heroes feed bans/maps — off-role excluded
+  const roleHeroes=p.mainRole&&p.mainRole!=='Flex'
     ? [...new Set([...p.mainHeroes,...p.poolHeroes])].filter(hn=>{const h=heroMap[hn];return !h||h.role===p.mainRole;})
     : [...new Set([...p.mainHeroes,...p.poolHeroes])];
   const banScores={};
-  mainRoleHeroes.forEach(hn=>{
+  roleHeroes.forEach(hn=>{
     const h=heroMap[hn];if(!h)return;
     (h.counters||[]).forEach(c=>{
       if(!banScores[c.name])banScores[c.name]={name:c.name,score:0,count:0};
@@ -597,20 +615,18 @@ function computePlayerRecs(p){
   const mapScores={};
   maps.forEach(m=>{
     let score=0;
-    mainRoleHeroes.forEach(hn=>{
+    roleHeroes.forEach(hn=>{
       const h=heroMap[hn];if(!h)return;
       if((h.strongMaps||[]).includes(m.name))score+=p.mainHeroes.includes(hn)?2:1;
       if((h.weakMaps||[]).includes(m.name))score-=1;
     });
     if(score>0)mapScores[m.name]={name:m.name,score,type:m.type,tier:m.tier};
   });
-  const TIER_WEIGHT={S:5,A:4,B:3,C:2,D:1};
-  function sortMaps(arr){return arr.slice().sort((a,b)=>b.score!==a.score?b.score-a.score:(TIER_WEIGHT[b.tier]||0)-(TIER_WEIGHT[a.tier]||0));}
   const recMaps=sortMaps(Object.values(mapScores)).slice(0,6);
   const avoidScores={};
   maps.forEach(m=>{
     let score=0;
-    mainRoleHeroes.forEach(hn=>{
+    roleHeroes.forEach(hn=>{
       const h=heroMap[hn];if(!h)return;
       if((h.weakMaps||[]).includes(m.name))score+=p.mainHeroes.includes(hn)?2:1;
     });
@@ -684,7 +700,7 @@ function showPlayerDetail(name){
     return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${avg>=8?'rgba(224,85,85,.3)':'var(--border)'}">
       ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
       <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
-      ${h.role?`<div style="display:flex;align-items:center;gap:4px">${roleIcon(h.role,16)}${h.subrole?`<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${h.subrole}</span>`:''}</div>`:``}
+      ${h.role?`<div style="display:flex;align-items:center;gap:4px">${roleIcon(h.role,16)}${h.subrole?`<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${h.subrole}</span>`:''}</div>`:''}
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
   const recMapsHtml=recs.recMaps.length?recs.recMaps.map(m=>`
@@ -739,17 +755,18 @@ function showPlayerDetail(name){
 }
 function backToPlayers(){document.getElementById('playerDetail').classList.remove('show');document.getElementById('playerDetail').innerHTML='';renderPlayers()}
  
-let rosterRoles={};
-let rosterRoleOpen={};
-function getRosterRole(name){return rosterRoles[name]||null;}
+let rosterRoles={};   // { playerName: 'Tank'|'Damage'|'Support'|null }
+let rosterRoleOpen={}; // { playerName: bool } — whether role picker is expanded
+
+function getRosterRole(n){return rosterRoles[n]||null;}
 function setRosterRole(pname,role){rosterRoles[pname]=role;rosterRoleOpen[pname]=false;renderRoster();}
 function clearRosterRole(pname){delete rosterRoles[pname];rosterRoleOpen[pname]=true;renderRoster();}
 function getHeroesForRoster(p){
   const sel=getRosterRole(p.name);
-  const allH=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-  if(!sel)return allH;
-  return allH.filter(hn=>{const h=heroMap[hn];return h&&h.role===sel;});
+  const all=[...new Set([...p.mainHeroes,...p.poolHeroes])];
+  return sel?all.filter(hn=>{const h=heroMap[hn];return h&&h.role===sel;}):all;
 }
+
 let rosterPlayers=[];
 let openBanDetail=null;
 
@@ -779,19 +796,15 @@ function renderRoster(){
     let roleBlock='';
     if(isFlex)roleBlock=roleIcon('Flex',22);
     else if(p.mainRole)roleBlock=roleIcon(p.mainRole,18)+(hasOff?`<span style="margin-left:1px">${roleIcon(p.offRole,13)}</span>`:'');
-    const selRole=typeof getRosterRole==='function'?getRosterRole(p.name):null;
-    const isOpen=(typeof rosterRoleOpen!=='undefined'&&rosterRoleOpen[p.name])||!selRole;
-    const availRoles=['Tank','Damage','Support'].filter(r=>{
-      const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-      return pool.some(hn=>{const h=heroMap[hn];return h&&h.role===r;});
-    });
+    const selRole=getRosterRole(p.name);
+    const isOpen=rosterRoleOpen[p.name]||!selRole;
     const rc2={Tank:'var(--tank)',Damage:'var(--damage)',Support:'var(--support)'};
-    let rolePickerHtml='';
-    if(selRole&&!isOpen){
-      rolePickerHtml=`<div style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:6px;background:var(--bg4);border:1px solid var(--border2)" onclick="clearRosterRole('${esc(p.name)}')" title="Сменить роль">${roleIcon(selRole,18)}<span style="font-family:var(--mono);font-size:9px;color:${rc2[selRole]||'var(--text)'};margin-left:2px">${selRole}</span></div>`;
-    } else {
-      rolePickerHtml=`<div style="display:flex;gap:3px">${availRoles.map(r=>`<div style="cursor:pointer;padding:3px 6px;border-radius:6px;border:1px solid var(--border);opacity:${selRole&&selRole!==r?0.4:1}" onclick="setRosterRole('${esc(p.name)}','${r}')" title="${r}">${roleIcon(r,18)}</div>`).join('')}</div>`;
-    }
+    const availRoles=['Tank','Damage','Support'].filter(r=>{
+      return [...new Set([...p.mainHeroes,...p.poolHeroes])].some(hn=>{const h=heroMap[hn];return h&&h.role===r;});
+    });
+    const rolePickerHtml=selRole&&!isOpen
+      ?`<div style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:6px;background:var(--bg4);border:1px solid var(--border2)" onclick="clearRosterRole('${esc(p.name)}')" title="Сменить роль">${roleIcon(selRole,18)}<span style="font-family:var(--mono);font-size:9px;color:${rc2[selRole]};margin-left:2px">${selRole}</span></div>`
+      :`<div style="display:flex;gap:3px">${availRoles.map(r=>`<div style="cursor:pointer;padding:3px 6px;border-radius:6px;border:1px solid var(--border);opacity:${selRole&&selRole!==r?0.4:1}" onclick="setRosterRole('${esc(p.name)}','${r}')" title="${r}">${roleIcon(r,18)}</div>`).join('')}</div>`;
     return`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
       <div style="display:flex;align-items:center;gap:8px;min-width:170px">
         ${rolePickerHtml}
@@ -892,13 +905,13 @@ function renderRoster(){
 function computeRosterRecs(){
   const banMap={};
   rosterPlayers.forEach(p=>{
-    const allH=typeof getHeroesForRoster==='function'?getHeroesForRoster(p):[...new Set([...p.mainHeroes,...p.poolHeroes])];
+    const allH=getHeroesForRoster(p);
     allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.counters||[]).forEach(c=>{if(!banMap[c.name])banMap[c.name]={name:c.name,totalScore:0,count:0};banMap[c.name].totalScore+=c.score;banMap[c.name].count++;});});
   });
   const bans=Object.values(banMap).map(b=>({...b,avg:Math.round(b.totalScore/b.count)})).filter(b=>b.avg>=6&&b.count>=1).sort((a,b)=>b.count-a.count||b.avg-a.avg).slice(0,8);
   const mapScores={};
   rosterPlayers.forEach(p=>{
-    const allH=typeof getHeroesForRoster==='function'?getHeroesForRoster(p):[...new Set([...p.mainHeroes,...p.poolHeroes])];
+    const allH=getHeroesForRoster(p);
     allH.forEach(hn=>{const h=heroMap[hn];if(!h)return;(h.strongMaps||[]).forEach(mn=>{const m=maps.find(x=>x.name===mn);if(!m)return;if(!mapScores[mn])mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};mapScores[mn].score+=p.mainHeroes.includes(hn)?2:1;});(h.weakMaps||[]).forEach(mn=>{if(!mapScores[mn]){const m=maps.find(x=>x.name===mn);if(!m)return;mapScores[mn]={name:mn,score:0,type:m.type,tier:m.tier};}mapScores[mn].score-=p.mainHeroes.includes(hn)?2:1;});});
   });
   const mapArr=Object.values(mapScores);
