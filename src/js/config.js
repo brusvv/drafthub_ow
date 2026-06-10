@@ -16,7 +16,8 @@ let pickerMode='preferred';
 let pickerSelected={
   preferred:[],bans:[],comp:[],
   playerMain:[],playerPool:[],
-  playerRole_Tank:[],playerRole_Damage:[],playerRole_Support:[],playerRole_Flex:[]
+  playerRole_Tank:[],playerRole_Damage:[],playerRole_Support:[],playerRole_Flex:[],
+  banHeroes:[]
 };
 let pickerRoleFilter='all';
 let pickerMax=999;
