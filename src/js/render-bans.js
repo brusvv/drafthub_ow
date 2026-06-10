@@ -505,7 +505,7 @@ function _renderCurrentMapHeroBan(){
 
   // Какие герои недоступны (уже банили эту роль)
   const currentTeam = hb.step===0?'A':'B';
-  const bannedRoles = hb.bannedRoles[currentTeam]||[];
+  const bannedRoles = [...new Set([...(hb.bannedRoles.A||[]),...(hb.bannedRoles.B||[])])];
 
   // Рекомендации для текущего бана
   const recs = hb.step<2 ? _computeTournBanRecs(m, bannedRoles) : [];
@@ -557,9 +557,11 @@ function doTournHeroBan(mapName, heroName){
   if(!hb||hb.step>=2)return;
   const h = heroMap[heroName]; if(!h)return;
   const team = hb.step===0?'A':'B';
+  // Проверяем что роль ещё не забанена в этом матче
+  const allBannedRoles=[...(hb.bannedRoles.A||[]),...(hb.bannedRoles.B||[])];
+  if(allBannedRoles.includes(h.role)){toast(`Роль ${h.role} уже забанена на этой карте`,'err');return;}
   if(team==='A') hb.banA=heroName; else hb.banB=heroName;
-  hb.bannedRoles[team]=[...(hb.bannedRoles[team]||[])];
-  // Записываем использованную роль (для OWCS: один бан на команду, роль не ограничена)
+  hb.bannedRoles[team]=[...(hb.bannedRoles[team]||[]),h.role]; // записываем роль
   hb.step++;
   renderBans();
 }
