@@ -1,5 +1,13 @@
-let rosterRoles={};  // { playerName: 'Tank'|'Damage'|'Support'|null }
-let rosterRoleOpen={}; // { playerName: true/false } — whether picker is open
+
+// ── Store proxies ──
+Object.defineProperties(window, {
+  rosterPlayers: { get(){ return store.get('rosterPlayers'); }, set(v){ store.set('rosterPlayers',v); }, configurable:true },
+  rosterRoles:   { get(){ return store.get('rosterRoles'); },   set(v){ store.set('rosterRoles',v); },   configurable:true },
+  rosterRoleOpen:{ get(){ return store.get('rosterRoleOpen'); },set(v){ store.set('rosterRoleOpen',v); },configurable:true },
+  openBanDetail: { get(){ return store.get('openBanDetail'); }, set(v){ store.set('openBanDetail',v); }, configurable:true },
+});
+// [store] rosterRoles → store.state
+// [store] rosterRoleOpen → store.state
 
 function getRosterRole(name){
   return rosterRoles[name]||null;
@@ -36,8 +44,8 @@ function clearRosterRole(pname){
   rosterRoleOpen[pname]=true;
   renderRoster();
 }
-let rosterPlayers=[];
-let openBanDetail=null;
+// [store] rosterPlayers → store.state
+// [store] openBanDetail → store.state
 
 // Кто из наших героев уязвим к данному бан-герою
 function getBanVictims(banName){

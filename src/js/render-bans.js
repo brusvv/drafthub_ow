@@ -1,18 +1,27 @@
+
+// ── Store proxies ──
+Object.defineProperties(window, {
+  compBanVotes:  { get(){ return store.get('compBanVotes'); },  set(v){ store.set('compBanVotes',v); },  configurable:true },
+  compBanMap:    { get(){ return store.get('compBanMap'); },    set(v){ store.set('compBanMap',v); },    configurable:true },
+  banDraftMap:   { get(){ return store.get('banDraftMap'); },   set(v){ store.set('banDraftMap',v); },   configurable:true },
+  banDraftHeroes:{ get(){ return store.get('banDraftHeroes'); },set(v){ store.set('banDraftHeroes',v); },configurable:true },
+  tDraft:        { get(){ return store.get('tDraft'); },        set(v){ store.set('tDraft',v); },        configurable:true },
+});
 // ════ BANS — MODE SELECTOR ════
 
 let banMode = 'competitive'; // 'competitive' | 'tournament'
 
 // ── Competitive state ──
-let compBanVotes = {}; // { heroName: { p1: [choice1,choice2,choice3], ... } }
-let compBanMap = '';
+// [store] compBanVotes → store.state // { heroName: { p1: [choice1,choice2,choice3], ... } }
+// [store] compBanMap → store.state
 
 // ── Tournament state ──
 let tournMapPool = [];       // выбранный пул карт [{name,type}]
 let tournCurrentMap = null;  // карта текущего матча
 let tournHeroBans = { A: [], B: [] }; // забаненные герои по командам
 let tournSide = 'A';         // чья очередь банить
-let banDraftMap = '';
-let banDraftHeroes = [];
+// [store] banDraftMap → store.state
+// [store] banDraftHeroes → store.state
 
 const _confirmPickerPreBans = window.confirmPicker || (()=>{});
 window.confirmPicker = function(){
@@ -30,56 +39,6 @@ window.confirmPicker = function(){
     _confirmPickerPreBans();
   }
 };
-
-
-function resetCompBans(){
-  compBanVotes={};
-  compBanMap='';
-  banDraftHeroes=[];
-  if(pickerSelected) pickerSelected.banHeroes=[];
-  renderBans();
-}
-
-function openCompMapPopup(){
-  // Build a simple overlay with map thumbnails grouped by type
-  const types=['Control','Hybrid','Push','Escort','Flashpoint'];
-  const groupHtml = types.map(t=>{
-    const ms=maps.filter(m=>m.type===t);
-    if(!ms.length)return '';
-    return `<div style="margin-bottom:14px">
-      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:4px">${mapTypeIcon(t,12)} ${t}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${ms.map(m=>{
-          const src=mapImg(m.name);
-          const sel=compBanMap===m.name;
-          return `<div onclick="compBanMap='${esc(m.name)}';closeCompMapPopup();renderBans();" style="cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid ${sel?'var(--support)':'var(--border)'};background:${sel?'rgba(43,189,142,.08)':'var(--bg3)'};transition:all .1s;width:100px">
-            ${src?`<img src="${src}" style="width:100%;height:56px;object-fit:cover;display:block" onerror="this.style.display='none'">`:
-              `<div style="width:100%;height:56px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3)">${m.name[0]}</div>`}
-            <div style="padding:4px 6px;font-size:10px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }).join('');
-
-  const overlay=document.createElement('div');
-  overlay.id='compMapPopup';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:3000;padding:1rem';
-  overlay.onclick=e=>{if(e.target===overlay)closeCompMapPopup();};
-  overlay.innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:620px;max-height:84vh;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border)">
-      <span style="font-size:15px;font-weight:700">Выбрать карту матча</span>
-      <button style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px" onclick="closeCompMapPopup()">×</button>
-    </div>
-    <div style="overflow-y:auto;padding:1.25rem">${groupHtml}</div>
-  </div>`;
-  document.body.appendChild(overlay);
-}
-
-function closeCompMapPopup(){
-  const el=document.getElementById('compMapPopup');
-  if(el)el.remove();
-}
 
 function renderBans(){
   const bg = document.getElementById('bansGrid');
@@ -127,23 +86,18 @@ function _renderCompetitiveMode(){
   return `
     <div class="ban-panel">
       <div class="ban-panel-head">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div class="ban-panel-title">Соревновательные баны</div>
-          <button class="btn" style="font-size:10px;padding:4px 12px" onclick="resetCompBans()">↺ Сбросить</button>
-        </div>
+        <div class="ban-panel-title">Соревновательные баны</div>
         <div class="ban-panel-hint">Система голосования: 2 бана на команду, макс 2 героя одной роли. Каждый игрок выбирает 3 приоритета (7/5/3 очка)</div>
       </div>
       <div class="ban-draft-controls" style="margin-bottom:12px">
         <div class="ban-draft-ctrl">
           <div class="ban-draft-lbl">Карта матча</div>
-          <div class="ban-map-picker-btn" onclick="openCompMapPopup()" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;cursor:pointer;min-height:38px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border3)'" onmouseout="this.style.borderColor='var(--border2)'">
-            ${compBanMap ? (() => {
-              const m = maps.find(x=>x.name===compBanMap);
-              const src = m ? mapImg(m.name) : null;
-              return `${src?`<img src="${src}" style="width:48px;height:28px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'">`:''}<span style="font-size:13px;font-weight:600;flex:1">${compBanMap}</span>${m?`<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${m.type}</span>`:''}`;
-            })() : '<span style="font-size:12px;color:var(--text3)">Нажми чтобы выбрать карту...</span>'}
-            <span style="color:var(--text3);font-size:12px;margin-left:auto">▾</span>
-          </div>
+          <select class="form-select" id="compBanMapSel" onchange="compBanMap=this.value;renderBans()" style="font-size:13px">
+            <option value="">— не выбрана —</option>
+            ${maps.sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
+              `<option value="${esc(m.name)}"${compBanMap===m.name?' selected':''}>${m.name} (${m.type})</option>`
+            ).join('')}
+          </select>
         </div>
         <div class="ban-draft-ctrl">
           <div class="ban-draft-lbl">Наши герои</div>
@@ -449,13 +403,11 @@ function _renderTournMapDraft(){
       <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
         ${steps.map((s,i)=>{
           const col = s.t==='ban'?'var(--damage)':s.t==='pick'?'var(--support)':'var(--text3)';
-          const isCurrent = i===si;
-          const label = s.t==='ban'?'БАН':s.t==='pick'?'ПИК':'СТР';
-          const valText = s.done&&s.value ? (s.value.length>9?s.value.slice(0,9)+'…':s.value) : '';
-          return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:56px;padding:5px 7px;border-radius:6px;background:${s.done?col+'1a':'var(--bg3)'};border:1px solid ${isCurrent?col:'var(--border)'};opacity:${i>si?0.45:1}">
-            <span style="font-family:var(--mono);font-size:7px;text-transform:uppercase;letter-spacing:.06em;color:${s.done?col:'var(--text3)'};font-weight:700">${label}</span>
-            <span style="font-family:var(--mono);font-size:8px;color:var(--text3)">${s.team} · ${s.mode.slice(0,3)}</span>
-            ${valText?`<span style="font-size:8px;font-weight:700;color:${col};text-align:center;line-height:1.2;max-width:54px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${valText}</span>`:''}
+          const bg = s.done?col:'var(--bg3)';
+          const border = i===si?col:'var(--border)';
+          const label = s.t==='ban'?'БАН':s.t==='pick'?'ПИК':'СТОРОНА';
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:6px;background:${bg === 'var(--bg3)'?'var(--bg3)':bg+'22'};border:1px solid ${border};opacity:${i>si?0.4:1}">
+          ? _renderTournSideOptions(step)
           </div>`;
         }).join('')}
       </div>

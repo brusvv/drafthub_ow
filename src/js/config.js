@@ -1,10 +1,44 @@
 // ════ CONFIG ════
-const SCOPES='https://www.googleapis.com/auth/spreadsheets';
-const DISCOVERY='https://sheets.googleapis.com/$discovery/rest?version=v4';
+
+// ── Прокси для обратной совместимости ──────────────────────
+// Пока файлы не мигрированы на store.get()/set(),
+// эти геттеры/сеттеры перенаправляют обращения в store.
+
+// Auth (не в store — нужны до инициализации)
 let tokenClient=null,gapiInited=false,gisInited=false,gisLibReady=false;
 
-let heroes=[],maps=[],players=[],heroMap={},heroPortraits={},mapScreenshots={};
-let mapFilter='all',heroFilter='all';
+// Данные из Sheets
+Object.defineProperties(window, {
+  heroes:        { get(){ return store.get('heroes'); },        set(v){ store.set('heroes',v); },        configurable:true },
+  maps:          { get(){ return store.get('maps'); },          set(v){ store.set('maps',v); },          configurable:true },
+  players:       { get(){ return store.get('players'); },       set(v){ store.set('players',v); },       configurable:true },
+  heroMap:       { get(){ return store.get('heroMap'); },       set(v){ store.set('heroMap',v); },       configurable:true },
+  heroPortraits: { get(){ return store.get('heroPortraits'); }, set(v){ store.set('heroPortraits',v); }, configurable:true },
+  mapScreenshots:{ get(){ return store.get('mapScreenshots'); },set(v){ store.set('mapScreenshots',v); },configurable:true },
+
+  // Фильтры
+  mapFilter:     { get(){ return store.get('mapFilter'); },     set(v){ store.set('mapFilter',v); },     configurable:true },
+  heroFilter:    { get(){ return store.get('heroFilter'); },    set(v){ store.set('heroFilter',v); },    configurable:true },
+
+  // Picker
+  pickerMode:         { get(){ return store.get('pickerMode'); },         set(v){ store.set('pickerMode',v); },         configurable:true },
+  pickerSelected:     { get(){ return store.get('pickerSelected'); },     set(v){ store.set('pickerSelected',v); },     configurable:true },
+  pickerRoleFilter:   { get(){ return store.get('pickerRoleFilter'); },   set(v){ store.set('pickerRoleFilter',v); },   configurable:true },
+  pickerMax:          { get(){ return store.get('pickerMax'); },          set(v){ store.set('pickerMax',v); },          configurable:true },
+  mapPickerMode:      { get(){ return store.get('mapPickerMode'); },      set(v){ store.set('mapPickerMode',v); },      configurable:true },
+  mapPickerSelected:  { get(){ return store.get('mapPickerSelected'); },  set(v){ store.set('mapPickerSelected',v); },  configurable:true },
+  mapPickerTypeFilter:{ get(){ return store.get('mapPickerTypeFilter'); },set(v){ store.set('mapPickerTypeFilter',v); },configurable:true },
+  counterPickerRoleFilter:{ get(){ return store.get('counterPickerRoleFilter'); }, set(v){ store.set('counterPickerRoleFilter',v); }, configurable:true },
+  counterPickerSelected:  { get(){ return store.get('counterPickerSelected'); },   set(v){ store.set('counterPickerSelected',v); },   configurable:true },
+});
+// ────────────────────────────────────────────────────────────
+
+const SCOPES='https://www.googleapis.com/auth/spreadsheets';
+const DISCOVERY='https://sheets.googleapis.com/$discovery/rest?version=v4';
+// [store] let tokenClient → store.state
+
+// [store] let heroes → store.state
+// [store] let mapFilter → store.state
 
 const rc={Tank:'var(--tank)',Damage:'var(--damage)',Support:'var(--support)'};
 const ts={S:{bg:'rgba(240,160,48,.15)',c:'var(--tier-s)'},A:{bg:'rgba(139,195,74,.15)',c:'var(--tier-a)'},B:{bg:'rgba(91,155,213,.15)',c:'var(--tier-b)'},C:{bg:'rgba(136,136,136,.1)',c:'var(--tier-c)'},D:{bg:'rgba(160,64,48,.15)',c:'var(--tier-d)'}};
@@ -12,19 +46,14 @@ const ts={S:{bg:'rgba(240,160,48,.15)',c:'var(--tier-s)'},A:{bg:'rgba(139,195,74
 const NO_ATKDEF=['Control','Flashpoint'];
 
 // ════ PICKER STATE ════
-let pickerMode='preferred';
-let pickerSelected={
-  preferred:[],bans:[],comp:[],
-  playerMain:[],playerPool:[],
-  playerRole_Tank:[],playerRole_Damage:[],playerRole_Support:[],playerRole_Flex:[],
-  banHeroes:[]
-};
-let pickerRoleFilter='all';
-let pickerMax=999;
+// [store] let pickerMode → store.state
+// [store] pickerSelected → store.state (extended keys below in INITIAL_STATE)
+// [store] let pickerRoleFilter → store.state
+// [store] let pickerMax → store.state
 
-let mapPickerMode='heroStrong';
-let mapPickerSelected={heroStrong:[],heroWeak:[]};
-let mapPickerTypeFilter='all';
+// [store] let mapPickerMode → store.state
+// [store] let mapPickerSelected → store.state
+// [store] let mapPickerTypeFilter → store.state
 
 // ════ WIKI ICONS (hardcoded URLs — no API needed) ════
 const BASE='https://static.wikia.nocookie.net/overwatch_gamepedia/images';

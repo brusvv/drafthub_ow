@@ -1,10 +1,20 @@
+
+// ── Store proxies ──
+Object.defineProperties(window, {
+  tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
+  tierOrderHeroes:  { get(){ return store.get('tierOrderHeroes'); },  set(v){ store.set('tierOrderHeroes',v); },  configurable:true },
+  tierMapTypeFilter:{ get(){ return store.get('tierMapTypeFilter'); }, set(v){ store.set('tierMapTypeFilter',v); },configurable:true },
+  tierHeroRoleFilter:{ get(){ return store.get('tierHeroRoleFilter'); },set(v){ store.set('tierHeroRoleFilter',v); },configurable:true },
+  dragItem: { get(){ return store.get('dragItem'); }, set(v){ store.set('dragItem',v); }, configurable:true },
+  dragType: { get(){ return store.get('dragType'); }, set(v){ store.set('dragType',v); }, configurable:true },
+});
 // ════ TIER LIST — D&D ════
 
 // Состояние тирлистов (сохраняется локально)
-let tierOrderMaps={S:[],A:[],B:[],C:[],D:[]};
-let tierOrderHeroes={S:[],A:[],B:[],C:[],D:[]};
-let tierMapTypeFilter='all';
-let tierHeroRoleFilter='all';
+// [store] tierOrderMaps → store.state
+// [store] tierOrderHeroes → store.state
+// [store] tierMapTypeFilter → store.state
+// [store] tierHeroRoleFilter → store.state
 
 function switchTierTab(tab,btn){
   document.querySelectorAll('.tier-tab').forEach(b=>b.classList.remove('active'));
@@ -97,7 +107,7 @@ async function saveTierHeroesSheets(){
 }
 
 // drag state
-let dragItem=null,dragType=null;
+// [store] dragItem/dragType → store.state
 
 function renderTierMaps(){
   initTierMaps();

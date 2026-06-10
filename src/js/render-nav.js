@@ -1,3 +1,8 @@
+
+// ── Store proxies ──
+Object.defineProperties(window, {
+  toastT: { get(){ return store.get('toastT'); }, set(v){ store.set('toastT',v); }, configurable:true },
+});
 // ════ NAV ════
 function showView(v,btn){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
@@ -9,7 +14,7 @@ function showView(v,btn){
  
 function showLoading(id){const el=document.getElementById(id);if(el)el.innerHTML='<div class="loading-state"><div class="spinner"></div><br>Загрузка...</div>'}
 function showError(id,msg){const el=document.getElementById(id);if(el)el.innerHTML=`<div class="error-state">⚠ ${msg}</div>`}
-let toastT;
+// [store] toastT → store.state
 function toast(msg,type='ok'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000)}
 function esc(s){return(s||'').replace(/'/g,"\\'")}
  

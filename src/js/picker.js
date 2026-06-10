@@ -1,3 +1,9 @@
+
+// ── Store proxies ──
+Object.defineProperties(window, {
+  compSlots:    { get(){ return store.get('compSlots'); },    set(v){ store.set('compSlots',v); },    configurable:true },
+  activeSlotIdx:{ get(){ return store.get('activeSlotIdx'); },set(v){ store.set('activeSlotIdx',v); },configurable:true },
+});
 // ════ PICKER ════
 function openPicker(mode,max=999){
   pickerMode=mode;pickerMax=max;
@@ -93,8 +99,8 @@ function renderRolePoolPreviews(){
 }
  
 // ════ COUNTER PICKER ════
-let counterPickerRoleFilter='all';
-let counterPickerSelected=[];
+// [store] counterPickerRoleFilter → store.state
+// [store] counterPickerSelected → store.state
  
 function openCounterPicker(){
   counterPickerRoleFilter='all';
@@ -303,14 +309,8 @@ function openRoleHeroPicker(role){
  
 // ════ COMP SLOTS ════
 // compSlots[0] = {hero, role:'Tank'}, [1],[2] = Damage, [3],[4] = Support
-let compSlots=[
-  {hero:null,role:'Tank'},
-  {hero:null,role:'Damage'},
-  {hero:null,role:'Damage'},
-  {hero:null,role:'Support'},
-  {hero:null,role:'Support'}
-];
-let activeSlotIdx=null;
+// [store] compSlots → store.state
+// [store] activeSlotIdx → store.state
  
 function initCompSlots(map){
   compSlots=[
