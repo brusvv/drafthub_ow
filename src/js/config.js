@@ -1,7 +1,7 @@
 // ════ CONFIG ════
 const SCOPES='https://www.googleapis.com/auth/spreadsheets';
 const DISCOVERY='https://sheets.googleapis.com/$discovery/rest?version=v4';
-let tokenClient=null,gapiInited=false,gisInited=false;
+let tokenClient=null,gapiInited=false,gisInited=false,gisLibReady=false;
 
 let heroes=[],maps=[],players=[],heroMap={},heroPortraits={},mapScreenshots={};
 let mapFilter='all',heroFilter='all';
