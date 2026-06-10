@@ -45,7 +45,7 @@ echo '<div class="toast" id="toast"></div>' >> "$OUT"
 echo '<script>'                             >> "$OUT"
 
 # JS-модули (порядок важен)
-for module in config auth sheets write picker modals; do
+for module in store config auth sheets write picker modals; do
   echo ""                          >> "$OUT"
   echo "// ── ${module}.js ──"    >> "$OUT"
   cat "$SRC/js/${module}.js"       >> "$OUT"
