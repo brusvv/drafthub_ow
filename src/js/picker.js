@@ -1,8 +1,3 @@
-// ── Store proxies ──
-Object.defineProperties(window, {
-  compSlots:    { get(){ return store.get('compSlots'); },    set(v){ store.set('compSlots',v); },    configurable:true },
-  activeSlotIdx:{ get(){ return store.get('activeSlotIdx'); },set(v){ store.set('activeSlotIdx',v); },configurable:true },
-});
 // ════ PICKER ════
 function openPicker(mode,max=999){
   pickerMode=mode;pickerMax=max;
@@ -100,8 +95,8 @@ function renderRolePoolPreviews(){
 }
  
 // ════ COUNTER PICKER ════
-// [store] counterPickerRoleFilter → store.state
-// [store] counterPickerSelected → store.state
+let counterPickerRoleFilter='all';
+let counterPickerSelected=[];
  
 function openCounterPicker(){
   counterPickerRoleFilter='all';
@@ -214,11 +209,9 @@ function mapPickerFilter(type,btn){
 }
  
 function toggleMapPicker(name){
-  const obj=store.get('mapPickerSelected');
-  const sel=obj[mapPickerMode];
+  const sel=mapPickerSelected[mapPickerMode];
   const idx=sel.indexOf(name);
   if(idx>=0)sel.splice(idx,1);else sel.push(name);
-  store.set('mapPickerSelected',obj);
   renderMapPickerGrid();
 }
  
@@ -312,8 +305,14 @@ function openRoleHeroPicker(role){
  
 // ════ COMP SLOTS ════
 // compSlots[0] = {hero, role:'Tank'}, [1],[2] = Damage, [3],[4] = Support
-// [store] compSlots → store.state
-// [store] activeSlotIdx → store.state
+let compSlots=[
+  {hero:null,role:'Tank'},
+  {hero:null,role:'Damage'},
+  {hero:null,role:'Damage'},
+  {hero:null,role:'Support'},
+  {hero:null,role:'Support'}
+];
+let activeSlotIdx=null;
  
 function initCompSlots(map){
   compSlots=[
