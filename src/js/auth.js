@@ -1,18 +1,96 @@
 // ════ AUTH ════
-function gapiLoaded(){gapi.load('client',async()=>{await gapi.client.init({discoveryDocs:[DISCOVERY]});gapiInited=true;maybeInit()})}
-function gisLoaded(){if(!getClientId())return;tokenClient=google.accounts.oauth2.initTokenClient({client_id:getClientId(),scope:SCOPES,callback:resp=>{if(resp.error){toast('Ошибка авторизации','err');return};gapi.client.setToken({access_token:resp.access_token});showApp();loadAllData()}});gisInited=true;maybeInit()}
-function maybeInit(){if(!gapiInited||!gisInited)return}
-function signIn(){if(!getClientId()){document.getElementById('authConfigBanner').style.display='block';return};if(!gisInited){toast('Загрузка...','err');return};tokenClient.requestAccessToken({prompt:'consent'})}
-function signOut(){gapi.client.setToken(null);document.getElementById('mainApp').style.display='none';document.getElementById('authScreen').style.display='flex'}
-function showApp(){document.getElementById('authScreen').style.display='none';document.getElementById('mainApp').style.display='block';if(!getSheetId())document.getElementById('sheetConfigBanner').style.display='block'}
 
-// ════ CONFIG ════
+// Единый колбэк для токена — создаётся при initGis()
+function _makeTokenCallback(){
+  return resp=>{
+    if(resp.error){toast('Ошибка авторизации','err');return}
+    gapi.client.setToken({access_token:resp.access_token});
+    showApp();
+    loadAllData();
+  };
+}
+
+function gapiLoaded(){
+  gapi.load('client',async()=>{
+    await gapi.client.init({discoveryDocs:[DISCOVERY]});
+    gapiInited=true;
+    maybeInit();
+  });
+}
+
+// Вызывается браузером один раз при загрузке GIS SDK.
+// Если Client ID уже есть — инициализируем tokenClient сразу.
+// Если нет — просто фиксируем что SDK загружен; инициализация
+// произойдёт позже через initGis() после сохранения Client ID.
+function gisLoaded(){
+  gisLibReady=true;          // SDK загружен — запомним это
+  if(getClientId()) initGis(); // Client ID уже был → инициализируем
+}
+
+// Инициализирует tokenClient с текущим Client ID.
+// Можно вызывать несколько раз (например после saveClientId).
+function initGis(){
+  if(!gisLibReady) return;
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:getClientId(),
+    scope:SCOPES,
+    callback:_makeTokenCallback()
+  });
+  gisInited=true;
+  maybeInit();
+}
+
+function maybeInit(){if(!gapiInited||!gisInited)return}
+
+function signIn(){
+  if(!getClientId()){
+    document.getElementById('authConfigBanner').style.display='block';
+    return;
+  }
+  if(!gisInited){
+    // GIS SDK мог успеть загрузиться, но tokenClient не создан —
+    // попробуем инициализировать прямо сейчас
+    if(gisLibReady){initGis();}
+    else{toast('Загрузка Google SDK...','err');return}
+  }
+  tokenClient.requestAccessToken({prompt:'consent'});
+}
+
+function signOut(){
+  gapi.client.setToken(null);
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+}
+
+function showApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  if(!getSheetId()) document.getElementById('sheetConfigBanner').style.display='block';
+}
+
+// ════ LOCAL CONFIG ════
 function getClientId(){return localStorage.getItem('draft_client_id')||''}
 function getSheetId(){return localStorage.getItem('draft_sheet_id')||''}
-function saveClientId(){const v=document.getElementById('clientIdInput').value.trim();if(!v)return;localStorage.setItem('draft_client_id',v);document.getElementById('authConfigBanner').style.display='none';location.reload()}
-function saveSheetId(){const v=document.getElementById('sheetIdInput').value.trim();if(!v)return;localStorage.setItem('draft_sheet_id',v);document.getElementById('sheetConfigBanner').style.display='none';loadAllData()}
 
-// ════ SHEETS ════
+function saveClientId(){
+  const v=document.getElementById('clientIdInput').value.trim();
+  if(!v)return;
+  localStorage.setItem('draft_client_id',v);
+  document.getElementById('authConfigBanner').style.display='none';
+  // Инициализируем GIS с новым Client ID без перезагрузки страницы.
+  // Если GIS SDK ещё не загрузился — gisLoaded() вызовет initGis() сам.
+  initGis();
+}
+
+function saveSheetId(){
+  const v=document.getElementById('sheetIdInput').value.trim();
+  if(!v)return;
+  localStorage.setItem('draft_sheet_id',v);
+  document.getElementById('sheetConfigBanner').style.display='none';
+  loadAllData();
+}
+
+// ════ SHEETS API ════
 const SID=()=>getSheetId();
 async function sGet(r){const res=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SID(),range:r});return res.result.values||[]}
 async function sUp(r,v){await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:SID(),range:r,valueInputOption:'USER_ENTERED',resource:{values:v}})}
