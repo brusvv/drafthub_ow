@@ -23,7 +23,12 @@ cat > "$OUT" <<'HEADER'
 <style>
 HEADER
 
-cat "$SRC/style.css"                  >> "$OUT"
+# CSS — порядок важен: base первым
+for css in base maps heroes bans modals players subroles tiers; do
+  echo "" >> "$OUT"
+  echo "/* ── ${css}.css ── */" >> "$OUT"
+  cat "$SRC/css/${css}.css" >> "$OUT"
+done
 
 cat >> "$OUT" <<'AFTER_CSS'
 </style>
@@ -33,17 +38,24 @@ AFTER_CSS
 
 # HTML-части
 for part in auth main-app modal-hero modal-map modal-player picker; do
-  cat "$SRC/html/${part}.html"        >> "$OUT"
+  cat "$SRC/html/${part}.html" >> "$OUT"
 done
 
 echo '<div class="toast" id="toast"></div>' >> "$OUT"
-echo '<script>'                            >> "$OUT"
+echo '<script>'                             >> "$OUT"
 
-# JS-модули (порядок важен: config первым, render последним)
-for module in config auth sheets write picker modals render; do
-  echo ""                                  >> "$OUT"
-  echo "// ── ${module}.js ──"             >> "$OUT"
-  cat "$SRC/js/${module}.js"               >> "$OUT"
+# JS-модули (порядок важен)
+for module in config auth sheets write picker modals; do
+  echo ""                          >> "$OUT"
+  echo "// ── ${module}.js ──"    >> "$OUT"
+  cat "$SRC/js/${module}.js"       >> "$OUT"
+done
+
+# Render — разбит по вкладкам
+for module in render-utils render-maps render-heroes render-bans render-tiers render-players render-roster render-nav; do
+  echo ""                          >> "$OUT"
+  echo "// ── ${module}.js ──"    >> "$OUT"
+  cat "$SRC/js/${module}.js"       >> "$OUT"
 done
 
 cat >> "$OUT" <<'FOOTER'
