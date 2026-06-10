@@ -1,7 +1,7 @@
 /* ════ BASE RESET & CSS VARIABLES ════
-   Edit --tank/--damage/--support to change role colors
-   Edit --bg/--bg2/--bg3/--bg4/--bg5 to change background shades
-   Edit --tier-s/a/b/c/d for tier badge colors
+   --tank/--damage/--support = role colors
+   --bg … --bg5 = background shades (darkest → lightest)
+   --tier-s/a/b/c/d = tier badge colors
 */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -65,10 +65,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .view{display:none}.view.active{display:block}
  
 /* ════ MAPS VIEW ════
-   .map-grid           — CSS grid container
-   .map-card           — single map card (thumbnail + name + badges)
-   .tier-badge         — S/A/B/C/D tier letter badge
-   .dots / .dot        — ATK/DEF/difficulty dot row
+   .map-grid / .map-card / .tier-badge / .dots / .dot
 */
 /* ── MAP GRID ── */
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
@@ -95,11 +92,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .dot.dif{background:var(--accent)}
  
 /* ════ MAP DETAIL VIEW ════
-   .map-detail         — full detail panel
-   .detail-banner      — wide banner image
-   .detail-grid        — 2-col grid layout for info cards
-   .d-card             — info card (heroes / bans / comp / notes)
-   .d-card-title       — card section heading
+   .detail-banner / .detail-grid / .d-card / .d-card-title
+   .d-card padding controls card size in roster/player views
 */
 /* ── MAP DETAIL ── */
 .map-detail{display:none}
@@ -117,7 +111,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .m-item{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--text2)}
 .m-val{color:var(--text);font-weight:600}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.d-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.125rem}
+.d-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem}
 .d-card.full{grid-column:1/-1}
 .d-card-title{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
  
@@ -153,11 +147,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .note-line::before{content:'→ ';color:var(--text3)}
  
 /* ════ HEROES VIEW ════
-   .role-title         — "Tank / Damage / Support" heading (font-size here)
-   .h-card             — individual hero card
-   .h-card-name        — hero name text inside card (font-size here)
-   .h-card-portrait    — hero portrait image
-   .h-card-body        — card content below portrait
+   .role-title   — "Tank/Damage/Support" heading font-size here
+   .h-card       — individual hero card
+   .h-card-name  — hero name (font-size here)
 */
 /* ── HERO POOL ── */
 .role-section{margin-bottom:2rem}
@@ -179,10 +171,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .banned-tag{position:absolute;top:5px;right:5px;font-family:var(--mono);font-size:8px;text-transform:uppercase;background:var(--damage);color:#fff;padding:2px 5px;border-radius:3px}
  
 /* ════ TIER LIST ════
-   .tier-row           — one full tier row (S/A/B/C/D)
-   .tier-lbl           — colored tier letter on the left
-   .tier-pill          — map name draggable pill
-   .tier-hero-pill     — hero portrait+name draggable pill
+   .tier-row / .tier-lbl / .tier-pill / .tier-hero-pill
 */
 /* ── TIER LIST ── */
 .tier-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
@@ -261,12 +250,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 }
  
 /* ════ PLAYERS VIEW ════
-   .player-card        — compact player grid card
-   .player-av          — avatar circle (initials)
-   .player-name        — player name
-   .player-btag        — Battle.net tag subtitle
-   .mini-av            — small hero portrait icon
-   .role-tag           — colored role label pill
+   .player-card / .player-av / .player-name / .player-btag
+   .mini-av / .role-tag
 */
 /* ── PLAYERS ── */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
@@ -302,9 +287,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 #counterPickerOverlay .p-hero{position:relative}
  
 /* ════ ROSTER / TEAM ANALYSIS VIEW ════
-   Player rows + recommended bans + map suggestions.
-   Role selector per player: click role icon to filter heroes.
-   Most layout is inline in render.js; shared chips below.
+   Role selector per player row — inline in render.js
+   Shared chips + d-card padding here
 */
 /* ── ROSTER ── */
 #view-roster .detail-grid{margin-top:0}
@@ -351,11 +335,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .tier-hero-pill img{width:22px;height:22px;border-radius:4px;object-fit:cover;flex-shrink:0}
 .tier-hero-pill-ph{width:22px;height:22px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--text3);flex-shrink:0}
  
-/* ════ BANS VIEW — chips grouped by role ════
-   .ban-chip           — single hero chip (portrait + name)
-   .ban-chip-name      — name text (word-break prevents "Soldier: 76" splitting)
-   .ban-chip-ph        — placeholder avatar when no portrait
-   .ban-role-group     — one role section block
+/* ════ BANS VIEW ════
+   .ban-chip / .ban-chip-name (word-break prevents Soldier:76 splitting)
 */
 /* ── BAN GRID BY ROLE ── */
 .ban-role-group{margin-bottom:1.25rem}
@@ -391,9 +372,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .hero-sort-note{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:14px}
 
 /* ════ HERO CARD COUNTER ICONS ════
-   .h-counter-icon     — wrapper; change width/height to resize icons
-   .h-counter-score    — score badge overlaid bottom-right
-   .h-counter-list     — flex row of counter icons
+   .h-counter-icon — change width/height to resize
+   .h-counter-score — overlaid score badge
 */
 /* ── HERO CARD COUNTERS ── */
 .h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
@@ -403,12 +383,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
 
 /* ════ TIER PREVIEW POPUP ════
-   .tier-preview-overlay  — full-screen backdrop
-   .tier-preview-box      — the floating card
-   .tier-preview-banner   — map/hero screenshot at top
-   .tier-preview-meta     — tier badge, type, priority row
-   .tier-preview-stats    — ATK/DEF or difficulty dots
-   .tier-preview-notes    — notes paragraph
+   .tier-preview-overlay / .tier-preview-box / .tier-preview-banner
+   .tier-preview-meta / .tier-preview-stats / .tier-preview-notes
 */
 /* ── TIER PREVIEW POPUP ── */
 .tier-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:1rem}
