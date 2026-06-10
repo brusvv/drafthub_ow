@@ -94,7 +94,7 @@ function showPlayerDetail(name){
       <div style="display:flex;flex-wrap:wrap;gap:5px">${byRole[r].map(({name:n,isMain})=>{
         const src=portrait(n);const border=isMain?'var(--accent)':'var(--border)';
         return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-          ${src?`<img src="${src}" title="${n}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;border:2px solid ${border}" onerror="this.outerHTML='<div style=width:36px;height:36px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;border:2px solid ${border}>${n[0]}</div>'">`:`<div style="width:36px;height:36px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text3);border:2px solid ${border}">${n[0]}</div>`}
+          ${src?`<img src="${src}" title="${n}" style="width:44px;height:44px;border-radius:7px;object-fit:cover;border:2px solid ${border}" onerror="this.outerHTML='<div style=width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;border:2px solid ${border}>${n[0]}</div>'">`:`<div style="width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text3);border:2px solid ${border}">${n[0]}</div>`}
           <div style="width:5px;height:5px;border-radius:50%;background:${isMain?'var(--accent)':'transparent'}"></div>
         </div>`;
       }).join('')}</div>
@@ -103,11 +103,10 @@ function showPlayerDetail(name){
   const recBansHtml=recs.recBans.length?recs.recBans.map(b=>{
     const src=portrait(b.name);const h=heroMap[b.name]||{};
     const avg=Math.round(b.score/b.count);const color=avg>=8?'var(--damage)':avg>=6?'var(--accent)':'var(--text3)';
-    return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid ${avg>=8?'rgba(224,85,85,.3)':'var(--border)'}">
-      ${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px">${b.name[0]}</div>`}
-      <span style="font-size:12px;font-weight:600;flex:1">${b.name}</span>
-      ${h.role?`<div style="display:flex;align-items:center;gap:2px">${roleIcon(h.role,13)}${subroleIcon(h.role,h.subrole,13)}</div>`:""}
-      <div style="display:flex;align-items:center;gap:3px">${h.role?roleIcon(h.role,14):''}${h.subrole?`<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${h.subrole}</span>`:''}</div>
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg3);border:1px solid ${avg>=8?'rgba(224,85,85,.3)':'var(--border)'}">
+      ${src?`<img src="${src}" style="width:36px;height:36px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:36px;height:36px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${b.name[0]}</div>`}
+      <span style="font-size:13px;font-weight:700;flex:1">${b.name}</span>
+      ${h.role?`<div style="display:flex;align-items:center;gap:4px">${roleIcon(h.role,16)}${subroleIcon(h.role,h.subrole,16)}<span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${h.subrole||''}</span></div>`:''}
     </div>`;
   }).join(''):'<div class="empty">Нет данных</div>';
   const recMapsHtml=recs.recMaps.length?recs.recMaps.map(m=>`
@@ -125,12 +124,12 @@ function showPlayerDetail(name){
       <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--damage)">−${Math.abs(m.score)}</span>
     </div>`).join(''):'';
   detail.innerHTML=`
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem 1.75rem">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:14px">
-          <div style="width:52px;height:52px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--text2);border:2px solid var(--border2)">${p.name[0].toUpperCase()}</div>
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:var(--text2);border:2px solid var(--border2)">${p.name[0].toUpperCase()}</div>
           <div>
-            <div style="font-size:20px;font-weight:800;margin-bottom:3px">${p.name}</div>
+            <div style="font-size:22px;font-weight:800;margin-bottom:4px">${p.name}</div>
             <div style="font-family:var(--mono);font-size:11px;color:var(--text3)">${p.btag||'Battle.net tag не указан'}</div>
             <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
               ${p.mainRole?`<span class="role-tag ${p.mainRole}">Основная: ${p.mainRole}</span>`:''}
@@ -162,4 +161,3 @@ function showPlayerDetail(name){
     <button class="back-btn" onclick="backToPlayers()" style="margin-top:10px">← Назад к игрокам</button>`;
 }
 function backToPlayers(){document.getElementById('playerDetail').classList.remove('show');document.getElementById('playerDetail').innerHTML='';renderPlayers()}
- 
