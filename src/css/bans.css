@@ -123,3 +123,21 @@
 .tourn-map-chip:hover{border-color:var(--border3)}
 .tourn-map-chip.sel{border-color:var(--support);background:rgba(43,189,142,.08)}
 .tourn-map-check{position:absolute;top:4px;right:4px;background:var(--support);color:#000;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800}
+
+/* ── TOURNAMENT FORMAT / SIDE PICK ── */
+.tourn-format-block{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);flex-wrap:wrap}
+.tourn-format-picker{display:flex;gap:5px;flex-wrap:wrap}
+.tourn-format-btn{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.06em;padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text3);cursor:pointer;transition:all .15s}
+.tourn-format-btn:hover{border-color:var(--border3);color:var(--text2)}
+.tourn-format-btn.active{border-color:var(--support);background:rgba(43,189,142,.12);color:var(--support);box-shadow:0 0 0 1px rgba(43,189,142,.18) inset}
+.tourn-side-options{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.tourn-side-hint{font-family:var(--mono);font-size:10px;line-height:1.5;color:var(--text3)}
+.tourn-side-buttons{display:flex;gap:8px;flex-wrap:wrap}
+
+@media (max-width:640px){
+  .ban-mode-switcher{flex-direction:column}
+  .ban-mode-btn{width:100%}
+  .tourn-format-block{align-items:flex-start;flex-direction:column}
+  .tourn-map-chip{min-width:72px;max-width:88px;padding:4px 6px}
+  .tourn-map-chip img{width:72px;height:40px}
+}
