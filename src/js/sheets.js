@@ -1,3 +1,12 @@
+// ════ SHEETS API ════
+const SID=()=>getSheetId();
+async function sGet(r){const res=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SID(),range:r});return res.result.values||[]}
+async function sUp(r,v){await gapi.client.sheets.spreadsheets.values.update({spreadsheetId:SID(),range:r,valueInputOption:'USER_ENTERED',resource:{values:v}})}
+async function sApp(s,v){await gapi.client.sheets.spreadsheets.values.append({spreadsheetId:SID(),range:s+'!A1',valueInputOption:'USER_ENTERED',insertDataOption:'INSERT_ROWS',resource:{values:v}})}
+async function sClear(r){await gapi.client.sheets.spreadsheets.values.clear({spreadsheetId:SID(),range:r})}
+async function sDelRow(gid,idx){await gapi.client.sheets.spreadsheets.batchUpdate({spreadsheetId:SID(),resource:{requests:[{deleteDimension:{range:{sheetId:gid,dimension:'ROWS',startIndex:idx,endIndex:idx+1}}}]}})}
+async function sGid(name){const m=await gapi.client.sheets.spreadsheets.get({spreadsheetId:SID()});const s=(m.result.sheets||[]).find(s=>s.properties.title===name);return s?s.properties.sheetId:null}
+
 // ════ LOAD ════
 async function loadAllData(){
   if(!SID())return;
