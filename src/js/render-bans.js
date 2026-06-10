@@ -1,4 +1,3 @@
-
 // ── Store proxies ──
 Object.defineProperties(window, {
   compBanVotes:  { get(){ return store.get('compBanVotes'); },  set(v){ store.set('compBanVotes',v); },  configurable:true },
@@ -26,7 +25,8 @@ let tournSide = 'A';         // чья очередь банить
 const _confirmPickerPreBans = window.confirmPicker || (()=>{});
 window.confirmPicker = function(){
   if(pickerMode === 'banHeroes'){
-    banDraftHeroes = [...(pickerSelected.banHeroes || [])];
+    const _ps=store.get('pickerSelected');
+    store.set('banDraftHeroes', [...(_ps.banHeroes || [])]);
     closePicker();
     _refreshBanAssist();
   } else if(pickerMode === 'tournMapPool'){
@@ -151,19 +151,19 @@ function _getCompPriority(name){
 }
 
 function toggleCompBan(name){
-  const vals = Object.values(compBanVotes);
-  const existing = compBanVotes[name];
+  let votes = {...store.get('compBanVotes')};
+  const existing = votes[name];
   if(existing){
-    delete compBanVotes[name];
-    // Сдвигаем приоритеты
-    const reordered = Object.entries(compBanVotes).sort((a,b)=>a[1]-b[1]);
-    compBanVotes = {};
-    reordered.forEach(([n,p],i)=>{ compBanVotes[n]=i+1; });
+    delete votes[name];
+    const reordered = Object.entries(votes).sort((a,b)=>a[1]-b[1]);
+    votes = {};
+    reordered.forEach(([n,p],i)=>{ votes[n]=i+1; });
   } else {
-    const count = Object.keys(compBanVotes).length;
+    const count = Object.keys(votes).length;
     if(count >= 3){ toast('Максимум 3 приоритета','err'); return; }
-    compBanVotes[name] = count + 1;
+    votes[name] = count + 1;
   }
+  store.set('compBanVotes', votes);
   renderBans();
 }
 
@@ -699,8 +699,11 @@ function _buildHeroChips(){
 }
 
 function removeBanDraftHero(name){
-  banDraftHeroes=banDraftHeroes.filter(n=>n!==name);
-  pickerSelected.banHeroes=[...banDraftHeroes];
+  const heroes=store.get('banDraftHeroes').filter(n=>n!==name);
+  store.set('banDraftHeroes', heroes);
+  const ps=store.get('pickerSelected');
+  ps.banHeroes=[...heroes];
+  store.set('pickerSelected', ps);
   renderBans();
 }
 
