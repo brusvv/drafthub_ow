@@ -38,3 +38,224 @@
 /* ── ROSTER ── */
 #view-roster .detail-grid{margin-top:0}
  
+
+/* ════ EMPTY STATES ════
+   Используются в render-players.js и render-roster.js
+   когда нет данных для отображения.
+   .empty-icon  — большая эмодзи/иконка
+   .empty-title — заголовок состояния
+   .empty-desc  — пояснительный текст + CTA
+*/
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  gap: .5rem;
+}
+.empty-icon  { font-size: 2.5rem; line-height: 1; margin-bottom: .25rem; }
+.empty-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.empty-desc  { font-size: 13px; color: var(--text3); line-height: 1.6; max-width: 320px; }
+
+/* ════════════════════════════════════════════════════════════
+   ROSTER — Состав команды
+   Все классы для render-roster.js.
+   Inline style в JS остаётся только для динамических значений:
+     rc[role] (цвет роли), transform:rotate, border-color бана.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Player list ─────────────────────────────────────────── */
+.roster-player-list  { display:flex; flex-direction:column; gap:6px; margin-bottom:1.5rem; }
+
+.roster-player-row   {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:10px 14px;
+}
+.roster-player-info  { display:flex; align-items:center; gap:10px; min-width:150px; }
+.roster-player-name  { font-weight:700; font-size:16px; }
+
+/* Role picker */
+.roster-role-picker  { display:flex; gap:4px; }
+.roster-role-btn     {
+  cursor:pointer; padding:3px 6px; border-radius:6px;
+  background:transparent; border:1px solid transparent; transition:background .1s;
+}
+.roster-role-btn.active { background:var(--bg4); border-color:var(--border2); }
+.roster-role-btn:hover  { background:var(--bg4); }
+
+.roster-role-selected {
+  display:flex; align-items:center; gap:3px; cursor:pointer;
+  padding:3px 7px; border-radius:6px;
+  background:var(--bg4); border:1px solid var(--border2);
+  transition:border-color .15s;
+}
+.roster-role-selected:hover { border-color:var(--border3); }
+.roster-role-label   { font-family:var(--mono); font-size:9px; margin-left:2px; }
+
+/* Hero strip */
+.roster-hero-strip   { display:flex; gap:5px; flex:1; justify-content:center; }
+.roster-hero-av      { width:38px; height:38px; border-radius:6px; object-fit:cover; flex-shrink:0; }
+.roster-hero-av-ph   {
+  background:var(--bg4); display:flex; align-items:center;
+  justify-content:center; font-size:12px; font-weight:700;
+}
+
+/* Remove button */
+.roster-remove-btn   { padding:4px 10px; font-size:11px; flex-shrink:0; }
+
+/* ── Ban list ─────────────────────────────────────────────── */
+.roster-ban-list     { display:flex; flex-direction:column; gap:5px; }
+
+.roster-ban-card     {
+  border-radius:8px; background:var(--bg3);
+  border:1px solid rgba(224,85,85,.35); /* overridden inline for high/med */
+  transition:border-color .15s;
+}
+.roster-ban-header   {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; cursor:pointer;
+}
+.roster-ban-portrait {
+  width:40px; height:40px; border-radius:6px;
+  object-fit:cover; flex-shrink:0;
+}
+.roster-ban-portrait-ph {
+  background:var(--bg4); display:flex; align-items:center;
+  justify-content:center; font-weight:800;
+}
+.roster-ban-body     { flex:1; min-width:0; }
+.roster-ban-name     { font-size:14px; font-weight:700; }
+.roster-ban-subrole  { display:flex; align-items:center; gap:4px; margin-top:2px; }
+.roster-ban-subrole-text { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.roster-ban-count    { font-family:var(--mono); font-size:10px; flex-shrink:0; }
+.roster-ban-arrow    {
+  font-size:12px; color:var(--text3); flex-shrink:0;
+  transition:transform .15s; display:inline-block;
+}
+.roster-ban-detail   { padding:0 10px 10px; }
+.roster-ban-detail-inner  { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+.roster-ban-detail-label  {
+  font-family:var(--mono); font-size:9px; color:var(--text3);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;
+}
+.roster-ban-detail-empty  {
+  margin-top:8px; padding-top:8px; border-top:1px solid var(--border);
+  font-size:11px; color:var(--text3);
+}
+
+/* Victim chips inside ban detail */
+.roster-victim-row    { display:flex; align-items:center; gap:8px; padding:5px 0; }
+.roster-victim-player { font-size:11px; font-weight:600; color:var(--text2); min-width:60px; }
+.roster-victim-heroes { display:flex; gap:5px; flex-wrap:wrap; }
+.roster-victim-chip   { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.roster-victim-av     {
+  width:32px; height:32px; border-radius:5px;
+  object-fit:cover; border:2px solid var(--border);
+}
+.roster-victim-av-ph  {
+  background:var(--bg4); display:flex; align-items:center;
+  justify-content:center; font-weight:800; font-size:11px;
+}
+.roster-victim-score  { font-family:var(--mono); font-size:9px; font-weight:700; }
+
+/* ── Map list ─────────────────────────────────────────────── */
+.roster-map-list     { display:flex; flex-direction:column; gap:5px; }
+
+.roster-map-row      {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 10px; border-radius:7px; background:var(--bg3);
+}
+.roster-map-row-good { border:1px solid rgba(43,189,142,.2); }
+.roster-map-dot      { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.roster-map-name     { font-size:15px; font-weight:700; flex:1; }
+.roster-map-type     { font-family:var(--mono); font-size:11px; color:var(--text3); }
+.roster-map-score    { font-family:var(--mono); font-size:11px; font-weight:700; }
+.roster-map-score-good { color:var(--support); }
+.roster-map-score-bad  { color:var(--damage); }
+
+/* ── Player picker popup ──────────────────────────────────── */
+.roster-picker-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  z-index:9999; display:flex; align-items:center; justify-content:center;
+}
+.roster-picker-modal {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem;
+  max-width:400px; width:100%; max-height:80vh; overflow-y:auto;
+}
+.roster-picker-title { font-size:15px; font-weight:800; margin-bottom:12px; }
+.roster-picker-list  { display:flex; flex-direction:column; gap:6px; }
+.roster-picker-item  {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:8px;
+  background:var(--bg3); border:1px solid var(--border);
+  cursor:pointer; transition:border-color .15s;
+}
+.roster-picker-item:hover { border-color:var(--border2); }
+.roster-picker-av    {
+  width:32px; height:32px; border-radius:50%; background:var(--bg4);
+  display:flex; align-items:center; justify-content:center; font-weight:800;
+}
+.roster-picker-name  { font-weight:600; font-size:13px; flex:1; }
+
+/* ════════════════════════════════════════════════════════════
+   PLAYER DETAIL VIEW
+   Все классы для showPlayerDetail() в render-players.js.
+   Inline style остаётся только для rc[role] и border-color героя.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Header card ─────────────────────────────────────────── */
+.pd-header-card   { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem 1.75rem; }
+.pd-header-top    { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.pd-header-left   { display:flex; align-items:center; gap:14px; }
+.pd-avatar        { width:60px; height:60px; border-radius:50%; background:var(--bg4); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; color:var(--text2); border:2px solid var(--border2); flex-shrink:0; }
+.pd-name          { font-size:22px; font-weight:800; margin-bottom:4px; }
+.pd-btag          { font-family:var(--mono); font-size:11px; color:var(--text3); }
+.pd-role-tags     { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+.pd-role-icon     { margin-left:12px; }
+.pd-role-block    { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.pd-role-label    { font-family:var(--mono); font-size:9px; text-transform:uppercase; }
+
+/* Rank badges */
+.pd-ranks         { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.pd-rank-badge    { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; text-align:center; }
+.pd-rank-role     { font-family:var(--mono); font-size:8px; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); margin-bottom:3px; }
+.pd-rank-val      { font-family:var(--mono); font-size:13px; font-weight:700; }
+
+/* ── Hero pool ───────────────────────────────────────────── */
+.pd-pool-legend      { color:var(--accent); font-size:8px; margin-left:6px; }
+.pd-pool-role-block  { margin-bottom:.75rem; }
+.pd-pool-role-label  { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+.pd-pool-heroes      { display:flex; flex-wrap:wrap; gap:5px; }
+.pd-pool-chip        { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.pd-pool-av          { width:44px; height:44px; border-radius:7px; object-fit:cover; border:2px solid var(--border); }
+.pd-pool-av-ph       { width:44px; height:44px; border-radius:7px; background:var(--bg4); display:flex; align-items:center; justify-content:center; font-weight:800; border:2px solid; }
+.pd-pool-dot         { width:5px; height:5px; border-radius:50%; }
+
+/* ── Ban rows ────────────────────────────────────────────── */
+.pd-list           { display:flex; flex-direction:column; gap:4px; }
+.pd-ban-row        { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); }
+.pd-ban-row-high   { border-color:rgba(224,85,85,.3); }
+.pd-ban-av         { width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0; }
+.pd-ban-av-ph      { background:var(--bg4); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; }
+.pd-ban-name       { font-size:13px; font-weight:700; flex:1; }
+.pd-ban-sub        { display:flex; align-items:center; gap:4px; }
+.pd-ban-subrole    { font-family:var(--mono); font-size:10px; color:var(--text2); }
+
+/* ── Map rows ────────────────────────────────────────────── */
+.pd-map-row        { display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:7px; background:var(--bg3); }
+.pd-map-row-good   { border:1px solid rgba(43,189,142,.25); }
+.pd-map-row-bad    { border:1px solid rgba(224,85,85,.2); }
+.pd-map-dot        { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.pd-map-dot-good   { background:var(--support); }
+.pd-map-dot-bad    { background:var(--damage); }
+.pd-map-name       { font-size:12px; font-weight:600; flex:1; }
+.pd-map-type       { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.pd-map-score-bad  { font-family:var(--mono); font-size:9px; font-weight:700; color:var(--damage); }
+.pd-avoid-title    { margin-top:12px; border:none; padding:0 0 8px; }
+
+/* ── Misc ────────────────────────────────────────────────── */
+.player-no-heroes  { font-size:11px; color:var(--text3); }
