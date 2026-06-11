@@ -1,245 +1,228 @@
+// ════════════════════════════════════════════════════════════
+// render-roster.js — вкладка «Состав»
+//
+// Все визуальные стили → players.css (секция ROSTER).
+// Inline style остаётся только для:
+//   • rc[role] — динамический цвет роли
+//   • transform:rotate — стрелка раскрытия
+//   • border-color ban-карточки (high/med)
+// ════════════════════════════════════════════════════════════
 
-// ── Store proxies ──
+// ── Store proxies ─────────────────────────────────────────────
 Object.defineProperties(window, {
-  rosterPlayers: { get(){ return store.get('rosterPlayers'); }, set(v){ store.set('rosterPlayers',v); }, configurable:true },
-  rosterRoles:   { get(){ return store.get('rosterRoles'); },   set(v){ store.set('rosterRoles',v); },   configurable:true },
-  rosterRoleOpen:{ get(){ return store.get('rosterRoleOpen'); },set(v){ store.set('rosterRoleOpen',v); },configurable:true },
-  openBanDetail: { get(){ return store.get('openBanDetail'); }, set(v){ store.set('openBanDetail',v); }, configurable:true },
+  rosterPlayers:  { get(){ return store.get('rosterPlayers');  }, set(v){ store.set('rosterPlayers',v);  }, configurable:true },
+  rosterRoles:    { get(){ return store.get('rosterRoles');    }, set(v){ store.set('rosterRoles',v);    }, configurable:true },
+  rosterRoleOpen: { get(){ return store.get('rosterRoleOpen'); }, set(v){ store.set('rosterRoleOpen',v); }, configurable:true },
+  openBanDetail:  { get(){ return store.get('openBanDetail');  }, set(v){ store.set('openBanDetail',v);  }, configurable:true },
 });
-// [store] rosterRoles → store.state
-// [store] rosterRoleOpen → store.state
 
-function getRosterRole(name){
-  return rosterRoles[name]||null;
-}
-function toggleRosterRolePicker(name){
-  if(rosterRoleOpen[name]){
-    // clicking active icon → reopen all
-    rosterRoleOpen[name]=true;
-  } else {
-    rosterRoleOpen[name]=!rosterRoleOpen[name];
-  }
-  renderRoster();
-}
+// ── Role helpers ──────────────────────────────────────────────
+function getRosterRole(name){ return rosterRoles[name]||null; }
+
 function setRosterRole(pname,role){
-  const roleLimits={Tank:1,Damage:2,Support:2};
-  // Считаем текущее использование роли без учёта этого игрока
-  const usedByOthers={Tank:0,Damage:0,Support:0};
+  const limits={Tank:1,Damage:2,Support:2};
+  const used={Tank:0,Damage:0,Support:0};
   rosterPlayers.forEach(pl=>{
-    if(pl.name===pname)return; // себя не считаем
+    if(pl.name===pname)return;
     const r=getRosterRole(pl.name);
-    if(r&&usedByOthers[r]!==undefined)usedByOthers[r]++;
+    if(r&&used[r]!==undefined)used[r]++;
   });
-  const limit=roleLimits[role];
-  if(limit!==undefined&&usedByOthers[role]>=limit){
-    toast(`Роль ${role} уже занята (лимит ${limit})`,'err');
+  if(limits[role]!==undefined&&used[role]>=limits[role]){
+    toast(`Роль ${role} уже занята (лимит ${limits[role]})`,'err');return;
+  }
+  rosterRoles[pname]=role; rosterRoleOpen[pname]=false; renderRoster();
+}
+function clearRosterRole(pname){ delete rosterRoles[pname]; rosterRoleOpen[pname]=true; renderRoster(); }
+function toggleBanDetail(name){ openBanDetail=openBanDetail===name?null:name; renderRoster(); }
+function getBanVictims(n){ return getBanVictims_scoring(n,rosterPlayers,getHeroesForRoster,heroMap); }
+function getHeroesForRoster(p){
+  const sel=getRosterRole(p.name);
+  const all=[...new Set([...p.mainHeroes,...p.poolHeroes])];
+  return sel?all.filter(n=>{const h=heroMap[n];return h&&h.role===sel;}):all;
+}
+function computeRosterRecs(){ return computeRosterRecs_scoring(rosterPlayers,getHeroesForRoster,maps,heroMap); }
+
+// ════════════════════════════════════════════════════════════
+// MAIN RENDER
+// ════════════════════════════════════════════════════════════
+function renderRoster(){
+  const el=document.getElementById('rosterContent'); if(!el)return;
+  if(!rosterPlayers.length){
+    el.innerHTML=`<div class="empty-state">
+      <div class="empty-icon">🎮</div>
+      <div class="empty-title">Состав не собран</div>
+      <div class="empty-desc">Добавь игроков для анализа банов и предпочтительных карт</div>
+      <button class="btn btn-primary" onclick="openRosterPlayerPicker()" style="margin-top:12px">+ Добавить игрока</button>
+    </div>`;
     return;
   }
-  rosterRoles[pname]=role;
-  rosterRoleOpen[pname]=false;
-  renderRoster();
-}
-function clearRosterRole(pname){
-  delete rosterRoles[pname];
-  rosterRoleOpen[pname]=true;
-  renderRoster();
-}
-// [store] rosterPlayers → store.state
-// [store] openBanDetail → store.state
-
-// Кто из наших героев уязвим к данному бан-герою
-function getBanVictims(banName){
-  // Делегируем в scoring.js
-  return getBanVictims_scoring(banName, rosterPlayers, getHeroesForRoster, heroMap);
-}
-function toggleBanDetail(name){openBanDetail=openBanDetail===name?null:name;renderRoster();}
-function renderRoster(){
-  const el=document.getElementById('rosterContent');if(!el)return;
-  if(!rosterPlayers.length){el.innerHTML='<div class="empty">Добавь игроков для анализа состава.</div>';return;}
   const recs=computeRosterRecs();
-
-  // ── Player rows ──
-  const playerCards=rosterPlayers.map(p=>{
-    const selRole=getRosterRole(p.name);
-    const isFlex=p.mainRole==='Flex';const hasOff=p.offRole&&p.offRole!==p.mainRole;
-    // Герои для отображения: если роль выбрана — только герои этой роли, иначе main
-    const displayH=(()=>{
-      if(selRole){
-        const roleHeroes=[
-          ...p.mainHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===selRole;}),
-          ...p.poolHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===selRole&&!p.mainHeroes.includes(n);})
-        ];
-        return roleHeroes.slice(0,5);
-      }
-      return p.mainHeroes.slice(0,5);
-    })();
-    let roleBlock='';
-    if(isFlex)roleBlock=roleIcon('Flex',22);
-    else if(p.mainRole)roleBlock=roleIcon(p.mainRole,18)+(hasOff?`<span style="margin-left:1px">${roleIcon(p.offRole,13)}</span>`:'');
-    const isOpen=rosterRoleOpen[p.name]||false;
-    const availRoles=['Tank','Damage','Support'].filter(r=>{
-      const pool=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-      return pool.some(hn=>{const h=heroMap[hn];return h&&h.role===r;});
-    });
-    let rolePickerHtml='';
-    if(selRole&&!isOpen){
-      // show selected role icon — click to reopen
-      rolePickerHtml=`<div style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 7px;border-radius:6px;background:var(--bg4);border:1px solid var(--border2)" onclick="clearRosterRole('${esc(p.name)}')" title="Сменить роль">${roleIcon(selRole,18)}<span style="font-family:var(--mono);font-size:9px;color:${rc[selRole]||'var(--text)'};margin-left:2px">${selRole}</span></div>`;
-    } else {
-      // show all available roles
-      rolePickerHtml=`<div style="display:flex;gap:4px">${availRoles.map(r=>`<div style="cursor:pointer;padding:3px 6px;border-radius:6px;background:${selRole===r?'var(--bg4)':'transparent'};border:1px solid ${selRole===r?'var(--border2)':'transparent'};opacity:${!selRole||selRole===r?1:0.45}" onclick="setRosterRole('${esc(p.name)}','${r}')" title="${r}">${roleIcon(r,18)}</div>`).join('')}</div>`;
-    }
-    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px">
-      <div style="display:flex;align-items:center;gap:10px;min-width:150px">
-        ${rolePickerHtml}
-        <span style="font-weight:700;font-size:16px">${p.name}</span>
-      </div>
-      <div style="display:flex;gap:5px;flex:1;justify-content:center">${displayH.map(n=>{const src=portrait(n);return src
-        ?`<img src="${src}" title="${n}" style="width:38px;height:38px;border-radius:6px;object-fit:cover" onerror="this.style.display='none'">`
-        :`<div style="width:38px;height:38px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${n[0]}</div>`;
-      }).join('')}</div>
-      <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;flex-shrink:0" onclick="removeRosterPlayer('${esc(p.name)}')">✕</button>
-    </div>`;
-  }).join('');
-
-  // ── Ban rows with expandable detail ──
-  const banHtml=recs.bans.length?recs.bans.map(b=>{
-    const src=portrait(b.name);const h=heroMap[b.name]||{};
-    const isOpen=openBanDetail===b.name;
-    const high=b.avg>=8;const color=high?'var(--damage)':'var(--accent)';
-    const borderColor=high?'rgba(224,85,85,.35)':'rgba(240,160,48,.25)';
-
-    // Detail panel — which of our heroes this hero counters
-    let detailHtml='';
-    if(isOpen){
-      const victims=getBanVictims(b.name);
-      if(victims.length){
-        // Group by player
-        const byPlayer={};
-        victims.forEach(v=>{if(!byPlayer[v.player])byPlayer[v.player]=[];byPlayer[v.player].push(v);});
-        const rows=Object.entries(byPlayer).map(([pname,vics])=>{
-          const chips=vics.map(v=>{
-            const vsrc=portrait(v.hero);
-            const sc=v.score;const sc_color=sc>=8?'var(--damage)':sc>=5?'var(--accent)':'var(--text3)';
-            return`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;position:relative">
-              ${vsrc?`<img src="${vsrc}" style="width:32px;height:32px;border-radius:5px;object-fit:cover;border:2px solid ${v.isMain?'var(--accent)':'var(--border)'}" onerror="this.style.display='none'">`:`<div style="width:32px;height:32px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;border:2px solid ${v.isMain?'var(--accent)':'var(--border)'}">${v.hero[0]}</div>`}
-              <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${sc_color}">${sc}</span>
-            </div>`;
-          }).join('');
-          return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
-            <span style="font-size:11px;font-weight:600;color:var(--text2);min-width:60px">${pname}</span>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">${chips}</div>
-          </div>`;
-        }).join('');
-        detailHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Контрит ваших героев</div>
-          ${rows}
-        </div>`;
-      }else{
-        detailHtml=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)">Нет пересечений с пулом</div>`;
-      }
-    }
-
-    return`<div style="border-radius:8px;background:var(--bg3);border:1px solid ${isOpen?borderColor.replace('.25','.5').replace('.35','.6'):borderColor};transition:border-color .15s">
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer" onclick="toggleBanDetail('${esc(b.name)}')">
-        ${src?`<img src="${src}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`:`<div style="width:40px;height:40px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800">${b.name[0]}</div>`}
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700">${b.name}</div>
-          ${h.role?`<div style="display:flex;align-items:center;gap:4px;margin-top:2px">${roleIcon(h.role,12)}<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${h.subrole||h.role}</span></div>`:''}
-        </div>
-        <span style="font-family:var(--mono);font-size:10px;color:${color};flex-shrink:0">${heroesCountLabel(b.count)}</span>
-        <span style="font-size:12px;color:var(--text3);flex-shrink:0;transition:transform .15s;transform:rotate(${isOpen?'90':'0'}deg)">›</span>
-      </div>
-      ${isOpen?`<div style="padding:0 10px 10px">${detailHtml}</div>`:''}
-    </div>`;
-  }).join(''):'<div class="empty">Нет данных</div>';
-
-  // ── Map rows ──
-  const mapHtml=recs.maps.length?recs.maps.map(m=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid rgba(43,189,142,.2)">
-      <div style="width:7px;height:7px;border-radius:50%;background:var(--support);flex-shrink:0"></div>
-      <span style="font-size:15px;font-weight:700;flex:1">${m.name}</span>
-      <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${m.type}</span>
-      <div class="tier-badge tier-${m.tier}" style="font-size:9px;padding:1px 5px">${m.tier}</div>
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--support)">+${m.score}</span>
-    </div>`).join(''):'<div class="empty">Добавь героев игрокам</div>';
-  const avoidHtml=recs.avoid.length?recs.avoid.map(m=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--bg3)">
-      <div style="width:7px;height:7px;border-radius:50%;background:var(--damage);flex-shrink:0"></div>
-      <span style="font-size:14px;font-weight:600;flex:1">${m.name}</span>
-      <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage)">−${Math.abs(m.score)}</span>
-    </div>`).join(''):'';
+  const avoidBlock=recs.avoid.length?`
+    <div class="d-card-title" style="margin-top:14px;border:none;padding:0 0 8px">⚠ Избегать</div>
+    <div class="roster-map-list">${recs.avoid.map(m=>_mapRow(m,'bad')).join('')}</div>`:'';
 
   el.innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1.5rem">${playerCards}</div>
+    <div class="roster-player-list">${rosterPlayers.map(_playerRow).join('')}</div>
     <div class="detail-grid">
       <div class="d-card">
         <div class="d-card-title">🔴 Рекомендованные баны</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px">Контрпики нескольких игроков — нажми чтобы раскрыть</div>
-        <div style="display:flex;flex-direction:column;gap:5px">${banHtml}</div>
+        <div class="d-card-hint">Контрпики нескольких игроков — нажми чтобы раскрыть</div>
+        <div class="roster-ban-list">
+          ${recs.bans.length?recs.bans.map(_banRow).join(''):'<div class="empty">Нет данных</div>'}
+        </div>
       </div>
       <div class="d-card">
         <div class="d-card-title">✅ Предпочтительные карты</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:10px">По сильным картам всех игроков</div>
-        <div style="display:flex;flex-direction:column;gap:5px">${mapHtml}</div>
-        ${avoidHtml?`<div class="d-card-title" style="margin-top:14px;border:none;padding:0 0 8px">⚠ Избегать</div><div style="display:flex;flex-direction:column;gap:5px">${avoidHtml}</div>`:''}
+        <div class="d-card-hint">По сильным картам всех игроков</div>
+        <div class="roster-map-list">
+          ${recs.maps.length?recs.maps.map(m=>_mapRow(m,'good')).join(''):'<div class="empty">Добавь героев игрокам</div>'}
+        </div>
+        ${avoidBlock}
       </div>
     </div>`;
 }
-function getHeroesForRoster(p){
-  // filter by selected role if set, otherwise all heroes
+
+// ── Player row ────────────────────────────────────────────────
+function _playerRow(p){
   const sel=getRosterRole(p.name);
-  const allH=[...new Set([...p.mainHeroes,...p.poolHeroes])];
-  if(!sel)return allH;
-  return allH.filter(hn=>{const h=heroMap[hn];return h&&h.role===sel;});
+  const isOpen=rosterRoleOpen[p.name]||false;
+  const availRoles=['Tank','Damage','Support'].filter(r=>{
+    return [...new Set([...p.mainHeroes,...p.poolHeroes])].some(n=>{const h=heroMap[n];return h&&h.role===r;});
+  });
+  const displayH=sel?[
+    ...p.mainHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===sel;}),
+    ...p.poolHeroes.filter(n=>{const h=heroMap[n];return h&&h.role===sel&&!p.mainHeroes.includes(n);}),
+  ].slice(0,5):p.mainHeroes.slice(0,5);
+
+  const rolePicker=sel&&!isOpen
+    ?`<div class="roster-role-selected" data-pname="${esc(p.name)}" onclick="clearRosterRole(this.dataset.pname)" title="Сменить роль">
+        ${roleIcon(sel,18)}<span class="roster-role-label" style="color:${rc[sel]||'var(--text)'}">${sel}</span>
+      </div>`
+    :`<div class="roster-role-picker">${availRoles.map(r=>`
+        <div class="roster-role-btn${sel===r?' active':''}"
+             style="opacity:${!sel||sel===r?1:0.45}"
+             data-pname="${esc(p.name)}" data-role="${r}"
+             onclick="setRosterRole(this.dataset.pname,this.dataset.role)" title="${r}">
+          ${roleIcon(r,18)}
+        </div>`).join('')}</div>`;
+
+  const heroChips=displayH.map(n=>{
+    const src=portrait(n);
+    return src
+      ?`<img src="${src}" title="${n}" class="roster-hero-av" onerror="this.style.display='none'">`
+      :`<div class="roster-hero-av roster-hero-av-ph">${n[0]}</div>`;
+  }).join('');
+
+  return`<div class="roster-player-row">
+    <div class="roster-player-info">${rolePicker}<span class="roster-player-name">${p.name}</span></div>
+    <div class="roster-hero-strip">${heroChips}</div>
+    <button class="btn btn-danger roster-remove-btn" data-pname="${esc(p.name)}" onclick="removeRosterPlayer(this.dataset.pname)">✕</button>
+  </div>`;
 }
-function computeRosterRecs(){
-  // Делегируем в scoring.js
-  return computeRosterRecs_scoring(rosterPlayers, getHeroesForRoster, maps, heroMap);
+
+// ── Ban row ───────────────────────────────────────────────────
+function _banRow(b){
+  const src=portrait(b.name); const h=heroMap[b.name]||{};
+  const isOpen=openBanDetail===b.name;
+  const high=b.avg>=8;
+  const color=high?'var(--damage)':'var(--accent)';
+  const bdr=high?`rgba(224,85,85,${isOpen?.6:.35})`:`rgba(240,160,48,${isOpen?.5:.25})`;
+  const portrait_el=src
+    ?`<img src="${src}" class="roster-ban-portrait" onerror="this.style.display='none'">`
+    :`<div class="roster-ban-portrait roster-ban-portrait-ph">${b.name[0]}</div>`;
+  const sub=h.role
+    ?`<div class="roster-ban-subrole">${roleIcon(h.role,12)}<span class="roster-ban-subrole-text">${h.subrole||h.role}</span></div>`:'';
+  const detail=isOpen?_banDetail(b.name):'';
+  return`<div class="roster-ban-card" style="border-color:${bdr}">
+    <div class="roster-ban-header" data-bname="${esc(b.name)}" onclick="toggleBanDetail(this.dataset.bname)">
+      ${portrait_el}
+      <div class="roster-ban-body"><div class="roster-ban-name">${b.name}</div>${sub}</div>
+      <span class="roster-ban-count" style="color:${color}">${heroesCountLabel(b.count)}</span>
+      <span class="roster-ban-arrow" style="transform:rotate(${isOpen?90:0}deg)">›</span>
+    </div>
+    ${detail?`<div class="roster-ban-detail">${detail}</div>`:''}
+  </div>`;
 }
+
+function _banDetail(banName){
+  const victims=getBanVictims(banName);
+  if(!victims.length)return'<div class="roster-ban-detail-empty">Нет пересечений с пулом</div>';
+  const byPlayer={};
+  victims.forEach(v=>{if(!byPlayer[v.player])byPlayer[v.player]=[];byPlayer[v.player].push(v);});
+  return`<div class="roster-ban-detail-inner">
+    <div class="roster-ban-detail-label">Контрит ваших героев</div>
+    ${Object.entries(byPlayer).map(([pname,vics])=>`
+      <div class="roster-victim-row">
+        <span class="roster-victim-player">${pname}</span>
+        <div class="roster-victim-heroes">${vics.map(v=>{
+          const vsrc=portrait(v.hero);
+          const sc=v.score>=8?'var(--damage)':v.score>=5?'var(--accent)':'var(--text3)';
+          const bdr=v.isMain?'var(--accent)':'var(--border)';
+          const img=vsrc
+            ?`<img src="${vsrc}" class="roster-victim-av" style="border-color:${bdr}" onerror="this.style.display='none'">`
+            :`<div class="roster-victim-av roster-victim-av-ph" style="border-color:${bdr}">${v.hero[0]}</div>`;
+          return`<div class="roster-victim-chip">${img}<span class="roster-victim-score" style="color:${sc}">${v.score}</span></div>`;
+        }).join('')}</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── Map row ───────────────────────────────────────────────────
+function _mapRow(m,type){
+  const good=type==='good';
+  const dot=good?'var(--support)':'var(--damage)';
+  const score=good
+    ?`<span class="roster-map-score roster-map-score-good">+${m.score}</span>`
+    :`<span class="roster-map-score roster-map-score-bad">−${Math.abs(m.score)}</span>`;
+  return`<div class="roster-map-row${good?' roster-map-row-good':''}">
+    <div class="roster-map-dot" style="background:${dot}"></div>
+    <span class="roster-map-name">${m.name}</span>
+    ${good?`<span class="roster-map-type">${m.type}</span>`:''}
+    ${good?`<div class="tier-badge tier-${m.tier}">${m.tier}</div>`:''}
+    ${score}
+  </div>`;
+}
+
+// ── Player picker popup ───────────────────────────────────────
 function openRosterPlayerPicker(){
   const avail=players.filter(p=>!rosterPlayers.find(r=>r.name===p.name));
-  if(!avail.length){toast('Все игроки уже добавлены','err');return}
-  const html=`<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center" id="rosterPickerBg" onclick="if(event.target.id==='rosterPickerBg')document.getElementById('rosterPickerBg').remove()">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:400px;width:100%;max-height:80vh;overflow-y:auto">
-      <div style="font-size:15px;font-weight:800;margin-bottom:12px">Выбери игрока</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${avail.map(p=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);cursor:pointer" onclick="addRosterPlayer('${esc(p.name)}')">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-weight:800">${p.name[0].toUpperCase()}</div>
-          <span style="font-weight:600;font-size:13px;flex:1">${p.name}</span>
-          ${p.mainRole?`<span class="role-tag ${p.mainRole}">${p.mainRole}</span>`:''}
-        </div>`).join('')}
+  if(!avail.length){toast('Все игроки уже добавлены','err');return;}
+  document.body.insertAdjacentHTML('beforeend',`
+    <div class="roster-picker-overlay" id="rosterPickerBg"
+         onclick="if(event.target.id==='rosterPickerBg')this.remove()">
+      <div class="roster-picker-modal">
+        <div class="roster-picker-title">Выбери игрока</div>
+        <div class="roster-picker-list">
+          ${avail.map(p=>`
+            <div class="roster-picker-item" data-pname="${esc(p.name)}" onclick="addRosterPlayer(this.dataset.pname)">
+              <div class="roster-picker-av">${p.name[0].toUpperCase()}</div>
+              <span class="roster-picker-name">${p.name}</span>
+              ${p.mainRole?`<span class="role-tag ${p.mainRole}">${p.mainRole}</span>`:''}
+            </div>`).join('')}
+        </div>
       </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend',html);
+    </div>`);
 }
+
 function addRosterPlayer(name){
-  const bg=document.getElementById('rosterPickerBg');if(bg)bg.remove();
-  const p=players.find(x=>x.name===name);if(!p||rosterPlayers.find(r=>r.name===name))return;
-  // Проверяем ограничение ролей: 1 Tank, 2 Damage, 2 Support
-  const roleLimits={Tank:1,Damage:2,Support:2};
-  const getPlayerActiveRoles=(pl)=>{
+  const bg=document.getElementById('rosterPickerBg'); if(bg)bg.remove();
+  const p=players.find(x=>x.name===name);
+  if(!p||rosterPlayers.find(r=>r.name===name))return;
+  const limits={Tank:1,Damage:2,Support:2};
+  const activeRoles=pl=>{
     const sel=getRosterRole(pl.name);
     if(sel)return[sel];
-    // если роль не выбрана — считаем только основную (не офф)
     if(pl.mainRole&&pl.mainRole!=='Flex')return[pl.mainRole];
     if(pl.mainRole==='Flex')return['Tank','Damage','Support'];
     return[];
   };
-  // Count current roles
-  const roleCounts={Tank:0,Damage:0,Support:0};
-  rosterPlayers.forEach(pl=>{
-    getPlayerActiveRoles(pl).forEach(r=>{if(roleCounts[r]!==undefined)roleCounts[r]++;});
-  });
-  // Check new player's possible roles
-  const newRoles=getPlayerActiveRoles(p);
-  const canAdd=newRoles.some(r=>!roleLimits[r]||roleCounts[r]<roleLimits[r]);
-  if(!canAdd){
-    const taken=newRoles.map(r=>`${r}: ${roleCounts[r]}/${roleLimits[r]||'∞'}`).join(', ');
-    toast(`Нельзя добавить — лимиты ролей заполнены (${taken})`,'err');
+  const counts={Tank:0,Damage:0,Support:0};
+  rosterPlayers.forEach(pl=>activeRoles(pl).forEach(r=>{if(counts[r]!==undefined)counts[r]++;}));
+  const newR=activeRoles(p);
+  if(!newR.some(r=>!limits[r]||counts[r]<limits[r])){
+    toast(`Нельзя добавить — лимиты ролей заполнены (${newR.map(r=>`${r}:${counts[r]}/${limits[r]||'∞'}`).join(', ')})`,'err');
     return;
   }
-  rosterPlayers.push(p);renderRoster();
+  rosterPlayers.push(p); renderRoster();
 }
-function removeRosterPlayer(name){rosterPlayers=rosterPlayers.filter(p=>p.name!==name);renderRoster()}
+function removeRosterPlayer(name){ rosterPlayers=rosterPlayers.filter(p=>p.name!==name); renderRoster(); }
