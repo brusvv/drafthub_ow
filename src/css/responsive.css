@@ -1,0 +1,138 @@
+/* ════════════════════════════════════════════════
+   responsive.css — адаптивность Draft Hub
+   Breakpoints:
+     xl  > 1200px  (широкий монитор)
+     lg  > 960px   (стандартный ноутбук — базовый дизайн)
+     md  768–960px (планшет горизонтально)
+     sm  480–768px (планшет вертикально / большой телефон)
+     xs  < 480px   (телефон)
+   ════════════════════════════════════════════════ */
+
+/* ── XL: используем лишнее пространство ── */
+@media (min-width:1200px){
+  .app{max-width:1160px}
+  .map-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .hero-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .detail-grid{grid-template-columns:1fr 1fr}
+}
+
+/* ── MD: планшет горизонтально ── */
+@media (max-width:960px){
+  .app{padding:1.5rem 1rem}
+  .header{flex-direction:column;align-items:flex-start;gap:10px}
+  .header-right{flex-wrap:wrap;gap:6px}
+  .map-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .tier-hero-pill img,.tier-hero-pill-ph{width:52px;height:52px}
+  .player-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
+
+/* ── SM: планшет вертикально / большой телефон ── */
+@media (max-width:768px){
+  .app{padding:1rem .875rem}
+
+  /* Навигация — переносим */
+  .nav{gap:3px}
+  .nav-btn{padding:5px 10px;font-size:9px}
+
+  /* Фильтры */
+  .toolbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .toolbar .btn-primary{align-self:flex-end}
+
+  /* Карты */
+  .map-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px}
+  .map-card-img{height:72px}
+  .detail-grid{grid-template-columns:1fr}
+  .detail-card.full{grid-column:1}
+  .detail-banner{height:140px}
+  .detail-name{font-size:20px}
+
+  /* Герои */
+  .hero-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
+
+  /* Тирлист */
+  .tier-lbl{width:36px;min-height:36px;font-size:14px}
+  .tier-hero-pill img,.tier-hero-pill-ph{width:46px;height:46px;border-radius:8px}
+  .tier-preview-box{max-width:100%}
+  .tier-hero-preview-card{grid-template-columns:1fr}
+  .tier-hero-preview-img,.tier-hero-preview-ph{width:100%;max-width:200px;margin:0 auto}
+
+  /* Игроки */
+  .player-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+
+  /* Состав */
+  .roster-player-card{flex-direction:column;align-items:flex-start;gap:8px}
+
+  /* Модалки */
+  .modal{padding:1.125rem}
+  .modal-title{font-size:14px}
+  .form-row{grid-template-columns:1fr}
+  .picker-box{max-height:92vh}
+  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(76px,1fr))}
+
+  /* Баны */
+  .ban-role-heroes{gap:5px}
+  .ban-chip{padding:3px 6px 3px 4px}
+}
+
+/* ── XS: телефон ── */
+@media (max-width:480px){
+  .app{padding:.875rem .75rem}
+
+  .header-title{font-size:16px}
+  .header-tag{display:none}
+
+  /* Навигация — скролл горизонтально */
+  .nav{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav-btn{white-space:nowrap;flex-shrink:0}
+
+  /* Фильтры тоже скролл */
+  .filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .f-btn{white-space:nowrap;flex-shrink:0}
+
+  /* Карты */
+  .map-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .map-card-img{height:60px}
+  .map-card-body{padding:7px 8px}
+  .map-card-name{font-size:12px}
+
+  /* Герои */
+  .hero-grid{grid-template-columns:repeat(3,1fr);gap:5px}
+  .h-card-body{padding:5px 6px}
+  .h-card-name{font-size:10px}
+  .h-card-sub,.h-card-prio{display:none}
+
+  /* Тирлист */
+  .tier-row{gap:6px}
+  .tier-lbl{width:30px;min-height:30px;font-size:12px;border-radius:6px}
+  .tier-hero-pill img,.tier-hero-pill-ph{width:38px;height:38px;border-radius:6px}
+  .tier-maps{gap:4px;padding:4px}
+
+  /* Хедер — кнопки компактнее */
+  .header-right .btn{padding:4px 8px;font-size:9px}
+  .user-chip span{display:none}
+
+  /* Модалки — полноэкранные */
+  .modal-overlay{padding:.5rem}
+  .modal{border-radius:12px;max-height:95vh}
+  .picker-box{border-radius:12px;max-height:94vh}
+  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:5px}
+
+  /* Баны */
+  .ban-chip-name{font-size:9px}
+  .ban-chip img,.ban-chip-ph{width:18px;height:18px}
+}
+
+/* ── Утилиты ── */
+@media (max-width:768px){
+  .hide-sm{display:none!important}
+}
+@media (max-width:480px){
+  .hide-xs{display:none!important}
+}
+@media (min-width:769px){
+  .show-sm-only{display:none!important}
+}
