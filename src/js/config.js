@@ -134,27 +134,65 @@ function heroKey(name){
 }
 
 // ════ PORTRAITS ════
-async function loadPortraits(){
-  try{
-    const r=await fetch('https://overfast-api.tekrop.fr/heroes');
-    const data=await r.json();
-    data.forEach(h=>{
-      heroPortraits[h.name.toLowerCase()]=h.portrait;
-      heroPortraits[h.key]=h.portrait;
-      heroPortraits[heroKey(h.name)]=h.portrait;
-    });
-  }catch(e){console.warn('Portrait API error',e)}
+// ── Retry helper ──────────────────────────────────────────────
+// Пробует fetch N раз с нарастающей задержкой.
+// При полной недоступности — возвращает null и показывает предупреждение.
+async function _fetchWithRetry(url, retries = 2, delayMs = 1500) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      if (i === retries) return null;
+      await new Promise(res => setTimeout(res, delayMs * (i + 1)));
+    }
+  }
+  return null;
 }
 
-async function loadMapScreenshots(){
-  try{
-    const r=await fetch('https://overfast-api.tekrop.fr/maps');
-    const data=await r.json();
-    data.forEach(m=>{
-      mapScreenshots[m.name.toLowerCase()]=m.screenshot;
-      mapScreenshots[mapKey(m.name)]=m.screenshot;
+async function loadPortraits() {
+  const LS_KEY = 'draft_cache_portraits';
+  // Пробуем API
+  const data = await _fetchWithRetry('https://overfast-api.tekrop.fr/heroes');
+  if (data) {
+    data.forEach(h => {
+      heroPortraits[h.name.toLowerCase()] = h.portrait;
+      heroPortraits[h.key]                = h.portrait;
+      heroPortraits[heroKey(h.name)]      = h.portrait;
     });
-  }catch(e){console.warn('Maps API error',e)}
+    // Кэшируем в localStorage для офлайн-режима
+    try { localStorage.setItem(LS_KEY, JSON.stringify(heroPortraits)); } catch (_) {}
+  } else {
+    // Fallback: берём из кэша прошлой успешной загрузки
+    try {
+      const cached = localStorage.getItem(LS_KEY);
+      if (cached) Object.assign(heroPortraits, JSON.parse(cached));
+    } catch (_) {}
+    if (!Object.keys(heroPortraits).length) {
+      console.warn('[DraftHub] Portrait API недоступен, портреты не загружены');
+    }
+  }
+}
+
+async function loadMapScreenshots() {
+  const LS_KEY = 'draft_cache_mapshots';
+  const data = await _fetchWithRetry('https://overfast-api.tekrop.fr/maps');
+  if (data) {
+    data.forEach(m => {
+      mapScreenshots[m.name.toLowerCase()] = m.screenshot;
+      mapScreenshots[mapKey(m.name)]       = m.screenshot;
+    });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(mapScreenshots)); } catch (_) {}
+  } else {
+    try {
+      const cached = localStorage.getItem(LS_KEY);
+      if (cached) Object.assign(mapScreenshots, JSON.parse(cached));
+    } catch (_) {}
+    if (!Object.keys(mapScreenshots).length) {
+      console.warn('[DraftHub] Map screenshot API недоступен');
+    }
+  }
 }
 
 function portrait(name){
