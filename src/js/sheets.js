@@ -10,7 +10,7 @@ async function sGid(name){const m=await gapi.client.sheets.spreadsheets.get({spr
 // ════ LOAD ════
 async function loadAllData(){
   if(!SID())return;
-  showLoading('mapGrid');showLoading('heroPool');showLoading('playerGrid');
+  showLoading('mapGrid','card',8);showLoading('heroPool','hero',12);showLoading('playerGrid','player',5);
   try{
     await Promise.all([loadPortraits(),loadMapScreenshots(),loadHeroes(),loadMaps(),loadPlayers(),loadTiers()]);
     renderCurrentView();
