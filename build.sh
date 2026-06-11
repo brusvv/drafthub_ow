@@ -24,7 +24,7 @@ cat > "$OUT" <<'HEADER'
 HEADER
 
 # CSS — порядок важен: base первым
-for css in base maps heroes bans modals players subroles tiers; do
+for css in base maps heroes bans modals players subroles tiers responsive; do
   echo "" >> "$OUT"
   echo "/* ── ${css}.css ── */" >> "$OUT"
   cat "$SRC/css/${css}.css" >> "$OUT"
