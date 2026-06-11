@@ -1,4 +1,3 @@
-
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -125,11 +124,12 @@ function renderTierMaps(){
           const m=maps.find(x=>x.name===name);
           const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="true"
-            data-tier="${t}" data-type="maps" data-name="${esc(name)}" data-role="${h.role||''}"
+            data-tier="${t}" data-type="maps" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierMapPreview('${esc(name)}')">
             ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${mapTypeIcon(m.type,14)}</span>`:''}
+            ${name}
           </div>`;
         }).join('')}
       </div>
