@@ -52,7 +52,7 @@ for module in store scoring config auth sheets write picker modals; do
 done
 
 # Render — разбит по вкладкам
-for module in render-utils render-maps render-heroes render-bans render-tiers render-players render-roster render-nav; do
+for module in render-utils render-maps render-heroes render-bans-core render-bans-competitive render-bans-tournament-draft render-bans-tournament-herobans render-tiers render-players render-roster render-nav; do
   echo ""                          >> "$OUT"
   echo "// ── ${module}.js ──"    >> "$OUT"
   cat "$SRC/js/${module}.js"       >> "$OUT"
