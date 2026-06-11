@@ -125,12 +125,11 @@ function renderTierMaps(){
           const m=maps.find(x=>x.name===name);
           const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="true"
-            data-tier="${t}" data-type="maps" data-name="${esc(name)}"
+            data-tier="${t}" data-type="maps" data-name="${esc(name)}" data-role="${h.role||''}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierMapPreview('${esc(name)}')">
             ${m&&tierMapTypeFilter==='all'?`<span class="tier-pill-type">${mapTypeIcon(m.type,14)}</span>`:''}
-            ${name}
           </div>`;
         }).join('')}
       </div>
@@ -151,16 +150,17 @@ function renderTierHeroes(){
         ondrop="onDrop(event,'heroes','${t}')"
         ondragleave="onDragLeave(event)">
         ${items.map((name,idx)=>{
-          const h=heroMap[name];
+          const h=heroMap[name]||{};
           const src=portrait(name);
           const hidden=tierHeroRoleFilter!=='all'&&(!h||h.role!==tierHeroRoleFilter);
+          const tipText=h.subrole?`${name} · ${h.subrole}`:name;
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="true"
-            data-tier="${t}" data-type="heroes" data-name="${esc(name)}"
+            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h.role||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierHeroPreview('${esc(name)}')">
-            ${src?`<img src="${src}" width="22" height="22" style="border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
-            ${name}
+            ${src?`<img src="${src}" alt="${name}" onerror="this.outerHTML='<div class=tier-hero-pill-ph>${name[0]}</div>'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
+            <div class="tier-hero-pill-tip">${tipText}</div>
           </div>`;
         }).join('')}
       </div>
@@ -282,7 +282,7 @@ function openTierMapPreview(name){
   openTierPreview(m.name,body,actions);
 }
 function openTierHeroPreview(name){
-  const h=heroMap[name];if(!h)return;
+  const h=heroMap[name]||{};if(!h)return;
   const src=portrait(h.name);
   const counters=(h.counters||[]).slice().sort((a,b)=>b.score-a.score).slice(0,5);
   const counterHtml=counters.length?`<div class="tier-preview-section"><div class="tier-preview-section-title">Контрпики</div><div class="h-counter-list tier-preview-counters">${counters.map(c=>{const csrc=portrait(c.name);const cc=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';return`<div class="h-counter-icon" title="${c.name}">${csrc?`<img src="${csrc}" alt="${c.name}" onerror="this.style.display='none'">`:`<div class="h-counter-icon-ph">${c.name[0]}</div>`}<div class="h-counter-score" style="color:${cc}">${c.score}</div></div>`;}).join('')}</div></div>`:'';
