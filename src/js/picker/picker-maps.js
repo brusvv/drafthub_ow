@@ -1,123 +1,184 @@
-// ════ PICKER — MAP STRENGTH (выбор карт + оценка силы для героя) ════
+// ════ MAPS ════
+let mapPoolFilter='active'; // 'active' | 'all'
 
-let mapStrengthPickerHero=null;  // имя героя для которого открыт picker
-let mapStrengthPending=null;     // {map, type} — карта ожидающая оценки
+function renderMaps(){
+  const grid=document.getElementById('mapGrid');
+  const detail=document.getElementById('mapDetail');
+  detail.classList.remove('show');detail.innerHTML='';
 
-function openMapStrengthPicker(heroName){
-  mapStrengthPickerHero=heroName;
-  mapStrengthPickerTypeFilter='all';
-  document.getElementById('mapStrPickerTitle').textContent='Карты героя: оцени силу';
-  document.querySelectorAll('#mapStrPickerOverlay .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
-  renderMapStrPickerGrid();
-  document.getElementById('mapStrPickerOverlay').classList.remove('hidden');
-}
-function closeMapStrPicker(){
-  document.getElementById('mapStrPickerOverlay').classList.add('hidden');
-  document.getElementById('mapStrScorePopup').classList.add('hidden');
-  mapStrengthPending=null;
-}
+  // Пул карт: active = только с приоритетом > 0 (в текущем пуле)
+  const poolMaps = mapPoolFilter==='active'
+    ? maps.filter(m=>m.priority>0)
+    : maps;
+  const filtered=poolMaps.filter(m=>mapFilter==='all'||m.type===mapFilter);
 
-let mapStrengthPickerTypeFilter='all';
-function mapStrPickerFilter(type,btn){
-  mapStrengthPickerTypeFilter=type;
-  document.querySelectorAll('#mapStrPickerOverlay .f-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderMapStrPickerGrid();
-}
+  // Обновляем счётчик
+  const countEl=document.getElementById('mapPoolCount');
+  if(countEl) countEl.textContent=`${filtered.length} карт${filtered.length===1?'а':filtered.length>=2&&filtered.length<=4?'ы':''}`;
 
-function renderMapStrPickerGrid(){
-  const filtered=maps.filter(m=>mapStrengthPickerTypeFilter==='all'||m.type===mapStrengthPickerTypeFilter);
-  const grid=document.getElementById('mapStrPickerGrid');if(!grid)return;
+  if(!filtered.length){grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Карта" или Seed.</div>';return}
   grid.innerHTML=filtered.map(m=>{
-    const entry=(heroStrengthEdits||[]).find(e=>e.map===m.name)||{atk:0,def:0};
-    const hasData=entry.atk>0||entry.def>0;
-    const noAD=NO_ATKDEF.includes(m.type);
     const src=mapImg(m.name);
-    const label=noAD?`${entry.atk||0}`:`${entry.atk||0}/${entry.def||0}`;
-    return`<div class="map-str-chip${hasData?' has-data':''}" onclick="openMapStrScore('${esc(m.name)}','${m.type}')">
-      ${src?`<img src="${src}" onerror="this.style.display='none'">`:''}
-      <span class="map-str-chip-name">${m.name}</span>
-      ${mapTypeIcon(m.type,10)}
-      ${hasData?`<span class="map-str-chip-score">${label}</span>`:''}
+    const noAD=NO_ATKDEF.includes(m.type);
+    return`<div class="map-card" onclick="showMapDetail('${esc(m.name)}')">
+      ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
+      <div class="map-card-body">
+        <div class="map-card-name">${m.name}</div>
+        <!-- Тип: иконка всегда, текст — только когда фильтр "все" -->
+        <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span>${m.type}</span>`:''}</div>
+        <div class="map-card-meta">
+          <div class="tier-badge tier-${m.tier}">${m.tier}</div>
+          <div class="ratings">
+            ${noAD
+              ?`<div class="r-row">${ICON_DIF}${dots5(m.dif,'dif')}</div>`
+              :`<div class="r-row">${ICON_ATK}${dots5(m.atk,'atk')}</div>
+                <div class="r-row">${ICON_DEF}${dots5(m.def,'def')}</div>`
+            }
+          </div>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
 
-function openMapStrScore(mapName,mapType){
-  mapStrengthPending={map:mapName,type:mapType};
-  const entry=(heroStrengthEdits||[]).find(e=>e.map===mapName)||{atk:0,def:0};
-  const noAD=NO_ATKDEF.includes(mapType);
-  const popup=document.getElementById('mapStrScorePopup');if(!popup)return;
-  popup.innerHTML=`
-    <div class="map-str-popup-title">${mapName}</div>
-    ${noAD
-      ?`<div class="map-str-score-row">
-          <span class="map-str-score-label">Сила</span>
-          ${_mapStrDots('atk',entry.atk||0)}
-        </div>`
-      :`<div class="map-str-score-row">
-          <span class="map-str-score-label" style="color:var(--damage)">ATK</span>
-          ${_mapStrDots('atk',entry.atk||0)}
-        </div>
-        <div class="map-str-score-row">
-          <span class="map-str-score-label" style="color:var(--tank)">DEF</span>
-          ${_mapStrDots('def',entry.def||0)}
-        </div>`
-    }
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="btn btn-primary" onclick="confirmMapStrScore()" style="flex:1;font-size:10px">OK</button>
-      <button class="btn" onclick="clearMapStrScore('${esc(mapName)}')" style="font-size:10px">Сброс</button>
-    </div>`;
-  popup.classList.remove('hidden');
-}
+function showMapDetail(name){
+  const m=maps.find(x=>x.name===name);if(!m)return;
+  document.getElementById('mapGrid').innerHTML='';
+  const detail=document.getElementById('mapDetail');
+  detail.classList.add('show');
+  const noAD=NO_ATKDEF.includes(m.type);
+  const src=mapImg(m.name);
 
-function _mapStrDots(field,val){
-  return`<div class="map-str-dots" id="msd_${field}">
-    ${Array.from({length:10},(_,k)=>{
-      const v=k+1;const filled=v<=val;
-      const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
-      return`<span onclick="setMapStrDot('${field}',${v})"
-        style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'}">◆</span>`;
-    }).join('')}
-  </div>`;
-}
+  const byRole={Tank:[],Damage:[],Support:[]};
+  m.preferredHeroes.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(h)});
+  const heroRows=['Tank','Damage','Support'].flatMap(role=>
+    byRole[role].map(h=>{const ps=portrait(h.name);return`<div class="hero-row">
+      ${roleIcon(h.role,14)}
+      ${ps?`<img src="${ps}" class="hero-row-av" onerror="this.outerHTML='<div class=hero-row-av-ph>${h.name[0]}</div>'">`:`<div class="hero-row-av-ph">${h.name[0]}</div>`}
+      <div class="hero-row-info"><div class="hero-row-name">${h.name}</div><div class="hero-row-sub">${subroleIcon(h.role,h.subrole,11)}<span>${h.subrole}</span></div></div>
+    </div>`})
+  ).join('')||'<div class="empty">Не указаны</div>';
 
-// Временное хранилище для оценки текущего попапа
-let _mapStrTmpAtk=0,_mapStrTmpDef=0;
-
-function setMapStrDot(field,val){
-  if(field==='atk')_mapStrTmpAtk=val; else _mapStrTmpDef=val;
-  const dots=document.querySelectorAll(`#msd_${field} span`);
-  dots.forEach((d,k)=>{
-    const v=k+1;const filled=v<=val;
-    const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
-    d.style.color=filled?color:'var(--border2)';
+  const banByRole={Tank:[],Damage:[],Support:[]};
+  m.bans.forEach(n=>{
+    const h=heroMap[n];
+    const role=h?h.role:'Damage';
+    if(!banByRole[role])banByRole[role]=[];
+    banByRole[role].push(n);
   });
+  const banGroupsHtml=['Tank','Damage','Support'].filter(r=>banByRole[r].length).map(r=>`
+    <div class="ban-role-group">
+      <div class="ban-role-header">
+        ${roleIcon(r,14)}
+        <span class="ban-role-title" style="color:${rc[r]}">${r}</span>
+      </div>
+      <div class="ban-role-heroes">
+        ${banByRole[r].map(n=>{const ps=portrait(n);return`<div class="ban-chip">
+          ${ps?`<img src="${ps}" onerror="this.outerHTML='<div class=ban-chip-ph>${n[0]}</div>'">`:`<div class="ban-chip-ph">${n[0]}</div>`}
+          <span class="ban-chip-name">${n}</span>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty">Не указаны</div>';
+
+  const compHtml=buildCompDisplay(m.comp);
+
+  const counterByRole={Tank:[],Damage:[],Support:[]};
+  (m.counters||[]).forEach(n=>{
+    const h=heroMap[n];
+    const role=h?h.role:'Damage';
+    if(!counterByRole[role])counterByRole[role]=[];
+    counterByRole[role].push(n);
+  });
+  const counterGroupsHtml=['Tank','Damage','Support'].filter(r=>counterByRole[r].length).map(r=>`
+    <div class="ban-role-group">
+      <div class="ban-role-header">
+        ${roleIcon(r,14)}
+        <span class="ban-role-title" style="color:${rc[r]}">${r}</span>
+      </div>
+      <div class="ban-role-heroes">
+        ${counterByRole[r].map(n=>{const ps=portrait(n);return`<div class="ban-chip" style="background:rgba(240,160,48,.06);border-color:rgba(240,160,48,.2)">
+          ${ps?`<img src="${ps}" onerror="this.outerHTML='<div class=ban-chip-ph>${n[0]}</div>'">`:`<div class="ban-chip-ph">${n[0]}</div>`}
+          <span class="ban-chip-name" style="color:var(--accent)">${n}</span>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty">Не указаны</div>';
+
+  const notesHtml=m.notes
+    ?m.notes.split(/[.\n]/).filter(s=>s.trim()).map(s=>`<span class="note-line">${s.trim()}</span>`).join('')
+    :'<div class="empty">Нет заметок</div>';
+
+  detail.innerHTML=`
+    <div class="detail-header">
+      ${src?`<img src="${src}" class="detail-banner" alt="${m.name}" onerror="this.outerHTML='<div class=detail-banner-ph><div class=detail-banner-ph-inner>${m.name}</div></div>'">`:`<div class="detail-banner-ph"><div class="detail-banner-ph-inner">${m.name}</div></div>`}
+      <div class="detail-header-body">
+        <div class="detail-top">
+          <div>
+            <button class="back-btn" onclick="backToMaps()">← Назад</button>
+            <div class="detail-name">${m.name}</div>
+          </div>
+          <button class="btn" style="margin-top:2.5rem" onclick="openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
+        </div>
+        <div class="detail-meta">
+          <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier}" style="margin-left:4px">${m.tier}</span></div>
+          <div class="m-item"><span>Тип:</span>${mapTypeIcon(m.type,14)}<span class="m-val">${m.type}</span></div>
+          <div class="m-item"><span>Приоритет:</span><span class="m-val">#${m.priority}</span></div>
+          ${noAD
+            ?`<div class="m-item">${ICON_DIF}<span style="margin-left:4px">Сложность</span>${dots5(m.dif,'dif')}</div>`
+            :`<div class="m-item">${ICON_ATK}${dots5(m.atk,'atk')}</div>
+              <div class="m-item">${ICON_DEF}${dots5(m.def,'def')}</div>`
+          }
+        </div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="d-card">
+        <div class="d-card-title">Предпочтительные герои</div>
+        <div class="hero-list">${heroRows}</div>
+      </div>
+      <div class="d-card">
+        <div class="d-card-title">Цели для банов</div>
+        ${banGroupsHtml}
+      </div>
+      <div class="d-card">
+        <div class="d-card-title">Предпочтительный состав</div>
+        ${compHtml}
+      </div>
+      <div class="d-card">
+        <div class="d-card-title">Контрпики на карте</div>
+        ${counterGroupsHtml}
+      </div>
+      <div class="d-card full">
+        <div class="d-card-title">Заметки о подготовке</div>
+        <div class="notes-text">${notesHtml}</div>
+      </div>
+    </div>`;
 }
 
-function confirmMapStrScore(){
-  if(!mapStrengthPending)return;
-  const mapName=mapStrengthPending.map;
-  let entry=(heroStrengthEdits||[]).find(e=>e.map===mapName);
-  if(!entry){
-    entry={map:mapName,type:mapStrengthPending.type,atk:0,def:0};
-    (heroStrengthEdits=heroStrengthEdits||[]).push(entry);
-  }
-  if(_mapStrTmpAtk)entry.atk=_mapStrTmpAtk;
-  if(_mapStrTmpDef)entry.def=_mapStrTmpDef;
-  _mapStrTmpAtk=0;_mapStrTmpDef=0;
-  document.getElementById('mapStrScorePopup').classList.add('hidden');
-  mapStrengthPending=null;
-  renderMapStrPickerGrid();
+function buildCompDisplay(comp){
+  if(!comp||!comp.length)return'<div class="empty">Не указан</div>';
+  const byRole={Tank:[],Damage:[],Support:[]};
+  comp.forEach(c=>{
+    const role=c.playerRole||c.role||(heroMap[c.hero]||{}).role||'Damage';
+    if(!byRole[role])byRole[role]=[];
+    byRole[role].push({...c,displayRole:role});
+  });
+  return['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
+    <div style="margin-bottom:8px">
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${rc[r]};margin-bottom:5px;font-weight:700">${r}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${byRole[r].map(c=>{const ps=portrait(c.hero);return`<div class="comp-card ${r}">
+          ${ps?`<img src="${ps}" class="comp-av" onerror="this.outerHTML='<div class=comp-av-ph>${c.hero[0]}</div>'">`:`<div class="comp-av-ph">${c.hero[0]}</div>`}
+          <div class="comp-name">${c.hero}</div>
+        </div>`;}).join('')}
+      </div>
+    </div>`).join('');
 }
 
-function clearMapStrScore(mapName){
-  if(heroStrengthEdits){
-    const idx=heroStrengthEdits.findIndex(e=>e.map===mapName);
-    if(idx>=0){heroStrengthEdits[idx].atk=0;heroStrengthEdits[idx].def=0;}
-  }
-  _mapStrTmpAtk=0;_mapStrTmpDef=0;
-  document.getElementById('mapStrScorePopup').classList.add('hidden');
-  mapStrengthPending=null;
-  renderMapStrPickerGrid();
+function backToMaps(){document.getElementById('mapDetail').classList.remove('show');document.getElementById('mapDetail').innerHTML='';renderMaps()}
+function filterMaps(type,btn){mapFilter=type;document.querySelectorAll('#mapFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');backToMaps()}
+function toggleMapPool(btn){
+  mapPoolFilter=mapPoolFilter==='active'?'all':'active';
+  btn.textContent=mapPoolFilter==='active'?'АКТУАЛЬНЫЙ':'ВСЕ КАРТЫ';
+  btn.classList.toggle('pool-active',mapPoolFilter==='active');
+  backToMaps();
 }
