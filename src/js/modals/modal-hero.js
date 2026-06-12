@@ -122,3 +122,104 @@ window.confirmPicker=function(){
   }
   _heroModalConfirm();
 };
+
+// ── Map Strength Picker (оверлей) ─────────────────────────────
+let _mapStrTypeFilter = 'all';
+
+function openMapStrPicker(){
+  _mapStrTypeFilter = 'all';
+  _strengthActivePopup = null;
+  // Обновляем subtitle с именем героя
+  const heroName = document.getElementById('hName').value.trim();
+  const sub = document.getElementById('mapStrPickerHeroName');
+  if(sub) sub.textContent = heroName || '';
+  // Сбрасываем фильтр кнопок типов
+  document.querySelectorAll('#mapStrPickerOverlay .picker-filters .f-btn')
+    .forEach((b,i) => b.classList.toggle('active', i===0));
+  renderHeroStrengthGrid();
+  updateMapStrCount();
+  document.getElementById('mapStrPickerOverlay').classList.remove('hidden');
+}
+
+function closeMapStrPicker(){
+  _strengthActivePopup = null;
+  document.getElementById('mapStrPickerOverlay').classList.add('hidden');
+}
+
+function confirmMapStrPicker(){
+  closeMapStrPicker();
+  renderStrengthPreview();
+}
+
+function mapStrTypeFilter(type, btn){
+  _mapStrTypeFilter = type;
+  document.querySelectorAll('#mapStrPickerOverlay .picker-filters .f-btn')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHeroStrengthGrid();
+}
+
+function updateMapStrCount(){
+  const el = document.getElementById('mapStrPickerCount');
+  if(!el) return;
+  const rated = heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0).length;
+  el.textContent = rated + ' оценено';
+}
+
+// Переопределяем renderHeroStrengthGrid чтобы учитывать фильтр типа И _strengthShowOnlyRated
+// (оригинал в старом коде не знал о _mapStrTypeFilter)
+const _origRenderGrid = window.renderHeroStrengthGrid;
+window.renderHeroStrengthGrid = function(){
+  const el = document.getElementById('heroStrengthGrid');
+  if(!el) return;
+  _strengthActivePopup = null;
+  const order = ['Control','Escort','Hybrid','Push','Flashpoint'];
+  let entries = _strengthShowOnlyRated
+    ? heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0)
+    : heroStrengthEdits;
+  if(_mapStrTypeFilter !== 'all')
+    entries = entries.filter(e => e.type === _mapStrTypeFilter);
+  const byType = {};
+  entries.forEach(e => { if(!byType[e.type]) byType[e.type]=[]; byType[e.type].push(e); });
+  el.innerHTML = order.filter(t => byType[t]?.length).map(t => `
+    <div class="hs-type-group">
+      <div class="hs-type-label">${mapTypeIcon(t,11)} ${t}</div>
+      <div class="hs-map-row">
+        ${byType[t].map(e => _mapStrengthChip(e)).join('')}
+      </div>
+    </div>`).join('') || '<div class="empty" style="padding:8px 0">Нет карт</div>';
+};
+
+// Компактный превью в модалке — только карты с оценкой
+function renderStrengthPreview(){
+  const el = document.getElementById('heroStrengthPreview');
+  if(!el) return;
+  const rated = heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0);
+  if(!rated.length){
+    el.innerHTML = '<span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>';
+    return;
+  }
+  el.innerHTML = rated.map(e => {
+    const noAD = NO_ATKDEF.includes(e.type);
+    const label = noAD ? `${e.atk}` : `${e.atk}/${e.def}`;
+    const color = e.atk >= 8 ? 'var(--damage)' : e.atk >= 5 ? 'var(--accent)' : 'var(--text3)';
+    return `<div class="hs-map-chip rated" onclick="openMapStrPicker()" style="cursor:pointer">
+      <span class="hs-map-name">${e.map}</span>
+      <span class="hs-map-score" style="color:${color}">${label}</span>
+    </div>`;
+  }).join('');
+  updateMapStrCount();
+}
+
+// Перехватываем setStrengthDot чтобы обновлять счётчик
+const _origSetDot = window.setStrengthDot;
+window.setStrengthDot = function(mapName, field, val){
+  _origSetDot(mapName, field, val);
+  updateMapStrCount();
+};
+
+// Закрываем оверлей по клику на фон
+document.addEventListener('DOMContentLoaded', () => {
+  const ov = document.getElementById('mapStrPickerOverlay');
+  if(ov) ov.addEventListener('click', e => { if(e.target === ov) closeMapStrPicker(); });
+});
