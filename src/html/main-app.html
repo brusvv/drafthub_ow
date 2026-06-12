@@ -31,6 +31,11 @@
   </nav>
 
   <div id="view-maps" class="view active">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3)">Пул карт:</span>
+      <button class="btn pool-active" id="mapPoolToggle" onclick="toggleMapPool(this)" style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:20px">АКТУАЛЬНЫЙ</button>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="mapPoolCount"></span>
+    </div>
     <div class="toolbar">
       <div class="filters" id="mapFilters">
         <button class="f-btn active" onclick="filterMaps('all',this)">Все</button>
