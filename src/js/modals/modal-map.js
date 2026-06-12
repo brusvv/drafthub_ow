@@ -24,7 +24,11 @@ function openMapModal(map){
   initCompSlots(map);
   // Показываем авто-preferred из HeroMapStrength
   renderMapAutoPreferred(map);
-  setTimeout(()=>initDotRating('mDif','mDifDots'),0);
+  setTimeout(()=>{
+    initDotRating('mAtk','mAtkDots');
+    initDotRating('mDef','mDefDots');
+    initDotRating('mDif','mDifDots');
+  },0);
   document.getElementById('mapModal').classList.remove('hidden');
 }
 
