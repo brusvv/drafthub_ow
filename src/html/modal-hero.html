@@ -1,7 +1,11 @@
 <!-- HERO MODAL -->
 <div class="modal-overlay hidden" id="heroModal">
   <div class="modal">
-    <div class="modal-title" id="heroModalTitle">Добавить героя</div>
+    <!-- Заголовок с кнопкой X справа -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div class="modal-title" id="heroModalTitle" style="margin:0">Добавить героя</div>
+      <button onclick="closeModal('heroModal')" style="background:none;border:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px" title="Закрыть">×</button>
+    </div>
     <input type="hidden" id="heroEditRow">
     <div class="form-row">
       <div class="form-group"><label class="form-label">Имя *</label><input class="form-input" id="hName" placeholder="Tracer"></div>
@@ -19,15 +23,23 @@
       </label>
     </div>
 
-    <!-- Контрпики -->
-    <div class="form-group">
-      <label class="form-label">Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(оценка ≥8 = рекомендация к бану)</span></label>
-      <div class="sel-heroes" id="selHeroCounters" onclick="openCounterPicker()">
-        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+    <!-- Контрпики и синергии — в два столбца -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:.875rem">
+      <!-- Контрпики (левый столбец) -->
+      <div>
+        <label class="form-label">Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(≥8 = бан)</span></label>
+        <div class="sel-heroes" id="selHeroCounters" onclick="openCounterPicker()" style="min-height:36px">
+          <span class="sel-empty">Выбрать</span><span class="sel-edit-hint">✎</span>
+        </div>
+      </div>
+      <!-- Синергии (правый столбец) -->
+      <div>
+        <label class="form-label">Синергии</label>
+        <div id="heroSynergyBlock"></div>
       </div>
     </div>
 
-    <!-- Сила на картах — новая механика через mapStrPickerOverlay -->
+    <!-- Сила на картах -->
     <div class="form-group">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <label class="form-label" style="margin:0">Сила на картах</label>
@@ -38,16 +50,9 @@
             style="font-size:10px;padding:4px 10px">Открыть редактор ↗</button>
         </div>
       </div>
-      <!-- Компактный превью текущих оценок (только карты с оценкой) -->
       <div id="heroStrengthPreview" class="hs-map-row" style="min-height:28px">
         <span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>
       </div>
-    </div>
-
-    <!-- Синергии -->
-    <div class="form-group">
-      <label class="form-label">Синергии</label>
-      <div id="heroSynergyBlock"></div>
     </div>
 
     <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="hNotes" placeholder="Комментарии..."></textarea></div>
@@ -58,4 +63,5 @@
       <button class="btn btn-primary" onclick="saveHero()">Сохранить</button>
     </div>
   </div>
+
 </div>
