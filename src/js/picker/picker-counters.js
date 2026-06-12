@@ -7,11 +7,12 @@ let counterPickerSelected=[];
 function openCounterPicker(){
   counterPickerRoleFilter='all';
   document.querySelectorAll('#counterPickerOverlay .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  store.set('synergyExclude', document.getElementById('hName').value.trim());
   renderCounterPickerGrid();
   document.getElementById('counterPickerOverlay').classList.remove('hidden');
 }
 function closeCounterPicker(){document.getElementById('counterPickerOverlay').classList.add('hidden')}
-function confirmCounterPicker(){closeCounterPicker();renderCounterSelPreview();renderCounterScores();}
+function confirmCounterPicker(){closeCounterPicker();store.set('synergyExclude','');renderCounterSelPreview();renderCounterScores();}
 
 function counterPickerFilter(role,btn){
   counterPickerRoleFilter=role;
