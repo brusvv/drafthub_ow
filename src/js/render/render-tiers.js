@@ -282,20 +282,8 @@ function openTierMapPreview(name){
   openTierPreview(m.name,body,actions);
 }
 function openTierHeroPreview(name){
-  const h=heroMap[name]||{};if(!h)return;
-  const src=portrait(h.name);
-  const counters=(h.counters||[]).slice().sort((a,b)=>b.score-a.score).slice(0,5);
-  const counterHtml=counters.length?`<div class="tier-preview-section"><div class="tier-preview-section-title">Контрпики</div><div class="h-counter-list tier-preview-counters">${counters.map(c=>{const csrc=portrait(c.name);const cc=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';return`<div class="h-counter-icon" title="${c.name}">${csrc?`<img src="${csrc}" alt="${c.name}" onerror="this.style.display='none'">`:`<div class="h-counter-icon-ph">${c.name[0]}</div>`}<div class="h-counter-score" style="color:${cc}">${c.score}</div></div>`;}).join('')}</div></div>`:'';
-  const body=`<div class="tier-hero-preview-card">
-    ${src?`<img src="${src}" class="tier-hero-preview-img" alt="${h.name}" onerror="this.outerHTML='<div class=tier-hero-preview-ph>${h.name[0]}</div>'">`:`<div class="tier-hero-preview-ph">${h.name[0]}</div>`}
-    <div class="tier-hero-preview-info">
-      <div class="tier-preview-meta"><span>${roleIcon(h.role,16)} ${h.role}</span><span>${subroleIcon(h.role,h.subrole,14)} ${h.subrole||'Other'}</span><span>Приоритет #${h.priority}</span>${h.banned?'<span class="tier-preview-ban">БАН</span>':''}</div>
-      ${counterHtml}
-      ${h.notes?`<div class="tier-preview-notes">${h.notes}</div>`:''}
-    </div>
-  </div>`;
-  const actions=`<button class="btn btn-primary" onclick="closeTierPreview();openHeroModal(heroes.find(x=>x.name==='${esc(h.name)}'))">✎ Редактировать</button>`;
-  openTierPreview(h.name,body,actions);
+  // Используем единый попап из render-heroes.js
+  if(typeof openHeroInfoPopup === 'function') openHeroInfoPopup(name);
 }
 
 function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30)}
