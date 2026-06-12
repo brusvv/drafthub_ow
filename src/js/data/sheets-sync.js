@@ -89,7 +89,7 @@ const SM=[
 // ════ ENSURE SHEETS ════
 const REQUIRED_SHEETS=[
   {title:'Heroes',       headers:['name','role','subrole','priority','banned','notes','counters']},
-  {title:'Maps',         headers:['name','type','tier','priority','atk','def','dif','notes']},
+  {title:'Maps',         headers:['name','type','tier','priority','atk','def','dif','notes','inpool']},
   {title:'MapPreferred', headers:['map','hero']},
   {title:'MapBans',      headers:['map','hero']},
   {title:'Compositions', headers:['map','hero','role','playerRole']},
