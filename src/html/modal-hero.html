@@ -13,31 +13,49 @@
       <div class="form-group"><label class="form-label">Подкласс</label><input class="form-input" id="hSub" placeholder="Flanker"></div>
       <div class="form-group"><label class="form-label">Приоритет (1–10)</label><input class="form-input" id="hPrio" type="number" min="1" max="10" value="5"></div>
     </div>
-    <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="hBanned" style="accent-color:var(--damage)"> В текущем бане</label></div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="hBanned" style="accent-color:var(--damage)"> В текущем бане
+      </label>
+    </div>
+
+    <!-- Контрпики -->
     <div class="form-group">
       <label class="form-label">Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(оценка ≥8 = рекомендация к бану)</span></label>
       <div class="sel-heroes" id="selHeroCounters" onclick="openCounterPicker()">
         <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
       </div>
-      <!-- hidden inputs for scores, shown below selected heroes -->
       <div id="counterScoresBlock" style="display:none;margin-top:6px">
         <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px">Оценки контрпиков (1–10):</div>
         <div id="counterScoresList" style="display:flex;flex-direction:column;gap:4px"></div>
       </div>
     </div>
+
+    <!-- Сила на картах — новая механика через mapStrPickerOverlay -->
     <div class="form-group">
-      <label class="form-label">Силён на картах</label>
-      <div class="sel-heroes" id="selHeroStrong" onclick="openMapPicker('heroStrong')">
-        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label class="form-label" style="margin:0">Сила на картах</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="hs-filter-btn" id="mapStrFilterBtn"
+            onclick="toggleStrengthFilter(this)">С оценкой</button>
+          <button class="btn" onclick="openMapStrPicker()"
+            style="font-size:10px;padding:4px 10px">Открыть редактор ↗</button>
+        </div>
+      </div>
+      <!-- Компактный превью текущих оценок (только карты с оценкой) -->
+      <div id="heroStrengthPreview" class="hs-map-row" style="min-height:28px">
+        <span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>
       </div>
     </div>
+
+    <!-- Синергии -->
     <div class="form-group">
-      <label class="form-label">Слаб на картах</label>
-      <div class="sel-heroes" id="selHeroWeak" onclick="openMapPicker('heroWeak')">
-        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
-      </div>
+      <label class="form-label">Синергии</label>
+      <div id="heroSynergyBlock"></div>
     </div>
+
     <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="hNotes" placeholder="Комментарии..."></textarea></div>
+
     <div class="modal-footer">
       <button class="btn btn-danger" id="heroDeleteBtn" onclick="deleteHero()" style="display:none">Удалить</button>
       <button class="btn" onclick="closeModal('heroModal')">Отмена</button>
