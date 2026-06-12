@@ -80,8 +80,13 @@
 
 /* ── DOT RATING (сложность) ── */
 .dot-rating{display:flex;gap:6px;align-items:center;padding:8px 2px}
-.dot-rating-dot{font-size:18px;cursor:pointer;transition:color .1s;user-select:none;line-height:1}
+.dot-rating-dot{font-size:18px;cursor:pointer;transition:color .1s;user-select:none;line-height:1;color:var(--border2)}
+/* Незаполненные — серые по умолчанию через color:var(--border2) выше */
 .dot-rating-dot.dif{color:var(--border2)}
 .dot-rating-dot.dif.filled{color:var(--accent)}
+.dot-rating-dot.atk{color:var(--border2)}
+.dot-rating-dot.atk.filled{color:var(--damage)}
+.dot-rating-dot.def{color:var(--border2)}
+.dot-rating-dot.def.filled{color:var(--tank)}
 .dot-rating-dot:hover~.dot-rating-dot{color:var(--border2)!important}
 .dot-rating-wrap:hover .dot-rating-dot{color:var(--accent)}
