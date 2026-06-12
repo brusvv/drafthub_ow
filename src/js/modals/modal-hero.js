@@ -22,62 +22,9 @@ function openHeroModal(hero){
   // Загружаем синергии
   heroSynergyEdits=hero?(heroSynergy[hero.name]||[]).map(s=>({...s})):[];
   renderCounterSelPreview();renderCounterScores();
-  renderHeroStrengthTable();
+  renderStrengthPreview();
   renderHeroSynergyBlock();
   document.getElementById('heroModal').classList.remove('hidden');
-}
-
-function renderHeroStrengthTable(){
-  const el=document.getElementById('heroStrengthTable');if(!el)return;
-  const types=['Control','Escort','Hybrid','Push','Flashpoint','Clash'];
-  const byType={};
-  heroStrengthEdits.forEach(e=>{
-    if(!byType[e.type])byType[e.type]=[];
-    byType[e.type].push(e);
-  });
-  el.innerHTML=types.filter(t=>byType[t]&&byType[t].length).map(t=>{
-    const noAD=NO_ATKDEF.includes(t);
-    return`<div class="strength-type-group">
-      <div class="strength-type-label">${mapTypeIcon(t,11)} ${t}</div>
-      ${byType[t].map(e=>`
-        <div class="strength-row">
-          <span class="strength-map-name">${e.map}</span>
-          ${noAD
-            ?_strengthDots(e.map,'atk',e.atk,'Сила')
-            :`${_strengthDots(e.map,'atk',e.atk,'ATK')}${_strengthDots(e.map,'def',e.def,'DEF')}`
-          }
-        </div>`).join('')}
-    </div>`;
-  }).join('');
-}
-
-function _strengthDots(mapName,field,val,label){
-  const dots=Array.from({length:10},(_,k)=>{
-    const v=k+1;const filled=v<=val;
-    const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
-    return`<span onclick="setHeroStrength('${esc(mapName)}','${field}',${v})"
-      style="cursor:pointer;font-size:13px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
-  }).join('');
-  return`<div class="strength-field">
-    <span class="strength-field-label">${label}</span>
-    <div class="strength-dots">${dots}</div>
-    <span class="strength-val" id="sv_${esc(mapName)}_${field}">${val||0}</span>
-  </div>`;
-}
-
-function setHeroStrength(mapName,field,val){
-  const entry=heroStrengthEdits.find(e=>e.map===mapName);if(!entry)return;
-  entry[field]=val;
-  // Обновляем только затронутый ряд — не перерисовываем всё
-  const valEl=document.getElementById(`sv_${esc(mapName)}_${field}`);
-  if(valEl)valEl.textContent=val;
-  // Перекрашиваем точки
-  const dots=document.querySelectorAll(`.strength-dots span[onclick*="'${mapName}','${field}'"]`);
-  dots.forEach((dot,k)=>{
-    const v=k+1;const filled=v<=val;
-    const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
-    dot.style.color=filled?color:'var(--border2)';
-  });
 }
 
 // ── Synergy block ──
@@ -124,11 +71,15 @@ window.confirmPicker=function(){
 };
 
 // ── Map Strength Picker (оверлей) ─────────────────────────────
-let _mapStrTypeFilter = 'all';
+// Состояние оверлея «Оценка силы героя на картах».
+let _mapStrTypeFilter      = 'all';   // фильтр по типу карты ('all'|'Control'|...)
+let _strengthShowOnlyRated = false;   // кнопка «С оценкой» — показывать только оценённые
+let _strengthActivePopup   = null;    // имя карты, для которой открыт inline-попап оценки
 
 function openMapStrPicker(){
-  _mapStrTypeFilter = 'all';
-  _strengthActivePopup = null;
+  _mapStrTypeFilter      = 'all';
+  _strengthShowOnlyRated = false;
+  _strengthActivePopup   = null;
   // Обновляем subtitle с именем героя
   const heroName = document.getElementById('hName').value.trim();
   const sub = document.getElementById('mapStrPickerHeroName');
@@ -136,6 +87,9 @@ function openMapStrPicker(){
   // Сбрасываем фильтр кнопок типов
   document.querySelectorAll('#mapStrPickerOverlay .picker-filters .f-btn')
     .forEach((b,i) => b.classList.toggle('active', i===0));
+  // Сбрасываем кнопку «С оценкой» (может дублироваться: в модалке и в оверлее)
+  document.querySelectorAll('[id="mapStrFilterBtn"]')
+    .forEach(b => b.classList.remove('active'));
   renderHeroStrengthGrid();
   updateMapStrCount();
   document.getElementById('mapStrPickerOverlay').classList.remove('hidden');
@@ -143,6 +97,7 @@ function openMapStrPicker(){
 
 function closeMapStrPicker(){
   _strengthActivePopup = null;
+  _closeStrengthPopup();
   document.getElementById('mapStrPickerOverlay').classList.add('hidden');
 }
 
@@ -153,9 +108,24 @@ function confirmMapStrPicker(){
 
 function mapStrTypeFilter(type, btn){
   _mapStrTypeFilter = type;
+  _strengthActivePopup = null;
+  _closeStrengthPopup();
   document.querySelectorAll('#mapStrPickerOverlay .picker-filters .f-btn')
     .forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  renderHeroStrengthGrid();
+}
+
+/**
+ * Кнопка «С оценкой» — показывает только карты с заполненной оценкой.
+ * Может присутствовать дважды (в модалке и в оверлее) — синхронизируем обе.
+ */
+function toggleStrengthFilter(btn){
+  _strengthShowOnlyRated = !_strengthShowOnlyRated;
+  document.querySelectorAll('[id="mapStrFilterBtn"]')
+    .forEach(b => b.classList.toggle('active', _strengthShowOnlyRated));
+  _strengthActivePopup = null;
+  _closeStrengthPopup();
   renderHeroStrengthGrid();
 }
 
@@ -166,13 +136,12 @@ function updateMapStrCount(){
   el.textContent = rated + ' оценено';
 }
 
-// Переопределяем renderHeroStrengthGrid чтобы учитывать фильтр типа И _strengthShowOnlyRated
-// (оригинал в старом коде не знал о _mapStrTypeFilter)
-const _origRenderGrid = window.renderHeroStrengthGrid;
-window.renderHeroStrengthGrid = function(){
+/**
+ * Рисует сетку карт в оверлее с учётом фильтра типа и «С оценкой».
+ */
+function renderHeroStrengthGrid(){
   const el = document.getElementById('heroStrengthGrid');
   if(!el) return;
-  _strengthActivePopup = null;
   const order = ['Control','Escort','Hybrid','Push','Flashpoint'];
   let entries = _strengthShowOnlyRated
     ? heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0)
@@ -188,9 +157,103 @@ window.renderHeroStrengthGrid = function(){
         ${byType[t].map(e => _mapStrengthChip(e)).join('')}
       </div>
     </div>`).join('') || '<div class="empty" style="padding:8px 0">Нет карт</div>';
-};
+  // Если попап был открыт для карты, отфильтрованной фильтром — закрываем
+  if(_strengthActivePopup && !entries.find(e => e.map === _strengthActivePopup)){
+    _strengthActivePopup = null;
+  }
+  _renderStrengthPopup();
+}
 
-// Компактный превью в модалке — только карты с оценкой
+/**
+ * Карточка-чип одной карты в гриде оценки силы.
+ * Клик открывает inline-попап с диамантами ATK/DEF.
+ */
+function _mapStrengthChip(e){
+  const src    = mapImg(e.map);
+  const noAD   = NO_ATKDEF.includes(e.type);
+  const hasData= e.atk>0 || (!noAD && e.def>0);
+  const label  = noAD ? `${e.atk||0}` : `${e.atk||0}/${e.def||0}`;
+  return `<div class="map-str-chip${hasData?' has-data':''}"
+               data-map="${esc(e.map)}"
+               onclick="toggleStrengthPopup('${esc(e.map)}')">
+    ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
+    <div class="map-str-chip-name">${e.map}</div>
+    ${hasData ? `<div class="map-str-chip-score">${label}</div>` : ''}
+  </div>`;
+}
+
+/**
+ * Открывает/закрывает inline-попап оценки для карты.
+ * Повторный клик по той же карте закрывает попап.
+ */
+function toggleStrengthPopup(mapName){
+  _strengthActivePopup = (_strengthActivePopup === mapName) ? null : mapName;
+  _renderStrengthPopup();
+}
+
+function _closeStrengthPopup(){
+  const el = document.getElementById('mapStrScorePopup');
+  if(el) el.remove();
+}
+
+/**
+ * Рендерит единственный shared-попап (#mapStrScorePopup) с
+ * диамант-рейтингом ATK/DEF (или «Сила» для Control/Flashpoint)
+ * для карты _strengthActivePopup. Позиционируется через CSS
+ * (centered overlay) — см. strength.css.
+ */
+function _renderStrengthPopup(){
+  _closeStrengthPopup();
+  if(!_strengthActivePopup) return;
+  const e = heroStrengthEdits.find(x => x.map === _strengthActivePopup);
+  if(!e) return;
+  const noAD = NO_ATKDEF.includes(e.type);
+
+  const popup = document.createElement('div');
+  popup.id = 'mapStrScorePopup';
+  popup.className = 'hs-popup';
+  popup.innerHTML = `
+    <div class="map-str-popup-title">${e.map}</div>
+    ${_strengthPopupRow(e.map,'atk',e.atk, noAD?'Сила':'ATK')}
+    ${noAD ? '' : _strengthPopupRow(e.map,'def',e.def,'DEF')}
+    <button class="btn" style="margin-top:8px;width:100%"
+            onclick="toggleStrengthPopup('${esc(e.map)}')">Готово</button>
+  `;
+  const box = document.querySelector('#mapStrPickerOverlay .picker-box');
+  if(box) box.appendChild(popup);
+}
+
+function _strengthPopupRow(mapName, field, val, label){
+  const dots = Array.from({length:10}, (_,k) => {
+    const v = k+1; const filled = v <= val;
+    const color = v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
+    return`<span onclick="setStrengthDot('${esc(mapName)}','${field}',${v})"
+      style="cursor:pointer;font-size:15px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
+  }).join('');
+  return`<div class="map-str-score-row">
+    <span class="map-str-score-label">${label}</span>
+    <div class="map-str-dots">${dots}</div>
+    <span class="strength-val" style="margin-left:4px">${val||0}</span>
+  </div>`;
+}
+
+/**
+ * Устанавливает оценку ATK/DEF для карты.
+ * Повторный клик по уже выставленному значению уменьшает на 1
+ * (стандартный паттерн «toggle off» для диамант-рейтингов).
+ */
+function setStrengthDot(mapName, field, val){
+  const entry = heroStrengthEdits.find(e => e.map === mapName);
+  if(!entry) return;
+  entry[field] = (entry[field] === val) ? val-1 : val;
+  renderHeroStrengthGrid();
+  updateMapStrCount();
+}
+
+/**
+ * Компактный превью в самой модалке героя — только карты с оценкой.
+ * Клик по чипу открывает полный редактор (openMapStrPicker).
+ */
 function renderStrengthPreview(){
   const el = document.getElementById('heroStrengthPreview');
   if(!el) return;
@@ -210,13 +273,6 @@ function renderStrengthPreview(){
   }).join('');
   updateMapStrCount();
 }
-
-// Перехватываем setStrengthDot чтобы обновлять счётчик
-const _origSetDot = window.setStrengthDot;
-window.setStrengthDot = function(mapName, field, val){
-  _origSetDot(mapName, field, val);
-  updateMapStrCount();
-};
 
 // Закрываем оверлей по клику на фон
 document.addEventListener('DOMContentLoaded', () => {
