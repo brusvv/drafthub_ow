@@ -70,7 +70,7 @@ function parseCounters(str){
 // ════ MAPS ════
 async function loadMaps(){
   const[mr,pr,br,cr,mcr]=await Promise.all([
-    sGet('Maps!A:H'),sGet('MapPreferred!A:B'),sGet('MapBans!A:B'),
+    sGet('Maps!A:I'),sGet('MapPreferred!A:B'),sGet('MapBans!A:B'),
     sGet('Compositions!A:D'),sGet('MapCounters!A:B')
   ]);
   const pf={},bn={},co={},mc={};
@@ -88,6 +88,7 @@ async function loadMaps(){
     atk:parseInt(r[i('atk')])||3,def:parseInt(r[i('def')])||3,
     dif:parseInt(r[i('dif')])||3,
     notes:r[i('notes')]||'',
+    inPool:r[i('inpool')]!=='FALSE'&&r[i('inpool')]!=='false',
     preferredHeroes:pf[r[i('name')]]||[],
     bans:bn[r[i('name')]]||[],
     comp:co[r[i('name')]]||[],
@@ -115,6 +116,7 @@ async function loadPlayers(){
     mainRole:r[i('mainrole')]||'',offRole:r[i('offrole')]||'',
     rankTank:r[i('ranktank')]||'',rankDmg:r[i('rankdmg')]||'',rankSup:r[i('ranksup')]||'',
     notes:r[i('notes')]||'',
+    inPool:r[i('inpool')]!=='FALSE'&&r[i('inpool')]!=='false',
     mainHeroes:hm.main[r[i('name')]]||[],
     poolHeroes:hm.pool[r[i('name')]]||[]
   }));
