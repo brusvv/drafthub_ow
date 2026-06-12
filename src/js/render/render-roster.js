@@ -219,7 +219,8 @@ function addRosterPlayer(name){
   const counts={Tank:0,Damage:0,Support:0};
   rosterPlayers.forEach(pl=>activeRoles(pl).forEach(r=>{if(counts[r]!==undefined)counts[r]++;}));
   const newR=activeRoles(p);
-  if(!newR.some(r=>!limits[r]||counts[r]<limits[r])){
+  // Если роль не указана — пропускаем проверку лимитов и добавляем
+  if(newR.length && !newR.some(r=>!limits[r]||counts[r]<limits[r])){
     toast(`Нельзя добавить — лимиты ролей заполнены (${newR.map(r=>`${r}:${counts[r]}/${limits[r]||'∞'}`).join(', ')})`,'err');
     return;
   }
