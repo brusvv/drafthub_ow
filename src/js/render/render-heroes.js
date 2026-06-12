@@ -70,6 +70,17 @@ function openHeroInfoPopup(name){
   _buildHeroInfoPopup(name);
 }
 
+
+function _scoreColor(v){
+  if(v<=0)  return 'var(--text3)';
+  if(v<=4)  return `hsl(${Math.round(0+(v-1)*5)},70%,50%)`;
+  if(v===5) return 'var(--text3)';
+  if(v<=7)  return `hsl(${Math.round(38+(v-6)*12)},80%,52%)`;
+  if(v===8) return 'hsl(145,50%,50%)';
+  if(v===9) return 'hsl(135,65%,45%)';
+  return 'hsl(128,75%,40%)';
+}
+
 function _buildHeroInfoPopup(name){
   const hero=heroes.find(h=>h.name===name);if(!hero)return;
   const src=portrait(hero.name);
@@ -84,13 +95,13 @@ function _buildHeroInfoPopup(name){
     const ms=mapImg(mName);
     const noAD=m?NO_ATKDEF.includes(m.type):false;
     const scoreHtml=showFull&&!noAD
-      ?`<span style="font-family:var(--mono);font-size:11px;color:var(--damage)">${v.atk}</span>
+      ?`<span style="font-family:var(--mono);font-size:11px;color:${_scoreColor(v.atk)}">${v.atk}</span>
         <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">atk</span>
-        <span style="font-family:var(--mono);font-size:11px;color:var(--tank);margin-left:4px">${v.def}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:${_scoreColor(v.def)}">${v.def}</span>
         <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">def</span>`
-      :`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)">${noAD?v.atk:v.avg}</span>`;
+      :`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(noAD?v.atk:v.avg)}">${noAD?v.atk:v.avg}</span>`;
     return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)">
-      ${m?mapTypeIcon(m.type,12):''}
+      ${m?mapTypeIcon(m.type,18):''}
       ${ms?`<img src="${ms}" style="width:44px;height:28px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">`:''}
       <span style="font-size:13px;font-weight:600;flex:1">${mName}</span>
       ${scoreHtml}
