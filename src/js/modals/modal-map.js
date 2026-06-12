@@ -83,6 +83,41 @@ function openPlayerModal(player){
   document.getElementById('playerModal').classList.remove('hidden');
 }
 
+function _syncOffRoleVisibility(){
+  const mainRole=document.getElementById('pMainRole')?.value;
+  const offGroup=document.getElementById('pOffRole')?.closest('.form-group');
+  if(!offGroup)return;
+  if(mainRole==='Flex'){
+    offGroup.style.display='none';
+    const sel=document.getElementById('pOffRole');if(sel)sel.value='';
+  }else{
+    offGroup.style.display='';
+  }
+}
+
+function onPlayerRoleChange(){
+  _syncOffRoleVisibility();
+  const mainRole=document.getElementById('pMainRole')?.value;
+  const offRole=document.getElementById('pOffRole')?.value;
+  const block=document.getElementById('playerHeroPoolsBlock');
+  if(!block)return;
+  let roles=[];
+  if(mainRole==='Flex')roles=['Tank','Damage','Support'];
+  else if(mainRole){
+    roles=[mainRole];
+    if(offRole&&offRole!==mainRole)roles.push(offRole);
+  }
+  if(!roles.length){block.innerHTML='';return;}
+  block.innerHTML=roles.map(role=>`
+    <div class="form-group">
+      <label class="form-label">Герои ${role} (до 5)</label>
+      <div class="sel-heroes" id="selPlayer_${role}" onclick="openPicker('playerRole_${role}',5)">
+        <span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>
+      </div>
+    </div>`).join('');
+  renderRolePoolPreviews();
+}
+
 // ── Dot rating (shared) ──
 function setDotRating(inputId,dotsId,val){
   document.getElementById(inputId).value=val;
