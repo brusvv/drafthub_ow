@@ -18,7 +18,7 @@ function openHeroModal(hero){
     return{map:m.name,type:m.type,atk:entry.atk||0,def:entry.def||0};
   });
   heroSynergyEdits=hero?(heroSynergy[hero.name]||[]).map(s=>({...s})):[];
-  renderCounterSelPreview();renderCounterScores();
+  renderCounterSelPreview();
   renderStrengthPreview();
   renderHeroSynergyBlock();
   document.getElementById('heroModal').classList.remove('hidden');
