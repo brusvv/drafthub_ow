@@ -190,7 +190,7 @@ function _renderBanRecs(recs) {
         <div class="ban-rec-rank">${i + 1}</div>
         <div class="ban-rec-portrait">
           ${src
-            ? `<img src="${src}" onerror="this.style.display='none'">`
+            ? `<img src="${src}" onerror="this.outerHTML='<div class=ban-rec-ph>'+r.hero.name[0]+'</div>'">`
             : `<div class="ban-rec-ph">${r.hero.name[0]}</div>`}
         </div>
         <div class="ban-rec-body">
