@@ -63,7 +63,7 @@ function togglePickerHero(name){
 
 function renderPickerGrid(){
   const sel=pickerSelected[pickerMode]||[];
-  const filtered=heroes.filter(h=>pickerRoleFilter==='all'||h.role===pickerRoleFilter)
+  const _synExclude=pickerMode==='synergy'?(store.get('synergyExclude')||''):'';const filtered=heroes.filter(h=>(pickerRoleFilter==='all'||h.role===pickerRoleFilter)&&h.name!==_synExclude)
     .sort((a,b)=>b.priority-a.priority);
   document.getElementById('pickerCount').textContent=sel.length+' выбрано';
   document.getElementById('pickerGrid').innerHTML=filtered.map(h=>{
