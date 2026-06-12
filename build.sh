@@ -23,11 +23,24 @@ cat > "$OUT" <<'HEADER'
 <style>
 HEADER
 
-# CSS — порядок важен: base первым
-for css in base maps heroes bans modals players subroles tiers strength draft-comp responsive; do
+# CSS — base первым, потом features, modals, draft, responsive последним
+CSS_FILES=(
+  css/base/base.css
+  css/features/maps.css
+  css/features/heroes.css
+  css/features/players.css
+  css/features/subroles.css
+  css/features/tiers.css
+  css/modals/modals.css
+  css/modals/strength.css
+  css/draft/bans.css
+  css/draft/draft-comp.css
+  css/base/responsive.css
+)
+for f in "${CSS_FILES[@]}"; do
   echo "" >> "$OUT"
-  echo "/* ── ${css}.css ── */" >> "$OUT"
-  cat "$SRC/css/${css}.css" >> "$OUT"
+  echo "/* ── $f ── */" >> "$OUT"
+  cat "$SRC/$f" >> "$OUT"
 done
 
 cat >> "$OUT" <<'AFTER_CSS'
@@ -36,73 +49,76 @@ cat >> "$OUT" <<'AFTER_CSS'
 <body>
 AFTER_CSS
 
-# HTML-части
-for part in auth main-app modal-hero modal-map modal-player picker map-str-picker; do
+# HTML — порядок: auth, app, modals, pickers
+HTML_PARTS=(
+  auth
+  main-app
+  modal-hero
+  modal-map
+  modal-player
+  picker
+  map-str-picker
+)
+for part in "${HTML_PARTS[@]}"; do
   cat "$SRC/html/${part}.html" >> "$OUT"
 done
 
 echo '<div class="toast" id="toast"></div>' >> "$OUT"
 echo '<script>'                             >> "$OUT"
 
-# Core: store → config → auth → данные
-for module in store config auth; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+# JS — строгий порядок зависимостей:
+# core → data → scoring → write → picker → modals → render → draft
+JS_MODULES=(
+  # Core: store первый (нужен всем), потом config (прокси), auth
+  js/core/store.js
+  js/core/config.js
+  js/core/auth.js
 
-# Sheets: сначала load (sGet/sUp/loadHeroes...), потом sync (ensureSheets/seed)
-for module in sheets-load sheets-sync; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+  # Data: load до sync (sync использует sGet из load)
+  js/data/sheets-load.js
+  js/data/sheets-sync.js
 
-# Scoring: maps → bans → comp (порядок: зависимости сначала)
-for module in scoring-maps scoring-bans scoring-comp; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+  # Scoring: maps → bans → comp (comp зависит от maps)
+  js/scoring/scoring-maps.js
+  js/scoring/scoring-bans.js
+  js/scoring/scoring-comp.js
 
-# Write: разбито по сущностям
-for module in write-hero write-map write-player; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+  # Write: независимы друг от друга
+  js/write/write-hero.js
+  js/write/write-map.js
+  js/write/write-player.js
 
-# Picker: core → counters → maps → comp (каждый переопределяет confirmPicker)
-for module in picker-core picker-counters picker-maps picker-comp; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+  # Picker: core первый, потом расширения (каждое override confirmPicker)
+  js/picker/picker-core.js
+  js/picker/picker-counters.js
+  js/picker/picker-maps.js
+  js/picker/picker-comp.js
 
-# Modals
-for module in modal-hero modal-map; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
-done
+  # Modals: hero и map (используют picker и write)
+  js/modals/modal-hero.js
+  js/modals/modal-map.js
 
-# Render — разбит по вкладкам
-for module in \
-  render-utils \
-  render-maps \
-  render-heroes \
-  render-bans-core \
-  render-bans-competitive \
-  render-bans-tournament-draft \
-  render-bans-tournament-herobans \
-  render-draft-comp \
-  render-tiers \
-  render-players \
-  render-roster \
-  render-nav; do
-  echo ""                          >> "$OUT"
-  echo "// ── ${module}.js ──"    >> "$OUT"
-  cat "$SRC/js/${module}.js"       >> "$OUT"
+  # Render: utils первый (showLoading, showError, esc)
+  js/render/render-utils.js
+  js/render/render-maps.js
+  js/render/render-heroes.js
+  js/render/render-tiers.js
+  js/render/render-players.js
+  js/render/render-roster.js
+  js/render/render-nav.js
+
+  # Draft: core первый (общие хелперы для competitive и tournament)
+  js/draft/render-bans-core.js
+  js/draft/render-bans-competitive.js
+  js/draft/render-bans-tournament-draft.js
+  js/draft/render-bans-tournament-herobans.js
+  js/draft/render-draft-comp.js
+)
+
+for f in "${JS_MODULES[@]}"; do
+  echo ""                    >> "$OUT"
+  echo "// ── $f ──"         >> "$OUT"
+  cat "$SRC/$f"              >> "$OUT"
 done
 
 cat >> "$OUT" <<'FOOTER'
