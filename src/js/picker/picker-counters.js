@@ -6,13 +6,13 @@ let counterPickerSelected=[];
 
 function openCounterPicker(){
   counterPickerRoleFilter='all';
-  document.querySelectorAll('#counterPickerOverlay .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   store.set('synergyExclude', document.getElementById('hName').value.trim());
+  document.querySelectorAll('#counterPickerOverlay .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   renderCounterPickerGrid();
   document.getElementById('counterPickerOverlay').classList.remove('hidden');
 }
 function closeCounterPicker(){document.getElementById('counterPickerOverlay').classList.add('hidden')}
-function confirmCounterPicker(){closeCounterPicker();store.set('synergyExclude','');renderCounterSelPreview();renderCounterScores();}
+function confirmCounterPicker(){store.set('synergyExclude','');closeCounterPicker();renderCounterSelPreview();renderCounterScores();}
 
 function counterPickerFilter(role,btn){
   counterPickerRoleFilter=role;
@@ -28,8 +28,8 @@ function toggleCounterHero(name){
 }
 
 function renderCounterPickerGrid(){
-  const _self=store.get('synergyExclude')||'';
-  const filtered=heroes.filter(h=>(counterPickerRoleFilter==='all'||h.role===counterPickerRoleFilter)&&h.name!==_self)
+  const _cself=store.get('synergyExclude')||'';
+  const filtered=heroes.filter(h=>(counterPickerRoleFilter==='all'||h.role===counterPickerRoleFilter)&&h.name!==_cself)
     .sort((a,b)=>b.priority-a.priority);
   document.getElementById('counterPickerCount').textContent=counterPickerSelected.length+' выбрано';
   document.getElementById('counterPickerGrid').innerHTML=filtered.map(h=>{
