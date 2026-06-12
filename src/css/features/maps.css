@@ -82,3 +82,7 @@
    .h-card       — individual hero card
    .h-card-name  — hero name (font-size here)
 */
+
+/* Счётчик типа карты в фильтре */
+#mapFilters .f-btn{font-size:11px;padding:5px 12px}
+#mapFilters .f-btn.active{font-size:12px;font-weight:700}
