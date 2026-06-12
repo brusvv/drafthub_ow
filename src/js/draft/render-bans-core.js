@@ -189,9 +189,7 @@ function _renderBanRecs(recs) {
       return `<div class="ban-rec-card${pct > 70 ? ' ban-rec-high' : ''}">
         <div class="ban-rec-rank">${i + 1}</div>
         <div class="ban-rec-portrait">
-          ${src
-            ? `<img src="${src}" onerror="this.outerHTML='<div class=ban-rec-ph>'+r.hero.name[0]+'</div>'">`
-            : `<div class="ban-rec-ph">${r.hero.name[0]}</div>`}
+          ${imgH(src,'ban-rec-portrait-img',r.hero.name[0])}
         </div>
         <div class="ban-rec-body">
           <div class="ban-rec-name">${r.hero.name}</div>
