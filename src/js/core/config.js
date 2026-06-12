@@ -43,7 +43,7 @@ const DISCOVERY='https://sheets.googleapis.com/$discovery/rest?version=v4';
 const rc={Tank:'var(--tank)',Damage:'var(--damage)',Support:'var(--support)'};
 const ts={S:{bg:'rgba(240,160,48,.15)',c:'var(--tier-s)'},A:{bg:'rgba(139,195,74,.15)',c:'var(--tier-a)'},B:{bg:'rgba(91,155,213,.15)',c:'var(--tier-b)'},C:{bg:'rgba(136,136,136,.1)',c:'var(--tier-c)'},D:{bg:'rgba(160,64,48,.15)',c:'var(--tier-d)'}};
 
-const NO_ATKDEF=['Control','Flashpoint'];
+const NO_ATKDEF=['Control','Flashpoint','Push'];
 
 // ════ PICKER STATE ════
 // [store] let pickerMode → store.state
