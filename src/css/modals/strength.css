@@ -57,3 +57,33 @@
     max-width:320px
   }
 }
+
+/* ── FIXES ── */
+/* Сетка карт в оверлее: горизонтальные ряды, не одна колонка */
+.hs-grid .hs-map-row{
+  display:flex;flex-wrap:wrap;gap:8px;
+}
+/* Чип карты в оверлее — фиксированная ширина, сетка 4-5 в ряд */
+.hs-grid .map-str-chip{
+  min-width:80px;max-width:100px;flex-shrink:0;
+}
+.hs-grid .map-str-chip img{
+  width:80px;height:48px;
+}
+/* Открытый чип подсвечивается */
+.map-str-chip.is-open{
+  border-color:var(--support);background:rgba(43,189,142,.1);
+}
+/* Кнопка "С оценкой" */
+.hs-filter-btn{
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;
+  padding:5px 12px;border-radius:20px;border:1px solid var(--border2);
+  background:transparent;color:var(--text2);cursor:pointer;font-weight:600;
+  transition:all .1s;white-space:nowrap;
+}
+.hs-filter-btn:hover{color:var(--text)}
+.hs-filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(240,160,48,.08)}
+/* Попап — центрирован в .picker-box */
+.hs-popup{
+  display:flex;flex-direction:column;gap:6px;
+}
