@@ -1,88 +1,72 @@
 # Draft Hub — Overwatch Team Analyst
 
-Аналитический дашборд для драфта команды. Данные хранятся в Google Sheets.
+Инструмент для анализа банов, карт и состава в Overwatch.
+Хостится на GitHub Pages. Данные хранятся в Google Sheets.
 
-## Структура репозитория
+## Структура проекта
 
 ```
-draft-hub/
-├── src/
-│
-│   ├── css/
-│   │   ├── base.css            # Header, navigation, filters, auth, buttons
-│   │   ├── maps.css            # Map cards, map details, map layouts
-│   │   ├── heroes.css          # Hero pool, hero cards, hero views
-│   │   ├── bans.css            # Hero bans, counter picks, ban displays
-│   │   ├── modals.css          # All modals, DOT rating controls
-│   │   ├── players.css         # Player cards, player profiles
-│   │   ├── subroles.css        # Tank/DPS/Support subrole styling
-│   │   └── tiers.css           # Tier list board, tier preview popup
-│
-│   ├── html/
-│   │   ├── auth.html           # Login screen and OAuth UI
-│   │   ├── main-app.html       # Main application shell and views
-│   │   ├── modal-hero.html     # Hero editor modal
-│   │   ├── modal-map.html      # Map editor modal with DOT difficulty rating
-│   │   └── picker.html         # Hero picker overlay
-│
-│   └── js/
-│       ├── config.js           # Global constants, state, helpers, image URLs
-│       ├── auth.js             # Google OAuth login/logout logic
-│       ├── sheets.js           # Sheets API, loading, parsing, seed logic
-│       ├── write.js            # Save, update, delete operations
-│       ├── picker.js           # Hero picker interactions and filtering
-│       ├── modals.js           # Modal logic, DOT rating handlers
-│
-│       ├── render-utils.js     # Shared render helpers and utility functions
-│       ├── render-nav.js       # Navigation rendering and view switching
-│
-│       ├── render-maps.js      # Map list, map cards, map details
-│       ├── render-heroes.js    # Hero pool rendering and filters
-│       ├── render-bans.js      # Ban board and counter rendering
-│       ├── render-tiers.js     # Tier list rendering and preview popup
-│       ├── render-players.js   # Players page rendering
-│       └── render-roster.js    # Team roster builder and role limits
-│
-├── dist/
-│   └── index.html              # Generated production build (auto-created)
-│
-├── build.sh                    # Build script: bundles HTML/CSS/JS into dist
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # GitHub Pages auto-deploy workflow
-│
-└── .gitignore                  # Ignored files and build artifacts
+src/
+  css/
+    base/         — base.css, responsive.css
+    features/     — maps, heroes, players, subroles, tiers
+    modals/       — modals.css, strength.css
+    draft/        — bans.css, draft-comp.css
+  js/
+    core/         — store, config, auth
+    data/         — sheets-load, sheets-sync
+    scoring/      — scoring-maps, scoring-bans, scoring-comp
+    write/        — write-hero, write-map, write-player
+    picker/       — picker-core, picker-counters, picker-maps, picker-comp
+    modals/       — modal-hero, modal-map
+    render/       — render-utils, maps, heroes, tiers, players, roster, nav
+    draft/        — render-bans-core, competitive, tournament-draft,
+                    tournament-herobans, render-draft-comp
+  html/           — auth, main-app, modals, pickers
+dist/
+  index.html      — собранный файл (build.sh)
 ```
 
-## Локальная разработка
+## Google Sheets — листы
+
+| Лист | Колонки | Назначение |
+|------|---------|------------|
+| Heroes | name, role, subrole, priority, banned, notes, counters | Герои |
+| Maps | name, type, tier, priority, atk, def, dif, notes | Карты |
+| MapPreferred | map, hero | Предпочтительные герои карты |
+| MapBans | map, hero | Цели для банов на карте |
+| Compositions | map, hero, role, playerRole | Состав для карты |
+| MapCounters | map, hero | Контрпики карты |
+| Players | name, btag, mainrole, offrole, ranktank, rankdmg, ranksup, notes | Игроки |
+| PlayerHeroes | player, hero, type | Пул героев игроков |
+| TierMaps | name, tier | Тир-лист карт |
+| TierHeroes | name, tier | Тир-лист героев |
+| HeroMapStrength | hero, map, atk, def | Сила героя на картах (1–10) |
+| HeroSynergy | hero, synergy_hero, score | Синергии героев (1–10) |
+
+### Типы карт и оценки
+
+- **Hybrid / Escort**: atk + def (1–10)
+- **Control / Flashpoint / Push**: только `atk` как общая сила (def игнорируется)
+
+## Сборка
 
 ```bash
-./build.sh                 # собирает dist/index.html
-open dist/index.html       # открыть в браузере (macOS)
-xdg-open dist/index.html   # Linux
+./build.sh          # → dist/index.html
 ```
 
-## Деплой на GitHub Pages
+## Настройка
 
-1. Репозиторий → **Settings → Pages**
-2. Source: **GitHub Actions**
-3. Сделай пуш в `main` — Actions соберёт и задеплоит автоматически
+1. Создай Google Cloud проект, включи Sheets API, получи OAuth Client ID
+2. Добавь Client ID в настройки приложения
+3. Создай Google Sheets таблицу
+4. Нажми «Синхронизировать» — листы создадутся автоматически
 
-## Настройка Google OAuth
+## Вкладки
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → создай проект
-2. APIs & Services → Credentials → Create OAuth 2.0 Client ID (Web application)
-3. Authorized JavaScript origins: `https://<username>.github.io`
-4. Скопируй Client ID и вставь в поле на экране входа
-
-## Настройка Google Sheets
-
-Создай таблицу с листами:
-- `Heroes` — колонки: `name, role, subrole, priority, banned, notes`
-- `Maps` — колонки: `name, type, tier, priority, atk, def, dif, notes`
-- `MapPreferred` — колонки: `map, hero`
-- `MapBans` — колонки: `map, hero`
-- `Compositions` — колонки: `map, hero, role`
-
-Или нажми кнопку **⬇ Seed** в приложении — заполнит стартовыми данными.
+- **Карты** — обзор карт с тирами, оценками, банами
+- **Герои** — пул героев с ролями и приоритетами
+- **Tier List** — перетаскиваемые тир-листы карт и героев
+- **Драфт** — соревновательные баны (голосование) и турнирный драфт
+- **Игроки** — пул героев, рекомендации банов и карт
+- **Состав** — сборка состава с рекомендациями банов и карт
