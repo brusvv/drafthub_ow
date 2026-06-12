@@ -30,7 +30,7 @@
  
 /* ── ROSTER PLAYER ROLE SELECTOR ── */
 .roster-role-select{display:flex;gap:4px;align-items:center}
-.roster-role-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
+.roster-role-btn{width:56px;height:56px;border-radius:6px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
 .roster-role-btn:hover{border-color:var(--border3)}
 .roster-role-btn.active-Tank{border-color:var(--tank);background:rgba(74,158,224,.12)}
 .roster-role-btn.active-Damage{border-color:var(--damage);background:rgba(224,85,85,.12)}
