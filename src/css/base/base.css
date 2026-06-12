@@ -136,3 +136,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   padding: 12px;
 }
 .sk-banner { height: 80px; border-radius: 8px; }
+
+/* Текст в кнопке фильтра скрывается когда кнопка активна */
+.f-btn.active .f-btn-text{display:none}
+.f-btn{display:inline-flex;align-items:center;gap:4px}
+
+/* Кнопка активного пула карт */
+.pool-active{border-color:rgba(43,189,142,.5)!important;color:var(--support)!important}
