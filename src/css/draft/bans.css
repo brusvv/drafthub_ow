@@ -84,7 +84,7 @@
 .ban-rec-card{display:flex;align-items:flex-start;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 12px;transition:border-color .15s}
 .ban-rec-card.ban-rec-high{border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.04)}
 .ban-rec-rank{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text3);min-width:14px;margin-top:3px}
-.ban-rec-portrait{width:44px;height:44px;border-radius:7px;overflow:hidden;flex-shrink:0;background:var(--bg4)}
+.ban-rec-portrait{width:56px;height:56px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg4)}
 .ban-rec-portrait img{width:100%;height:100%;object-fit:cover;display:block}
 .ban-rec-ph{width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
 .ban-rec-body{flex:1;min-width:0}
