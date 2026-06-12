@@ -11,7 +11,7 @@ function renderMapFilters(){
     // Активный фильтр — иконка + текст когда всё, иначе только иконка
     const label=isAll
       ?'Все'
-      :`${mapTypeIcon(t,13)}<span class="f-btn-text">${t}</span>`;
+      :`${mapTypeIcon(t,15)}<span class="f-btn-text">${t}</span>`;
     return`<button class="f-btn${active?' active':''}" onclick="filterMaps('${t}',this)">${label}</button>`;
   }).join('');
 }
@@ -42,7 +42,7 @@ function renderMaps(){
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
-        <div class="map-card-type">${mapTypeIcon(m.type,12)}<span>${m.type}</span></div>
+        <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span class="f-btn-text">${m.type}</span>`:''}</div>
         <div class="map-card-meta">
           <div class="tier-badge tier-${m.tier}">${m.tier}</div>
           <div class="ratings">
