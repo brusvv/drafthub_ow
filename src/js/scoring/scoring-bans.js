@@ -53,8 +53,6 @@ function _scorePlayerBans(player){
 
 /**
  * Рекомендации банов для состава (несколько игроков).
- * @param {object[]} rosterPlayers
- * @param {Function} getHeroListFn  — (player) => string[]
  */
 function scoreRosterBans(rosterPlayers, getHeroListFn){
   const acc={};
@@ -106,4 +104,29 @@ function scoreRosterRecs(rosterPlayers, getHeroListFn, side='avg'){
     maps:sortMapsByScore(mapArr.filter(m=>m.score>0)).slice(0,8),
     avoid:mapArr.filter(m=>m.score<0).sort((a,b)=>a.score-b.score).slice(0,4)
   };
+}
+
+// ════ COMPAT WRAPPERS ════
+// Вызываются из render-players.js и render-roster.js
+// через старые имена функций.
+
+function computePlayerRecs_scoring(player){
+  return scorePlayerRecs(player,'avg');
+}
+
+function computeRosterRecs_scoring(rosterPlayers, getHeroListFn){
+  return scoreRosterRecs(rosterPlayers,getHeroListFn,'avg');
+}
+
+/**
+ * Жертвы бана — какие герои состава контрит banName.
+ * Возвращает {player, hero, score, isMain}[] по всем игрокам.
+ */
+function getBanVictims_scoring(banName, rosterPlayers, getHeroListFn){
+  const victims=[];
+  rosterPlayers.forEach(p=>{
+    scoreBanVictims(banName,getHeroListFn(p),p.mainHeroes)
+      .forEach(v=>victims.push({...v,player:p.name}));
+  });
+  return victims.sort((a,b)=>b.score-a.score);
 }
