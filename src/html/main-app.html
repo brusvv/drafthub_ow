@@ -34,17 +34,10 @@
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
       <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3)">Пул карт:</span>
       <button class="btn pool-active" id="mapPoolToggle" onclick="toggleMapPool(this)" style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:20px">АКТУАЛЬНЫЙ</button>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="mapPoolCount"></span>
+      <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text2)" id="mapPoolCount"></span>
     </div>
     <div class="toolbar">
-      <div class="filters" id="mapFilters">
-        <button class="f-btn active" onclick="filterMaps('all',this)">Все</button>
-        <button class="f-btn" onclick="filterMaps('Hybrid',this)">Hybrid</button>
-        <button class="f-btn" onclick="filterMaps('Escort',this)">Escort</button>
-        <button class="f-btn" onclick="filterMaps('Control',this)">Control</button>
-        <button class="f-btn" onclick="filterMaps('Push',this)">Push</button>
-        <button class="f-btn" onclick="filterMaps('Flashpoint',this)">Flashpoint</button>
-      </div>
+      <div class="filters" id="mapFilters"><!-- рендерится renderMapFilters() --></div>
       <button class="btn btn-primary" onclick="openMapModal()">+ Карта</button>
     </div>
     <div id="mapGrid" class="map-grid"></div>
