@@ -67,12 +67,13 @@ function closeTopModal() {
   const knownIds = [
     'compMapPopup',
     'rosterPickerBg',
+    'mapStrPickerOverlay',
     'pickerOverlay',
-    'mapModal',
-    'heroModal',
-    'playerModal',
-    'tierPreviewOverlay',
     'counterPickerOverlay',
+    'mapModal',
+    'playerModal',
+    'heroModal',
+    'tierPreviewOverlay',
   ];
   for (const id of knownIds) {
     const el = document.getElementById(id);
@@ -80,6 +81,7 @@ function closeTopModal() {
       // Пытаемся закрыть через known close-функции
       if (id === 'compMapPopup')        { el.remove(); return; }
       if (id === 'rosterPickerBg')      { el.remove(); return; }
+      if (id === 'mapStrPickerOverlay')  { if (typeof closeMapStrPicker === 'function') { closeMapStrPicker(); return; } }
       if (id === 'pickerOverlay')       { if (typeof closePicker === 'function') { closePicker(); return; } }
       if (id === 'tierPreviewOverlay')  { if (typeof closeTierPreview === 'function') { closeTierPreview(); return; } }
       if (id === 'counterPickerOverlay'){ if (typeof closeCounterPicker === 'function') { closeCounterPicker(); return; } }
