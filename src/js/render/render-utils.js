@@ -87,7 +87,6 @@ function closeTopModal() {
       if (id === 'counterPickerOverlay'){ if (typeof closeCounterPicker === 'function') { closeCounterPicker(); return; } }
       // Generic modals: скрываем
       el.classList.add('hidden');
-      el.style.display = 'none';
       return;
     }
   }
