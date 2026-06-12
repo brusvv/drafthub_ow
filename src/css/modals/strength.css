@@ -32,3 +32,28 @@
 
 /* ── AUTO PREFERRED IN MAP MODAL ── */
 #mAutoPreferred{background:var(--bg3);border-radius:7px;padding:8px 10px;min-height:32px}
+
+/* ── MAP STR PICKER OVERLAY ── */
+.picker-box--wide{max-width:780px}
+.picker-subtitle{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:2px;letter-spacing:.06em}
+
+/* Сетка карт в оверлее (крупнее чем inline в модалке) */
+.hs-grid{
+  display:flex;flex-direction:column;gap:14px;padding:4px 0
+}
+.hs-grid .hs-type-group{margin-bottom:0}
+.hs-grid .hs-map-row{flex-wrap:wrap;gap:8px}
+.hs-grid .hs-map-chip{min-width:80px;max-width:100px}
+.hs-grid .hs-map-chip img{width:80px;height:48px}
+
+/* Попап в оверлее — позиционируется иначе на маленьких экранах */
+@media(max-width:600px){
+  .hs-popup{
+    position:fixed;
+    bottom:80px;
+    left:50%;
+    transform:translateX(-50%);
+    width:calc(100vw - 40px);
+    max-width:320px
+  }
+}
