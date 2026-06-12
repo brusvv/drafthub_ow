@@ -62,102 +62,134 @@ function renderHeroes(){
 function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#heroFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHeroes()}
 
 
-// ════ HERO INFO POPUP (tier-preview style) ════
+// ════ HERO INFO POPUP ════
+let _heroInfoExpanded=false;
+
 function openHeroInfoPopup(name){
+  _heroInfoExpanded=false;
+  _buildHeroInfoPopup(name);
+}
+
+function _buildHeroInfoPopup(name){
   const hero=heroes.find(h=>h.name===name);if(!hero)return;
   const src=portrait(hero.name);
-
-  // Сильные/слабые карты из heroMapStrength
   const strengthEntries=Object.entries(heroMapStrength[hero.name]||{});
-  const strongMaps=strengthEntries.filter(([,v])=>v.avg>=7).sort((a,b)=>b[1].avg-a[1].avg).slice(0,4);
-  const weakMaps =strengthEntries.filter(([,v])=>v.avg<=4).sort((a,b)=>a[1].avg-b[1].avg).slice(0,4);
+  const allStrong=strengthEntries.filter(([,v])=>v.avg>=7).sort((a,b)=>b[1].avg-a[1].avg);
+  const allWeak  =strengthEntries.filter(([,v])=>v.avg<=4).sort((a,b)=>a[1].avg-b[1].avg);
+  const strongMaps=_heroInfoExpanded?allStrong:allStrong.slice(0,5);
+  const weakMaps  =_heroInfoExpanded?allWeak  :allWeak.slice(0,5);
 
-  const _mapChip=([mName,v])=>{
+  const _mapRow=([mName,v],showFull)=>{
     const m=maps.find(x=>x.name===mName);
     const ms=mapImg(mName);
     const noAD=m?NO_ATKDEF.includes(m.type):false;
-    const label=noAD?`${v.atk}`:`${v.atk}/${v.def}`;
-    return`<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)">
-      ${ms?`<img src="${ms}" style="width:32px;height:20px;object-fit:cover;border-radius:3px" onerror="this.style.display='none'">`:''}
-      <span style="font-size:11px;font-weight:600;flex:1">${mName}</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">${label}</span>
-      ${m?mapTypeIcon(m.type,10):''}
+    const scoreHtml=showFull&&!noAD
+      ?`<span style="font-family:var(--mono);font-size:11px;color:var(--damage)">${v.atk}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">atk</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--tank);margin-left:4px">${v.def}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">def</span>`
+      :`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)">${noAD?v.atk:v.avg}</span>`;
+    return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)">
+      ${m?mapTypeIcon(m.type,12):''}
+      ${ms?`<img src="${ms}" style="width:44px;height:28px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">`:''}
+      <span style="font-size:13px;font-weight:600;flex:1">${mName}</span>
+      ${scoreHtml}
     </div>`;
   };
 
-  const mapsHtml=(!strongMaps.length&&!weakMaps.length)
-    ?'<div class="empty" style="font-size:11px">Нет данных о силе на картах</div>'
-    :`${strongMaps.length?`<div style="font-family:var(--mono);font-size:9px;color:var(--support);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Силён</div>
-      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">${strongMaps.map(_mapChip).join('')}</div>`:''}
-     ${weakMaps.length?`<div style="font-family:var(--mono);font-size:9px;color:var(--damage);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Слаб</div>
-      <div style="display:flex;flex-direction:column;gap:4px">${weakMaps.map(_mapChip).join('')}</div>`:''}`;
+  const hasMore=(!_heroInfoExpanded&&(allStrong.length>5||allWeak.length>5));
+  const mapsHtml=(allStrong.length===0&&allWeak.length===0)
+    ?'<div class="empty" style="font-size:12px">Нет данных о силе на картах</div>'
+    :`${strongMaps.length?`<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--support);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Силён</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">${strongMaps.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>`:''}
+     ${weakMaps.length?`<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Слаб</div>
+      <div style="display:flex;flex-direction:column;gap:5px">${weakMaps.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>`:''}
+     ${hasMore?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Подробнее ↓</button>`:''}
+     ${_heroInfoExpanded?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Свернуть ↑</button>`:''}`;
 
   // Синергии по ролям
   const syns=heroSynergy[hero.name]||[];
   const synByRole={Tank:[],Damage:[],Support:[]};
   syns.forEach(s=>{const h=heroMap[s.name];if(h&&synByRole[h.role])synByRole[h.role].push(s);});
-  const synHtml=['Tank','Damage','Support'].filter(r=>synByRole[r].length).map(role=>`
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      ${roleIcon(role,14)}
+  const synHtml=(_heroInfoExpanded||!syns.length)?(['Tank','Damage','Support'].filter(r=>synByRole[r].length).map(role=>`
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+      ${roleIcon(role,16)}
       ${synByRole[role].sort((a,b)=>b.score-a.score).map(s=>{
         const sp=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
         return`<div title="${s.name} — ${s.score}/10" style="position:relative;cursor:default">
-          ${sp?`<img src="${sp}" style="width:28px;height:28px;border-radius:5px;object-fit:cover;border:1px solid ${color}" onerror="this.style.display='none'">`
-            :`<div style="width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3);border:1px solid ${color}">${s.name[0]}</div>`}
-          <div style="position:absolute;bottom:-2px;right:-2px;font-family:var(--mono);font-size:7px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 2px;line-height:1.4">${s.score}</div>
+          ${sp?`<img src="${sp}" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:2px solid ${color}" onerror="this.style.display='none'">`
+            :`<div style="width:34px;height:34px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3);border:2px solid ${color}">${s.name[0]}</div>`}
+          <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${s.score}</div>
         </div>`;
       }).join('')}
-    </div>`).join('');
+    </div>`).join('')||'<div class="empty" style="font-size:12px">Нет данных</div>')
+    :'';
+  const synSection=syns.length?`<div style="margin-bottom:16px">
+    <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Синергии</div>
+    ${_heroInfoExpanded?synHtml:`<div style="display:flex;flex-wrap:wrap;gap:5px">${syns.slice(0,6).map(s=>{const sp=portrait(s.name);const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';return`<div title="${s.name}" style="position:relative">${sp?`<img src="${sp}" style="width:30px;height:30px;border-radius:5px;object-fit:cover;border:2px solid ${color}">`:`<div style="width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid ${color}">${s.name[0]}</div>`}<div style="position:absolute;bottom:-2px;right:-2px;font-family:var(--mono);font-size:7px;font-weight:700;background:${color};color:#000;border-radius:2px;padding:0 2px">${s.score}</div></div>`;}).join('')}</div>`}
+  </div>`:'';
 
-  // Контрпики
-  const topCounters=(hero.counters||[]).sort((a,b)=>b.score-a.score).slice(0,6);
-  const countersHtml=topCounters.length
-    ?`<div style="display:flex;flex-wrap:wrap;gap:5px">${topCounters.map(c=>{
-        const cp=portrait(c.name);const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
-        return`<div style="display:flex;align-items:center;gap:4px;padding:2px 6px 2px 4px;border-radius:5px;background:var(--bg3);border:1px solid ${color}22">
-          ${cp?`<img src="${cp}" style="width:20px;height:20px;border-radius:3px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:20px;height:20px;border-radius:3px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800">${c.name[0]}</div>`}
-          <span style="font-size:11px;font-weight:600">${c.name}</span>
-          <span style="font-family:var(--mono);font-size:9px;color:${color}">${c.score}</span>
-        </div>`;
-      }).join('')}</div>`
-    :'<div class="empty" style="font-size:11px">Не указаны</div>';
+  const topCounters=(hero.counters||[]).sort((a,b)=>b.score-a.score).slice(0,_heroInfoExpanded?12:6);
+  const countersSection=topCounters.length?`<div style="margin-bottom:16px">
+    <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Контрпики</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${topCounters.map(c=>{
+      const cp=portrait(c.name);const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
+      return`<div style="display:flex;align-items:center;gap:5px;padding:3px 8px 3px 5px;border-radius:6px;background:var(--bg3);border:1px solid ${color}33">
+        ${cp?`<img src="${cp}" style="width:24px;height:24px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:24px;height:24px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${c.name[0]}</div>`}
+        <span style="font-size:12px;font-weight:600">${c.name}</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:${color}">${c.score}</span>
+      </div>`;
+    }).join('')}</div>
+  </div>`:'';
 
   const body=`
-    <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
-      ${src?`<img src="${src}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0" onerror="this.style.display='none'">`:''}
-      <div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:4px">${hero.name}</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          ${roleIcon(hero.role,16)}
-          <span style="font-family:var(--mono);font-size:10px;color:${rc[hero.role]||'var(--text2)'};text-transform:uppercase">${hero.role}</span>
-          ${hero.subrole?`${subroleIcon(hero.role,hero.subrole,14)}<span style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase">${hero.subrole}</span>`:''}
+    <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
+      ${src?`<img src="${src}" style="width:96px;height:96px;object-fit:cover;border-radius:12px;flex-shrink:0;border:2px solid ${rc[hero.role]||'var(--border2)'}" onerror="this.style.display='none'">`:''}
+      <div style="flex:1">
+        <div style="font-size:24px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em">${hero.name}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          ${roleIcon(hero.role,18)}
+          <span style="font-family:var(--mono);font-size:12px;color:${rc[hero.role]||'var(--text2)'};text-transform:uppercase;font-weight:700">${hero.role}</span>
+          ${hero.subrole?`<span style="color:var(--border2)">·</span>${subroleIcon(hero.role,hero.subrole,16)}<span style="font-family:var(--mono);font-size:12px;color:var(--text2);text-transform:uppercase">${hero.subrole}</span>`:''}
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          ${Array.from({length:10},(_,k)=>`<span style="font-size:10px;color:${k<hero.priority?'var(--accent)':'var(--border2)'}">◆</span>`).join('')}
-          <span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:4px">${hero.priority}/10</span>
+        <div style="display:flex;align-items:center;gap:3px;margin-bottom:8px">
+          ${Array.from({length:10},(_,k)=>`<span style="font-size:13px;color:${k<hero.priority?'var(--accent)':'var(--border2)'}">◆</span>`).join('')}
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:5px">${hero.priority}/10</span>
         </div>
-        ${hero.banned?'<div style="margin-top:6px;font-family:var(--mono);font-size:9px;background:rgba(224,85,85,.15);color:var(--damage);border-radius:4px;padding:2px 7px;display:inline-block">В текущем бане</div>':''}
+        ${hero.banned?'<div style="font-family:var(--mono);font-size:10px;background:rgba(224,85,85,.15);color:var(--damage);border-radius:5px;padding:3px 9px;display:inline-block">В текущем бане</div>':''}
       </div>
     </div>
-
-    ${syns.length?`<div style="margin-bottom:14px">
-      <div class="tier-preview-section-title">Синергии</div>
-      ${synHtml||'<div class="empty" style="font-size:11px">Нет данных</div>'}
-    </div>`:''}
-
-    <div style="margin-bottom:14px">
-      <div class="tier-preview-section-title">Сила на картах</div>
+    ${synSection}
+    <div style="margin-bottom:16px">
+      <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Сила на картах</div>
       ${mapsHtml}
     </div>
-
-    ${topCounters.length?`<div>
-      <div class="tier-preview-section-title">Контрпики</div>
-      ${countersHtml}
-    </div>`:''}
-
-    ${hero.notes?`<div style="margin-top:12px;font-size:12px;color:var(--text2);line-height:1.7">${hero.notes}</div>`:''}`;
+    ${countersSection}
+    ${hero.notes?`<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:4px">${hero.notes}</div>`:''}`;
 
   const actions=`<button class="btn" onclick="closeTierPreview();openHeroModal(heroes.find(h=>h.name==='${esc(hero.name)}'))">✎ Редактировать</button>`;
-  openTierPreview(hero.name, body, actions);
+  // Используем широкий класс
+  _openHeroTierPreview(hero.name, body, actions);
+}
+
+function _toggleHeroInfoExpand(name){
+  _heroInfoExpanded=!_heroInfoExpanded;
+  closeTierPreview();
+  _buildHeroInfoPopup(name);
+}
+
+// Открываем попап в увеличенном варианте
+function _openHeroTierPreview(title, body, actions){
+  document.getElementById('tierPreviewOverlay')?.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="tier-preview-overlay" id="tierPreviewOverlay" onclick="if(event.target.id==='tierPreviewOverlay')closeTierPreview()">
+    <div class="tier-preview-box hero-preview-box">
+      <div class="tier-preview-head">
+        <div class="tier-preview-title" style="font-size:16px">${title}</div>
+        <button class="tier-preview-close" onclick="closeTierPreview()">×</button>
+      </div>
+      <div class="tier-preview-body">${body}</div>
+      ${actions?`<div class="tier-preview-actions">${actions}</div>`:''}
+    </div>
+  </div>`);
 }
