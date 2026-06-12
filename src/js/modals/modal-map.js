@@ -12,6 +12,7 @@ function openMapModal(map){
   document.getElementById('mDif').value=map?map.dif:'3';
   document.getElementById('mNotes').value=map?map.notes:'';
   document.getElementById('mCounters').value=map?(map.counters||[]).join(', '):'';
+  document.getElementById('mInPool').checked=map?map.inPool!==false:true;
   document.getElementById('mapDeleteBtn').style.display=map?'inline-flex':'none';
   onMapTypeChange();
   pickerSelected={
