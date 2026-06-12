@@ -63,7 +63,9 @@ function togglePickerHero(name){
 
 function renderPickerGrid(){
   const sel=pickerSelected[pickerMode]||[];
-  const _synExclude=pickerMode==='synergy'?(store.get('synergyExclude')||''):'';const filtered=heroes.filter(h=>(pickerRoleFilter==='all'||h.role===pickerRoleFilter)&&h.name!==_synExclude)
+  const _synExclude=pickerMode==='synergy'?(store.get('synergyExclude')||''):'';
+  const _synRoleEx=pickerMode==='synergy'?(store.get('synergyRoleExclude')||''):'';
+  const filtered=heroes.filter(h=>(pickerRoleFilter==='all'||h.role===pickerRoleFilter)&&h.name!==_synExclude&&(!_synRoleEx||h.role!==_synRoleEx))
     .sort((a,b)=>b.priority-a.priority);
   document.getElementById('pickerCount').textContent=sel.length+' выбрано';
   document.getElementById('pickerGrid').innerHTML=filtered.map(h=>{
