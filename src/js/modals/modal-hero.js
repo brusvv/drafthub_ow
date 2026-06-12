@@ -274,28 +274,34 @@ function openSynergyScorePopup(idx, chipEl){
   const s = heroSynergyEdits[idx]; if(!s) return;
   const popup = document.createElement('div');
   popup.id = 'synergyScorePopup';
-  popup.style.cssText = 'position:absolute;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+  // position:fixed в body — не обрезается модалкой с overflow:auto
+  popup.style.cssText = 'position:fixed;z-index:2000;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.7)';
   popup.innerHTML = `
-    <div style="font-size:12px;font-weight:700;margin-bottom:8px">${s.name}</div>
-    <div id="synPopupDots" style="display:flex;gap:3px;align-items:center;margin-bottom:6px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      ${portrait(s.name)?`<img src="${portrait(s.name)}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:''}
+      <div style="font-size:13px;font-weight:700">${s.name}</div>
+    </div>
+    <div style="display:flex;gap:3px;align-items:center;margin-bottom:10px">
       ${Array.from({length:10},(_,k)=>{
         const v=k+1;const filled=v<=s.score;
         const color=v>=8?'var(--support)':v>=5?'var(--accent)':'var(--text3)';
-        return`<span onclick="setSynergyScore(${idx},${v})" style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
+        return`<span onclick="setSynergyScore(${idx},${v})" style="cursor:pointer;font-size:18px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
       }).join('')}
-      <span id="synPopupVal" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);margin-left:6px">${s.score}</span>
+      <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);margin-left:6px">${s.score}</span>
     </div>
     <button class="btn" style="width:100%;font-size:10px" onclick="_closeSynergyPopup()">Готово</button>
   `;
-  // Позиционируем рядом с чипом
+  // Позиционируем под чипом — fixed coords от viewport
   const rect = chipEl.getBoundingClientRect();
-  const modal = chipEl.closest('.modal');
-  const mRect = modal ? modal.getBoundingClientRect() : {left:0,top:0};
-  popup.style.left = (rect.left - mRect.left) + 'px';
-  popup.style.top  = (rect.bottom - mRect.top + 4) + 'px';
-  const container = modal || document.body;
-  container.style.position = container.style.position || 'relative';
-  container.appendChild(popup);
+  const popW = 240;
+  let left = rect.left;
+  let top  = rect.bottom + 6;
+  // Не выходим за правый край экрана
+  if(left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+  if(top + 140 > window.innerHeight) top = rect.top - 140; // открываем вверх если нет места
+  popup.style.left = left + 'px';
+  popup.style.top  = top + 'px';
+  document.body.appendChild(popup);
   popup.addEventListener('click', e => e.stopPropagation());
 }
 
