@@ -32,13 +32,11 @@ function renderHeroSynergyBlock(){
       ${heroSynergyEdits.map((s,i)=>{
         const src=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
-        return`<div class="sel-hero-chip" style="border-left:2px solid ${color}">
+        return`<div class="sel-hero-chip syn-chip" style="border-left:2px solid ${color};cursor:pointer" onclick="openSynergyScorePopup(${i},this)">
           ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${s.name[0]}</div>`}
-          ${s.name}
-          <input type="number" min="1" max="10" value="${s.score}"
-            style="width:28px;font-size:10px;background:var(--bg4);border:none;color:${color};text-align:center;border-radius:3px"
-            onchange="heroSynergyEdits[${i}].score=parseInt(this.value)||5">
-          <span onclick="removeSynergy(${i})" style="cursor:pointer;color:var(--text3);margin-left:2px">×</span>
+          <span class="syn-chip-name">${s.name}</span>
+          <span class="syn-chip-score" style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${s.score}</span>
+          <span onclick="event.stopPropagation();removeSynergy(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
         </div>`;
       }).join('')}
     </div>
@@ -48,16 +46,22 @@ function renderHeroSynergyBlock(){
 function removeSynergy(idx){heroSynergyEdits.splice(idx,1);renderHeroSynergyBlock();}
 
 function openSynergyPicker(){
-  // Исключаем самого героя из списка
   const selfName=document.getElementById('hName').value.trim();
+  const selfRole=document.getElementById('hRole').value;
   pickerMode='synergy';pickerMax=10;pickerRoleFilter='all';
   pickerSelected['synergy']=heroSynergyEdits.map(s=>s.name);
-  // Запоминаем имя героя чтобы исключить его в renderPickerGrid
   store.set('synergyExclude', selfName);
+  store.set('synergyRoleExclude', selfRole==='Tank'?'Tank':'');
   document.getElementById('pickerTitle').textContent='Синергирует с';
   document.querySelectorAll('#pickerOverlay .f-btn').forEach((b,i)=>{
     b.style.display='';b.classList.toggle('active',i===0);
   });
+  // Скрываем кнопку фильтра Tank если герой-танк
+  if(selfRole==='Tank'){
+    document.querySelectorAll('#pickerOverlay .f-btn').forEach(b=>{
+      if((b.getAttribute('onclick')||'').includes("'Tank'"))b.style.display='none';
+    });
+  }
   renderPickerGrid();
   document.getElementById('pickerOverlay').classList.remove('hidden');
 }
@@ -259,7 +263,66 @@ function renderStrengthPreview(){
   updateMapStrCount();
 }
 
+
+// ── Synergy score popup ────────────────────────────────────────
+let _synPopupIdx = null;
+
+function openSynergyScorePopup(idx, chipEl){
+  _closeSynergyPopup();
+  if(_synPopupIdx === idx){ _synPopupIdx=null; return; }
+  _synPopupIdx = idx;
+  const s = heroSynergyEdits[idx]; if(!s) return;
+  const popup = document.createElement('div');
+  popup.id = 'synergyScorePopup';
+  popup.style.cssText = 'position:absolute;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5)';
+  popup.innerHTML = `
+    <div style="font-size:12px;font-weight:700;margin-bottom:8px">${s.name}</div>
+    <div id="synPopupDots" style="display:flex;gap:3px;align-items:center;margin-bottom:6px">
+      ${Array.from({length:10},(_,k)=>{
+        const v=k+1;const filled=v<=s.score;
+        const color=v>=8?'var(--support)':v>=5?'var(--accent)':'var(--text3)';
+        return`<span onclick="setSynergyScore(${idx},${v})" style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
+      }).join('')}
+      <span id="synPopupVal" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--accent);margin-left:6px">${s.score}</span>
+    </div>
+    <button class="btn" style="width:100%;font-size:10px" onclick="_closeSynergyPopup()">Готово</button>
+  `;
+  // Позиционируем рядом с чипом
+  const rect = chipEl.getBoundingClientRect();
+  const modal = chipEl.closest('.modal');
+  const mRect = modal ? modal.getBoundingClientRect() : {left:0,top:0};
+  popup.style.left = (rect.left - mRect.left) + 'px';
+  popup.style.top  = (rect.bottom - mRect.top + 4) + 'px';
+  const container = modal || document.body;
+  container.style.position = container.style.position || 'relative';
+  container.appendChild(popup);
+  popup.addEventListener('click', e => e.stopPropagation());
+}
+
+function setSynergyScore(idx, val){
+  if(!heroSynergyEdits[idx]) return;
+  heroSynergyEdits[idx].score = (heroSynergyEdits[idx].score === val) ? val-1 : val;
+  renderHeroSynergyBlock();
+  // Переоткрываем попап для того же индекса
+  _synPopupIdx = null;
+  setTimeout(()=>{
+    const chips = document.querySelectorAll('.syn-chip');
+    if(chips[idx]) openSynergyScorePopup(idx, chips[idx]);
+  }, 10);
+}
+
+function _closeSynergyPopup(){
+  const el = document.getElementById('synergyScorePopup');
+  if(el) el.remove();
+  _synPopupIdx = null;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const ov = document.getElementById('mapStrPickerOverlay');
   if(ov) ov.addEventListener('click', e => { if(e.target === ov) closeMapStrPicker(); });
+  const hm = document.getElementById('heroModal');
+  if(hm) hm.addEventListener('click', e => {
+    if(!e.target.closest('.syn-chip') && !e.target.closest('#synergyScorePopup'))
+      _closeSynergyPopup();
+  });
 });
