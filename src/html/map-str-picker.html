@@ -1,0 +1,42 @@
+<!-- MAP STRENGTH PICKER — оверлей оценки силы героя на картах -->
+<!-- Открывается из modal-hero.js через openMapStrPicker()      -->
+<div class="picker-overlay hidden" id="mapStrPickerOverlay">
+  <div class="picker-box picker-box--wide">
+
+    <div class="picker-header">
+      <div>
+        <div class="picker-title">Оценка силы героя на картах</div>
+        <div class="picker-subtitle" id="mapStrPickerHeroName"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="hs-filter-btn" id="mapStrFilterBtn"
+          onclick="toggleStrengthFilter(this)">С оценкой</button>
+        <div class="picker-count" id="mapStrPickerCount">0 оценено</div>
+      </div>
+    </div>
+
+    <!-- Фильтр по типу карты -->
+    <div class="picker-filters">
+      <button class="f-btn active" onclick="mapStrTypeFilter('all',this)">Все</button>
+      <button class="f-btn" onclick="mapStrTypeFilter('Hybrid',this)">Hybrid</button>
+      <button class="f-btn" onclick="mapStrTypeFilter('Escort',this)">Escort</button>
+      <button class="f-btn" onclick="mapStrTypeFilter('Control',this)">Control</button>
+      <button class="f-btn" onclick="mapStrTypeFilter('Push',this)">Push</button>
+      <button class="f-btn" onclick="mapStrTypeFilter('Flashpoint',this)">Flashpoint</button>
+    </div>
+
+    <!-- Сетка карт — чипы с inline-попапом оценки -->
+    <div class="picker-grid-wrap">
+      <div id="heroStrengthGrid" class="hs-grid"></div>
+    </div>
+
+    <div class="picker-footer">
+      <button class="btn" onclick="closeMapStrPicker()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmMapStrPicker()">Сохранить</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Inline попап оценки (рендерится динамически в modal-hero.js) -->
+<!-- Пустой контейнер — попапы создаются программно внутри чипов  -->
