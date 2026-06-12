@@ -17,8 +17,28 @@
     </div>
     <!-- ATK/DEF (Hybrid/Escort/Push) -->
     <div id="mAtkDefBlock" class="form-row">
-      <div class="form-group"><label class="form-label">ATK рейтинг (1–5)</label><input class="form-input" id="mAtk" type="number" min="1" max="5" value="3"></div>
-      <div class="form-group"><label class="form-label">DEF рейтинг (1–5)</label><input class="form-input" id="mDef" type="number" min="1" max="5" value="3"></div>
+      <div class="form-group">
+        <label class="form-label">ATK рейтинг</label>
+        <input type="hidden" id="mAtk" value="3">
+        <div class="dot-rating" id="mAtkDots" data-value="3">
+          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',1)" data-v="1">◆</span>
+          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',2)" data-v="2">◆</span>
+          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',3)" data-v="3">◆</span>
+          <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',4)" data-v="4">◆</span>
+          <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',5)" data-v="5">◆</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">DEF рейтинг</label>
+        <input type="hidden" id="mDef" value="3">
+        <div class="dot-rating" id="mDefDots" data-value="3">
+          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',1)" data-v="1">◆</span>
+          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',2)" data-v="2">◆</span>
+          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',3)" data-v="3">◆</span>
+          <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',4)" data-v="4">◆</span>
+          <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',5)" data-v="5">◆</span>
+        </div>
+      </div>
     </div>
     <!-- Difficulty (Control/Flashpoint) -->
     <div id="mDifBlock" style="display:none">
