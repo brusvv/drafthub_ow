@@ -27,7 +27,8 @@ function toggleCounterHero(name){
 }
 
 function renderCounterPickerGrid(){
-  const filtered=heroes.filter(h=>counterPickerRoleFilter==='all'||h.role===counterPickerRoleFilter)
+  const _self=store.get('synergyExclude')||'';
+  const filtered=heroes.filter(h=>(counterPickerRoleFilter==='all'||h.role===counterPickerRoleFilter)&&h.name!==_self)
     .sort((a,b)=>b.priority-a.priority);
   document.getElementById('counterPickerCount').textContent=counterPickerSelected.length+' выбрано';
   document.getElementById('counterPickerGrid').innerHTML=filtered.map(h=>{
