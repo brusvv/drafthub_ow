@@ -7,13 +7,15 @@ async function saveMap(){
   const er=document.getElementById('mapEditRow').value;
   const oldName=er?(maps.find(m=>m.rowIndex==er)||{}).name:null;
   const noAD=NO_ATKDEF.includes(type);
+  const inPool=document.getElementById('mInPool').checked?'TRUE':'FALSE';
   const row=[name,type,
     document.getElementById('mTier').value,
     document.getElementById('mPrio').value,
     noAD?'':document.getElementById('mAtk').value,
     noAD?'':document.getElementById('mDef').value,
     noAD?document.getElementById('mDif').value:'',
-    document.getElementById('mNotes').value.trim()
+    document.getElementById('mNotes').value.trim(),
+    inPool
   ];
   const bans=pickerSelected.bans||[];
   const comp=compSlots.filter(s=>s.hero).map(s=>({
