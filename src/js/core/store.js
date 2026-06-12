@@ -45,6 +45,7 @@ const INITIAL_STATE = {
   pickerRoleFilter:   'all',
   pickerMax:          999,
   synergyExclude:     '',
+  synergyRoleExclude: '',
 
   // ── Map picker (для карточки героя) ──
   mapPickerMode:       'heroStrong',
