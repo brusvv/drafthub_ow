@@ -1,10 +1,21 @@
 // ════ MAPS ════
+let mapPoolFilter='active'; // 'active' | 'all'
 
 function renderMaps(){
   const grid=document.getElementById('mapGrid');
   const detail=document.getElementById('mapDetail');
   detail.classList.remove('show');detail.innerHTML='';
-  const filtered=maps.filter(m=>mapFilter==='all'||m.type===mapFilter);
+
+  // Пул карт: active = только с приоритетом > 0 (в текущем пуле)
+  const poolMaps = mapPoolFilter==='active'
+    ? maps.filter(m=>m.priority>0)
+    : maps;
+  const filtered=poolMaps.filter(m=>mapFilter==='all'||m.type===mapFilter);
+
+  // Обновляем счётчик
+  const countEl=document.getElementById('mapPoolCount');
+  if(countEl) countEl.textContent=`${filtered.length} карт${filtered.length===1?'а':filtered.length>=2&&filtered.length<=4?'ы':''}`;
+
   if(!filtered.length){grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Карта" или Seed.</div>';return}
   grid.innerHTML=filtered.map(m=>{
     const src=mapImg(m.name);
@@ -164,3 +175,9 @@ function buildCompDisplay(comp){
 
 function backToMaps(){document.getElementById('mapDetail').classList.remove('show');document.getElementById('mapDetail').innerHTML='';renderMaps()}
 function filterMaps(type,btn){mapFilter=type;document.querySelectorAll('#mapFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');backToMaps()}
+function toggleMapPool(btn){
+  mapPoolFilter=mapPoolFilter==='active'?'all':'active';
+  btn.textContent=mapPoolFilter==='active'?'АКТУАЛЬНЫЙ':'ВСЕ КАРТЫ';
+  btn.classList.toggle('pool-active',mapPoolFilter==='active');
+  backToMaps();
+}
