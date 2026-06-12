@@ -16,6 +16,13 @@
       <div class="form-group"><label class="form-label">Приоритет</label><input class="form-input" id="mPrio" type="number" min="1" value="5"></div>
     </div>
     <!-- ATK/DEF (Hybrid/Escort/Push) -->
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="mInPool" checked style="accent-color:var(--support);width:15px;height:15px">
+        <span>Карта в актуальном пуле</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(снять если карта убрана из ротации)</span>
+      </label>
+    </div>
     <div id="mAtkDefBlock" class="form-row">
       <div class="form-group">
         <label class="form-label">ATK рейтинг</label>
