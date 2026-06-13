@@ -18,10 +18,91 @@ function openHeroModal(hero){
     return{map:m.name,type:m.type,atk:entry.atk||0,def:entry.def||0};
   });
   heroSynergyEdits=hero?(heroSynergy[hero.name]||[]).map(s=>({...s})):[];
-  renderCounterSelPreview();
+  renderHeroCounterBlock();
   renderStrengthPreview();
   renderHeroSynergyBlock();
   document.getElementById('heroModal').classList.remove('hidden');
+}
+
+
+// ── Counter block (аналогично синергиям, с попапом) ───────────────────
+let _ctrPopupIdx = null;
+
+function renderHeroCounterBlock(){
+  const el=document.getElementById('heroCounterBlock');if(!el)return;
+  el.innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:5px">
+      ${counterPickerSelected.map((c,i)=>{
+        const src=portrait(c.name);
+        const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
+        return`<div class="sel-hero-chip ctr-chip" style="border-left:2px solid ${color};cursor:pointer"
+                    onclick="openCounterScorePopup(${i},this)">
+          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${c.name[0]}</div>`}
+          <span>${c.name}</span>
+          <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${c.score}</span>
+          <span onclick="event.stopPropagation();removeCounter(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${!counterPickerSelected.length?'<span class="empty" style="font-size:11px">Нет контрпиков — нажми «+»</span>':''}`;
+}
+
+function removeCounter(idx){
+  counterPickerSelected.splice(idx,1);
+  renderHeroCounterBlock();
+}
+
+function openCounterScorePopup(idx,chipEl){
+  _closeCtrPopup();
+  if(_ctrPopupIdx===idx){_ctrPopupIdx=null;return;}
+  _ctrPopupIdx=idx;
+  const c=counterPickerSelected[idx];if(!c)return;
+  const popup=document.createElement('div');
+  popup.id='counterScorePopup';
+  // position:fixed в body — не обрезается модалкой
+  popup.style.cssText='position:fixed;z-index:2000;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.7)';
+  popup.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      ${portrait(c.name)?`<img src="${portrait(c.name)}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:''}
+      <div style="font-size:13px;font-weight:700">${c.name}</div>
+    </div>
+    <div style="display:flex;gap:3px;align-items:center;margin-bottom:10px">
+      ${Array.from({length:10},(_,k)=>{
+        const v=k+1;const filled=v<=c.score;
+        const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
+        return`<span onclick="setCtrScore(${idx},${v})" style="cursor:pointer;font-size:18px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
+      }).join('')}
+      <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--damage);margin-left:6px">${c.score}</span>
+    </div>
+    <button class="btn" style="width:100%;font-size:10px" onclick="_closeCtrPopup()">Готово</button>
+  `;
+  // Позиционируем под чипом — fixed от viewport
+  const rect=chipEl.getBoundingClientRect();
+  const popW=240;
+  let left=rect.left;
+  let top=rect.bottom+6;
+  if(left+popW>window.innerWidth-8) left=window.innerWidth-popW-8;
+  if(top+140>window.innerHeight) top=rect.top-140;
+  popup.style.left=left+'px';popup.style.top=top+'px';
+  document.body.appendChild(popup);
+  popup.addEventListener('click',e=>e.stopPropagation());
+}
+
+function setCtrScore(idx,val){
+  if(!counterPickerSelected[idx])return;
+  counterPickerSelected[idx].score=(counterPickerSelected[idx].score===val)?val-1:val;
+  renderHeroCounterBlock();
+  _ctrPopupIdx=null;
+  setTimeout(()=>{
+    const chips=document.querySelectorAll('.ctr-chip');
+    if(chips[idx])openCounterScorePopup(idx,chips[idx]);
+  },10);
+}
+
+function _closeCtrPopup(){
+  const el=document.getElementById('counterScorePopup');
+  if(el)el.remove();
+  _ctrPopupIdx=null;
 }
 
 // ── Synergy block ──────────────────────────────────────────────
@@ -330,5 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(hm) hm.addEventListener('click', e => {
     if(!e.target.closest('.syn-chip') && !e.target.closest('#synergyScorePopup'))
       _closeSynergyPopup();
+    if(!e.target.closest('.ctr-chip') && !e.target.closest('#counterScorePopup'))
+      _closeCtrPopup();
   });
 });
