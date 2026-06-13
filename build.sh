@@ -12,6 +12,11 @@ mkdir -p dist
 
 echo "⟳ Сборка Draft Hub..."
 
+# Обновляем @hash во всех JS и CSS исходниках
+if command -v python3 &>/dev/null && [ -f update_hash.py ]; then
+  find src/js src/css -name "*.js" -o -name "*.css" | xargs python3 update_hash.py 2>/dev/null
+fi
+
 cat > "$OUT" <<'HEADER'
 <!DOCTYPE html>
 <html lang="ru">
