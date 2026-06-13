@@ -85,7 +85,7 @@ function confirmPicker(){
 }
 
 function renderSelPreview(){
-  const elMap={preferred:'selPreferred',bans:'selBans',comp:'selComp',
+  const elMap={preferred:'selPreferred',bans:'selBans',comp:'selComp',mapCounters:'selMapCounters',
     playerMain:'selPlayerMain',playerPool:'selPlayerPool'};
   Object.entries(elMap).forEach(([mode,elId])=>{
     const el=document.getElementById(elId);if(!el)return;
