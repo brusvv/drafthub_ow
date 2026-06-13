@@ -25,38 +25,35 @@
 
     <!-- Контрпики -->
     <div class="form-group" style="margin-bottom:.75rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label class="form-label" style="margin:0;font-size:11px;font-weight:700">
-          Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3);font-weight:400">(≥8 = бан)</span>
-        </label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label class="form-label" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.04em">Контрпики</label>
         <button class="btn" onclick="openCounterPicker()"
-          style="font-size:13px;font-weight:700;padding:1px 9px;border-radius:6px;line-height:1.4">+</button>
+          style="font-size:14px;font-weight:700;padding:0 8px;border-radius:6px;line-height:1.6;min-width:24px">+</button>
       </div>
       <div id="heroCounterBlock"></div>
     </div>
     <!-- Синергии -->
     <div class="form-group" style="margin-bottom:.875rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label class="form-label" style="margin:0;font-size:11px;font-weight:700">Синергии</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label class="form-label" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.04em">Синергии</label>
         <button class="btn" onclick="openSynergyPicker()"
-          style="font-size:13px;font-weight:700;padding:1px 9px;border-radius:6px;line-height:1.4">+</button>
+          style="font-size:14px;font-weight:700;padding:0 8px;border-radius:6px;line-height:1.6;min-width:24px">+</button>
       </div>
       <div id="heroSynergyBlock"></div>
     </div>
 
-    <!-- Сила на картах -->
+    <!-- Сила на картах — заголовок как у контрпиков/синергий -->
     <div class="form-group">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <label class="form-label" style="margin:0">Сила на картах</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="hs-filter-btn" id="mapStrFilterBtn"
-            onclick="toggleStrengthFilter(this)">С оценкой</button>
-          <button class="btn" onclick="openMapStrPicker()"
-            style="font-size:10px;padding:4px 10px">Открыть редактор ↗</button>
-        </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label class="form-label" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.04em">Сила на картах</label>
+        <button class="btn" onclick="openMapStrPicker()"
+          style="font-size:14px;font-weight:700;padding:0 8px;border-radius:6px;line-height:1.6;min-width:24px">↗</button>
+        <button class="hs-filter-btn" id="mapStrFilterBtn"
+          onclick="toggleStrengthFilter(this)" style="margin-left:auto">С оценкой</button>
       </div>
-      <div id="heroStrengthPreview" class="hs-map-row" style="min-height:28px">
-        <span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>
+      <!-- Чипы карт с оценками — аналогично контрпикам/синергиям -->
+      <div id="heroStrengthPreview" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px">
+        <span class="empty" style="font-size:11px">Нет оценок — нажми «↗»</span>
       </div>
     </div>
 
