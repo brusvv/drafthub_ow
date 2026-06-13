@@ -1,3 +1,4 @@
+// @hash 813a6069 2026-06-13
 // ════ PICKER — COUNTERS & MAP PICKER ════
 
 // ── Counter picker ──
@@ -95,10 +96,12 @@ function setCounterScore(idx,val){
   if(!counterPickerSelected[idx])return;
   counterPickerSelected[idx].score=(counterPickerSelected[idx].score===val)?val-1:val;
   _closeCounterPopup();
-  renderCounterSelPreview();
+  renderCounterSelPreview();  // для пикера
+  renderHeroCounterBlock();   // для модалки героя
   // Переоткрываем попап
   setTimeout(()=>{
-    const chips=document.querySelectorAll('.counter-chip');
+    // Переоткрываем попап — ищем по обоим классам (.counter-chip в picker, .ctr-chip в modal)
+    const chips=document.querySelectorAll('.counter-chip,.ctr-chip');
     if(chips[idx])openCounterScorePopup(idx,chips[idx]);
   },10);
 }
