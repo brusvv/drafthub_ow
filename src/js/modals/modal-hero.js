@@ -1,3 +1,4 @@
+// @hash ed892fb5 2026-06-13
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
@@ -35,12 +36,12 @@ function renderHeroCounterBlock(){
       ${counterPickerSelected.map((c,i)=>{
         const src=portrait(c.name);
         const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
-        return`<div class="sel-hero-chip ctr-chip" style="border-left:2px solid ${color};cursor:pointer"
+        return`<div class="sel-hero-chip ctr-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px"
                     onclick="openCounterScorePopup(${i},this)">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${c.name[0]}</div>`}
-          <span>${c.name}</span>
-          <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${c.score}</span>
-          <span onclick="event.stopPropagation();removeCounter(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
+          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:36px;height:36px;border-radius:6px;object-fit:cover">`:`<div class="sel-hero-chip-ph" style="width:36px;height:36px;border-radius:6px;font-size:13px">${c.name[0]}</div>`}
+          <span style="font-size:12px;font-weight:600">${c.name}</span>
+          <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:2px">${c.score}</span>
+          <span onclick="event.stopPropagation();removeCounter(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:13px">×</span>
         </div>`;
       }).join('')}
     </div>
@@ -52,58 +53,6 @@ function removeCounter(idx){
   renderHeroCounterBlock();
 }
 
-function openCounterScorePopup(idx,chipEl){
-  _closeCtrPopup();
-  if(_ctrPopupIdx===idx){_ctrPopupIdx=null;return;}
-  _ctrPopupIdx=idx;
-  const c=counterPickerSelected[idx];if(!c)return;
-  const popup=document.createElement('div');
-  popup.id='counterScorePopup';
-  // position:fixed в body — не обрезается модалкой
-  popup.style.cssText='position:fixed;z-index:2000;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.7)';
-  popup.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      ${portrait(c.name)?`<img src="${portrait(c.name)}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:''}
-      <div style="font-size:13px;font-weight:700">${c.name}</div>
-    </div>
-    <div style="display:flex;gap:3px;align-items:center;margin-bottom:10px">
-      ${Array.from({length:10},(_,k)=>{
-        const v=k+1;const filled=v<=c.score;
-        const color=v>=8?'var(--damage)':v>=5?'var(--accent)':'var(--text3)';
-        return`<span onclick="setCtrScore(${idx},${v})" style="cursor:pointer;font-size:18px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
-      }).join('')}
-      <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--damage);margin-left:6px">${c.score}</span>
-    </div>
-    <button class="btn" style="width:100%;font-size:10px" onclick="_closeCtrPopup()">Готово</button>
-  `;
-  // Позиционируем под чипом — fixed от viewport
-  const rect=chipEl.getBoundingClientRect();
-  const popW=240;
-  let left=rect.left;
-  let top=rect.bottom+6;
-  if(left+popW>window.innerWidth-8) left=window.innerWidth-popW-8;
-  if(top+140>window.innerHeight) top=rect.top-140;
-  popup.style.left=left+'px';popup.style.top=top+'px';
-  document.body.appendChild(popup);
-  popup.addEventListener('click',e=>e.stopPropagation());
-}
-
-function setCtrScore(idx,val){
-  if(!counterPickerSelected[idx])return;
-  counterPickerSelected[idx].score=(counterPickerSelected[idx].score===val)?val-1:val;
-  renderHeroCounterBlock();
-  _ctrPopupIdx=null;
-  setTimeout(()=>{
-    const chips=document.querySelectorAll('.ctr-chip');
-    if(chips[idx])openCounterScorePopup(idx,chips[idx]);
-  },10);
-}
-
-function _closeCtrPopup(){
-  const el=document.getElementById('counterScorePopup');
-  if(el)el.remove();
-  _ctrPopupIdx=null;
-}
 
 // ── Synergy block ──────────────────────────────────────────────
 function renderHeroSynergyBlock(){
@@ -113,15 +62,14 @@ function renderHeroSynergyBlock(){
       ${heroSynergyEdits.map((s,i)=>{
         const src=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
-        return`<div class="sel-hero-chip syn-chip" style="border-left:2px solid ${color};cursor:pointer" onclick="openSynergyScorePopup(${i},this)">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${s.name[0]}</div>`}
-          <span class="syn-chip-name">${s.name}</span>
-          <span class="syn-chip-score" style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${s.score}</span>
-          <span onclick="event.stopPropagation();removeSynergy(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
+        return`<div class="sel-hero-chip syn-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px" onclick="openSynergyScorePopup(${i},this)">
+          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:36px;height:36px;border-radius:6px;object-fit:cover">`:`<div class="sel-hero-chip-ph" style="width:36px;height:36px;border-radius:6px;font-size:13px">${s.name[0]}</div>`}
+          <span class="syn-chip-name" style="font-size:12px;font-weight:600">${s.name}</span>
+          <span class="syn-chip-score" style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:2px">${s.score}</span>
+          <span onclick="event.stopPropagation();removeSynergy(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:13px">×</span>
         </div>`;
       }).join('')}
-    </div>
-    <button class="btn" onclick="openSynergyPicker()" style="font-size:10px">+ Добавить синергию</button>`;
+    </div>`;
 }
 
 function removeSynergy(idx){heroSynergyEdits.splice(idx,1);renderHeroSynergyBlock();}
@@ -329,16 +277,20 @@ function renderStrengthPreview(){
   if(!el) return;
   const rated = heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0);
   if(!rated.length){
-    el.innerHTML = '<span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>';
+    el.innerHTML = '<span class="empty" style="font-size:11px">Нет оценок — нажми «↗»</span>';
     return;
   }
+  // Чипы как у контрпиков/синергий: скриншот карты + название + оценка
   el.innerHTML = rated.map(e => {
     const noAD = NO_ATKDEF.includes(e.type);
+    const score = noAD ? e.atk : Math.round((e.atk + e.def) / 2);
     const label = noAD ? `${e.atk}` : `${e.atk}/${e.def}`;
-    const color = e.atk >= 8 ? 'var(--damage)' : e.atk >= 5 ? 'var(--accent)' : 'var(--text3)';
-    return `<div class="hs-map-chip rated" onclick="openMapStrPicker()" style="cursor:pointer">
-      <span class="hs-map-name">${e.map}</span>
-      <span class="hs-map-score" style="color:${color}">${label}</span>
+    const color = score >= 8 ? 'var(--support)' : score >= 6 ? 'var(--accent)' : score >= 4 ? 'var(--text2)' : 'var(--text3)';
+    const src = mapImg(e.map);
+    return `<div class="sel-hero-chip str-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px" onclick="openMapStrPicker()">
+      ${src ? `<img src="${src}" onerror="this.style.display='none'" style="width:48px;height:28px;border-radius:4px;object-fit:cover">` : `<div style="width:48px;height:28px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3)">${e.type}</div>`}
+      <span style="font-size:12px;font-weight:600">${e.map}</span>
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:auto">${label}</span>
     </div>`;
   }).join('');
   updateMapStrCount();
@@ -412,6 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!e.target.closest('.syn-chip') && !e.target.closest('#synergyScorePopup'))
       _closeSynergyPopup();
     if(!e.target.closest('.ctr-chip') && !e.target.closest('#counterScorePopup'))
-      _closeCtrPopup();
+      _closeCounterPopup();
   });
 });
