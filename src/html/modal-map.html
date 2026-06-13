@@ -23,27 +23,33 @@
         <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(снять если карта убрана из ротации)</span>
       </label>
     </div>
-    <div id="mAtkDefBlock" class="form-row">
-      <div class="form-group">
-        <label class="form-label">ATK рейтинг</label>
-        <input type="hidden" id="mAtk" value="3">
-        <div class="dot-rating" id="mAtkDots" data-value="3">
-          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',1)" data-v="1">◆</span>
-          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',2)" data-v="2">◆</span>
-          <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',3)" data-v="3">◆</span>
-          <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',4)" data-v="4">◆</span>
-          <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',5)" data-v="5">◆</span>
+    <!-- СЛОЖНОСТЬ — иконка + точки в одну строку -->
+    <div id="mAtkDefBlock" class="form-group">
+      <label class="form-label">Сложность</label>
+      <input type="hidden" id="mAtk" value="3">
+      <input type="hidden" id="mDef" value="3">
+      <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">
+        <!-- ATK row: иконка + 5 точек -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="mAtkIcon" style="display:flex;align-items:center;flex-shrink:0"></span>
+          <div class="dot-rating" id="mAtkDots" data-value="3" style="padding:0;gap:5px">
+            <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',1)" data-v="1">◆</span>
+            <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',2)" data-v="2">◆</span>
+            <span class="dot-rating-dot atk filled" onclick="setDotRating('mAtk','mAtkDots',3)" data-v="3">◆</span>
+            <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',4)" data-v="4">◆</span>
+            <span class="dot-rating-dot atk" onclick="setDotRating('mAtk','mAtkDots',5)" data-v="5">◆</span>
+          </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">DEF рейтинг</label>
-        <input type="hidden" id="mDef" value="3">
-        <div class="dot-rating" id="mDefDots" data-value="3">
-          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',1)" data-v="1">◆</span>
-          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',2)" data-v="2">◆</span>
-          <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',3)" data-v="3">◆</span>
-          <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',4)" data-v="4">◆</span>
-          <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',5)" data-v="5">◆</span>
+        <!-- DEF row: иконка + 5 точек -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="mDefIcon" style="display:flex;align-items:center;flex-shrink:0"></span>
+          <div class="dot-rating" id="mDefDots" data-value="3" style="padding:0;gap:5px">
+            <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',1)" data-v="1">◆</span>
+            <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',2)" data-v="2">◆</span>
+            <span class="dot-rating-dot def filled" onclick="setDotRating('mDef','mDefDots',3)" data-v="3">◆</span>
+            <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',4)" data-v="4">◆</span>
+            <span class="dot-rating-dot def" onclick="setDotRating('mDef','mDefDots',5)" data-v="5">◆</span>
+          </div>
         </div>
       </div>
     </div>
@@ -99,8 +105,11 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">Контрпики на этой карте (через запятую)</label>
-      <input class="form-input" id="mCounters" placeholder="Zarya, Ana, Kiriko">
+      <label class="form-label">Контрпики на этой карте</label>
+      <div class="sel-heroes" id="selMapCounters" onclick="openPicker('mapCounters')" style="min-height:36px">
+        <span class="sel-empty">Нажми чтобы выбрать</span>
+        <span class="sel-edit-hint">✎</span>
+      </div>
     </div>
 
     <div class="modal-footer">
