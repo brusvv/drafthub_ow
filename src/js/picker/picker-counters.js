@@ -64,7 +64,15 @@ function openCounterScorePopup(idx,chipEl){
   const c=counterPickerSelected[idx];if(!c)return;
   const popup=document.createElement('div');
   popup.id='counterScorePopup';
-  popup.style.cssText='position:absolute;z-index:300;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.6)';
+
+  // position:fixed → рендерим в body, не обрезается overflow:hidden модалки
+  const rect=chipEl.getBoundingClientRect();
+  const popupW=230;
+  const left=rect.right+popupW>window.innerWidth?rect.right-popupW:rect.left;
+  const spaceBelow=window.innerHeight-(rect.bottom+8);
+  const top=spaceBelow<120?rect.top-130:rect.bottom+6;
+
+  popup.style.cssText=`position:fixed;z-index:9999;top:${top}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   popup.innerHTML=`
     <div style="font-size:12px;font-weight:700;margin-bottom:8px">${c.name}</div>
     <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px">
@@ -76,14 +84,7 @@ function openCounterScorePopup(idx,chipEl){
       <span id="cntPopVal" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--damage);margin-left:6px">${c.score}</span>
     </div>
     <button class="btn" style="width:100%;font-size:10px" onclick="_closeCounterPopup()">Готово</button>`;
-  const rect=chipEl.getBoundingClientRect();
-  const modal=chipEl.closest('.modal');
-  const mRect=modal?modal.getBoundingClientRect():{left:0,top:0};
-  popup.style.left=(rect.left-mRect.left)+'px';
-  popup.style.top=(rect.bottom-mRect.top+4)+'px';
-  const container=modal||document.body;
-  container.style.position=container.style.position||'relative';
-  container.appendChild(popup);
+  document.body.appendChild(popup);
   popup.addEventListener('click',e=>e.stopPropagation());
 }
 function _closeCounterPopup(){
