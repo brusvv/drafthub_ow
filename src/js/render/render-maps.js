@@ -1,23 +1,7 @@
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
-// Рендерим фильтры с иконками. Активная кнопка — только иконка (текст скрыт)
-function renderMapFilters(){
-  const el=document.getElementById('mapFilters');if(!el)return;
-  const types=['all','Hybrid','Escort','Control','Push','Flashpoint'];
-  el.innerHTML=types.map(t=>{
-    const isAll=t==='all';
-    const active=mapFilter===t;
-    // Активный фильтр — иконка + текст когда всё, иначе только иконка
-    const label=isAll
-      ?'Все'
-      :`${mapTypeIcon(t,15)}<span class="f-btn-text">${t}</span>`;
-    return`<button class="f-btn${active?' active':''}" onclick="filterMaps('${t}',this)">${label}</button>`;
-  }).join('');
-}
-
 function renderMaps(){
-  renderMapFilters(); // обновляем фильтры с иконками
   const grid=document.getElementById('mapGrid');
   const detail=document.getElementById('mapDetail');
   detail.classList.remove('show');detail.innerHTML='';
@@ -28,12 +12,10 @@ function renderMaps(){
     : maps;
   const filtered=poolMaps.filter(m=>mapFilter==='all'||m.type===mapFilter);
 
-  // Обновляем счётчик — увеличенный шрифт
+  // Обновляем счётчик
   const countEl=document.getElementById('mapPoolCount');
-  if(countEl){
-    const n=filtered.length;
-    countEl.textContent=`${n} карт${n===1?'а':n>=2&&n<=4?'ы':''}`;
-  }
+  if(countEl) countEl.textContent=`${filtered.length} карт${filtered.length===1?'а':filtered.length>=2&&filtered.length<=4?'ы':''}`;
+
   if(!filtered.length){grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Карта" или Seed.</div>';return}
   grid.innerHTML=filtered.map(m=>{
     const src=mapImg(m.name);
@@ -42,7 +24,8 @@ function renderMaps(){
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
-        <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span class="f-btn-text">${m.type}</span>`:''}</div>
+        <!-- Тип: иконка всегда, текст — только когда фильтр "все" -->
+        <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span>${m.type}</span>`:''}</div>
         <div class="map-card-meta">
           <div class="tier-badge tier-${m.tier}">${m.tier}</div>
           <div class="ratings">
@@ -141,8 +124,8 @@ function showMapDetail(name){
           <div class="m-item"><span>Приоритет:</span><span class="m-val">#${m.priority}</span></div>
           ${noAD
             ?`<div class="m-item">${ICON_DIF}<span style="margin-left:4px">Сложность</span>${dots5(m.dif,'dif')}</div>`
-            :`<div class="m-item">${ICON_ATK}<span style="margin-left:4px">ATK</span>${dots5(m.atk,'atk')}</div>
-              <div class="m-item">${ICON_DEF}<span style="margin-left:4px">DEF</span>${dots5(m.def,'def')}</div>`
+            :`<div class="m-item">${ICON_ATK}${dots5(m.atk,'atk')}</div>
+              <div class="m-item">${ICON_DEF}${dots5(m.def,'def')}</div>`
           }
         </div>
       </div>
