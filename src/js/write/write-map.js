@@ -21,13 +21,13 @@ async function saveMap(){
   const comp=compSlots.filter(s=>s.hero).map(s=>({
     hero:s.hero,playerRole:s.role,role:(heroMap[s.hero]||{}).role||''
   }));
-  const counters=(document.getElementById('mCounters').value||'')
-    .split(',').map(s=>s.trim()).filter(Boolean);
+  // Контрпики берём из пикера (pickerSelected.mapCounters)
+  const counters=pickerSelected.mapCounters||[];
   // preferredHeroes теперь вычисляются автоматически из HeroMapStrength
   // но пользователь может переопределить вручную
   const pref=pickerSelected.preferred||[];
   try{
-    if(er)await sUp(`Maps!A${er}:H${er}`,[row]);
+    if(er)await sUp(`Maps!A${er}:I${er}`,[row]);
     else await sApp('Maps',[row]);
     await rewrite('MapPreferred',oldName||name,name,pref.map(h=>[name,h]));
     await rewrite('MapBans',oldName||name,name,bans.map(h=>[name,h]));
