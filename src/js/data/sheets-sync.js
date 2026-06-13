@@ -102,50 +102,124 @@ const REQUIRED_SHEETS=[
   {title:'HeroSynergy',  headers:['hero','synergy_hero','score']},
 ];
 
+// ── Миграция схемы листа ────────────────────────────────────────────────
+// Сравнивает фактические заголовки с ожидаемыми.
+// Если набор колонок совпадает, но порядок отличается — переставляет данные.
+// Если есть новые колонки — добавляет их с пустыми значениями.
+// Если есть удалённые — игнорирует (данные не теряются).
+// Возвращает {migrated: bool, changes: string[]}
+async function migrateSheet(title, expectedHeaders){
+  let rows;
+  try{ rows=await sGet(`${title}!A:ZZ`); }
+  catch(e){ return{migrated:false,changes:[]}; }
+  if(!rows.length) return{migrated:false,changes:[]};
+
+  const actualHeaders=rows[0].map(h=>h.toLowerCase().trim());
+  const changes=[];
+
+  // Нет расхождений — ничего не делаем
+  const same=expectedHeaders.length===actualHeaders.length &&
+    expectedHeaders.every((h,i)=>h.toLowerCase()===actualHeaders[i]);
+  if(same) return{migrated:false,changes:[]};
+
+  // Строим маппинг: имя колонки → индекс в актуальных данных
+  const oldIdx={};
+  actualHeaders.forEach((h,i)=>{ oldIdx[h]=i; });
+
+  // Новые колонки которых не было
+  const added=expectedHeaders.filter(h=>oldIdx[h.toLowerCase()]===undefined);
+  if(added.length) changes.push(`+колонки: ${added.join(', ')}`);
+
+  // Переставленные
+  const reordered=expectedHeaders.filter(h=>{
+    const i=oldIdx[h.toLowerCase()];
+    return i!==undefined && i!==expectedHeaders.indexOf(h);
+  });
+  if(reordered.length) changes.push(`переставлены: ${reordered.join(', ')}`);
+
+  if(!changes.length) return{migrated:false,changes:[]};
+
+  // Перестраиваем все строки данных по новой схеме
+  const dataRows=rows.slice(1);
+  const newRows=[
+    expectedHeaders,  // новый заголовок
+    ...dataRows.map(row=>
+      expectedHeaders.map(col=>{
+        const i=oldIdx[col.toLowerCase()];
+        // Существующее значение или пустая строка для новой колонки
+        return i!==undefined?(row[i]||''):'';
+      })
+    )
+  ];
+
+  // Записываем обратно — сначала очищаем лишние колонки если схема сузилась
+  const colLetter=String.fromCharCode(64+Math.max(expectedHeaders.length,actualHeaders.length));
+  await sClear(`${title}!A1:${colLetter}${newRows.length+50}`);
+  const range=`${title}!A1:${String.fromCharCode(64+expectedHeaders.length)}${newRows.length}`;
+  await sUp(range, newRows);
+
+  return{migrated:true,changes};
+}
+
 async function ensureSheets(){
   const meta=await gapi.client.sheets.spreadsheets.get({spreadsheetId:SID()});
   const existing=new Set((meta.result.sheets||[]).map(s=>s.properties.title));
+
+  // Создаём отсутствующие листы
   const toCreate=REQUIRED_SHEETS.filter(s=>!existing.has(s.title));
-  if(!toCreate.length)return{created:[]};
-  await gapi.client.sheets.spreadsheets.batchUpdate({
-    spreadsheetId:SID(),
-    resource:{requests:toCreate.map(s=>({addSheet:{properties:{title:s.title}}}))}
-  });
-  await Promise.all(toCreate.map(s=>sUp(`${s.title}!A1`,[s.headers])));
-  return{created:toCreate.map(s=>s.title)};
+  if(toCreate.length){
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId:SID(),
+      resource:{requests:toCreate.map(s=>({addSheet:{properties:{title:s.title}}}))}
+    });
+    await Promise.all(toCreate.map(s=>sUp(`${s.title}!A1`,[s.headers])));
+  }
+
+  // Мигрируем схему существующих листов (добавляем новые колонки, правим порядок)
+  const migrations=await Promise.all(
+    REQUIRED_SHEETS.filter(s=>existing.has(s.title))
+      .map(s=>migrateSheet(s.title,s.headers))
+  );
+  const migrated=migrations.filter(m=>m.migrated);
+
+  return{
+    created:toCreate.map(s=>s.title),
+    migrated:migrated.flatMap(m=>m.changes)
+  };
 }
 
 async function syncHeroes(){
-  const{created}=await ensureSheets();
+  const{created,migrated}=await ensureSheets();
   const rows=await sGet('Heroes!A:A');
   const existing=new Set(rows.slice(1).map(r=>r[0]).filter(Boolean));
   const toAdd=SH.slice(1).filter(r=>!existing.has(r[0]));
-  if(!toAdd.length)return{added:0,created};
+  if(!toAdd.length)return{added:0,created,migrated};
   await sApp('Heroes',toAdd);
-  return{added:toAdd.length,created};
+  return{added:toAdd.length,created,migrated};
 }
 
 async function syncMaps(){
-  const{created}=await ensureSheets();
+  const{created,migrated}=await ensureSheets();
   const rows=await sGet('Maps!A:A');
   const existing=new Set(rows.slice(1).map(r=>r[0]).filter(Boolean));
   const priorities=rows.slice(1).map(r=>parseInt(r[3])||0).filter(n=>n>0);
   let nextP=priorities.length?Math.max(...priorities)+1:1;
   const toAdd=SM.slice(1).filter(r=>!existing.has(r[0]))
-    .map(r=>[r[0],r[1],r[2],nextP++,r[4],r[5],r[6],r[7]]);
-  if(!toAdd.length)return{added:0,created};
+    .map(r=>[r[0],r[1],r[2],nextP++,r[4],r[5],r[6],r[7],'TRUE']);
+  if(!toAdd.length)return{added:0,created,migrated};
   await sApp('Maps',toAdd);
-  return{added:toAdd.length,created};
+  return{added:toAdd.length,created,migrated};
 }
 
 async function seedSheets(){
   if(!SID()){toast('Сначала укажи Sheet ID','err');return}
   if(!confirm('Заполнить таблицу стартовыми данными?\nHeroes и Maps будут перезаписаны полностью.'))return;
   try{
-    const{created}=await ensureSheets();
+    const{created,migrated}=await ensureSheets();
     if(created.length)toast(`Созданы листы: ${created.join(', ')}`,'ok');
+    if(migrated.length)toast(`Схема обновлена: ${migrated.join('; ')}`,'ok');
     await sUp('Heroes!A1:G'+SH.length,SH);
-    await sUp('Maps!A1:H'+SM.length,SM);
+    await sUp('Maps!A1:I'+SM.length,SM);
     toast('Таблица заполнена ✓','ok');
     await loadAllData();
   }catch(e){toast('Ошибка: '+e.message,'err')}
@@ -157,7 +231,13 @@ async function smartSync(){
     toast('Синхронизация...','ok');
     const[h,m]=await Promise.all([syncHeroes(),syncMaps()]);
     const msgs=[];
-    if(h.created.length)msgs.push(`Созданы листы: ${h.created.join(', ')}`);
+    // Созданные листы
+    const allCreated=[...new Set([...h.created,...m.created])];
+    if(allCreated.length)msgs.push(`Созданы листы: ${allCreated.join(', ')}`);
+    // Мигрированные схемы
+    const allMigrated=[...new Set([...(h.migrated||[]),...(m.migrated||[])])];
+    if(allMigrated.length)msgs.push(`Схема обновлена: ${allMigrated.join('; ')}`);
+    // Новые данные
     if(h.added)msgs.push(`Добавлено героев: ${h.added}`);
     if(m.added)msgs.push(`Добавлено карт: ${m.added}`);
     if(!msgs.length)msgs.push('Всё актуально');
