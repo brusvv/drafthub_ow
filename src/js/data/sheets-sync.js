@@ -219,7 +219,8 @@ async function seedSheets(){
     if(created.length)toast(`Созданы листы: ${created.join(', ')}`,'ok');
     if(migrated.length)toast(`Схема обновлена: ${migrated.join('; ')}`,'ok');
     await sUp('Heroes!A1:G'+SH.length,SH);
-    await sUp('Maps!A1:I'+SM.length,SM);
+    const SMwithPool=SM.map((r,i)=>i===0?[...r,'inpool']:[...r,'TRUE']);
+    await sUp('Maps!A1:I'+SMwithPool.length,SMwithPool);
     toast('Таблица заполнена ✓','ok');
     await loadAllData();
   }catch(e){toast('Ошибка: '+e.message,'err')}
