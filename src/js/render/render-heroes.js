@@ -1,3 +1,4 @@
+// @hash 98cc3f7a 2026-06-13
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   const pool=document.getElementById('heroPool');
@@ -65,6 +66,24 @@ function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#hero
 // ════ HERO INFO POPUP ════
 let _heroInfoExpanded=false;
 
+// ── Универсальный чип героя: портрет + скор + tooltip + клик → карточка ──
+const _synColor = s => s>=8?'var(--support)':s>=5?'var(--accent)':'var(--text3)';
+const _ctrColor = s => s>=8?'var(--damage)' :s>=5?'var(--accent)':'var(--text3)';
+
+function _heroScoreChip(name, score, colorFn, size=36){
+  const src=portrait(name);
+  const color=colorFn(score);
+  const r=Math.round(size*0.18);
+  const img=src
+    ?`<img src="${src}" style="width:${size}px;height:${size}px;border-radius:${r}px;object-fit:cover;border:2px solid ${color};display:block" onerror="this.style.display='none'">`
+    :`<div style="width:${size}px;height:${size}px;border-radius:${r}px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.3)}px;font-weight:800;color:var(--text3);border:2px solid ${color}">${name[0]}</div>`;
+  return`<div title="${esc(name)}" style="position:relative;cursor:pointer;flex-shrink:0"
+              onclick="event.stopPropagation();closeTierPreview();openHeroInfoPopup('${esc(name)}')">
+    ${img}
+    <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${score}</div>
+  </div>`;
+}
+
 function openHeroInfoPopup(name){
   _heroInfoExpanded=false;
   _buildHeroInfoPopup(name);
@@ -127,37 +146,29 @@ function _buildHeroInfoPopup(name){
       ${synByRole[role].sort((a,b)=>b.score-a.score).map(s=>{
         const sp=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
-        return`<div title="${s.name} — ${s.score}/10" style="position:relative;cursor:default">
-          ${sp?`<img src="${sp}" style="width:44px;height:44px;border-radius:7px;object-fit:cover;border:2px solid ${color}" onerror="this.style.display='none'">`
-            :`<div style="width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3);border:2px solid ${color}">${s.name[0]}</div>`}
-          <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${s.score}</div>
-        </div>`;
+        return _heroScoreChip(s.name,s.score,_synColor,40);
       }).join('')}
     </div>`).join('')||'<div class="empty" style="font-size:12px">Нет данных</div>')
     :'';
   const synSection=syns.length?`<div style="margin-bottom:16px">
     <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Синергии</div>
-    ${_heroInfoExpanded?synHtml:`<div style="display:flex;flex-wrap:wrap;gap:5px">${syns.slice(0,6).map(s=>{const sp=portrait(s.name);const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';return`<div title="${s.name}" style="position:relative">${sp?`<img src="${sp}" style="width:30px;height:30px;border-radius:5px;object-fit:cover;border:2px solid ${color}">`:`<div style="width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid ${color}">${s.name[0]}</div>`}<div style="position:absolute;bottom:-2px;right:-2px;font-family:var(--mono);font-size:7px;font-weight:700;background:${color};color:#000;border-radius:2px;padding:0 2px">${s.score}</div></div>`;}).join('')}</div>`}
+    ${_heroInfoExpanded?synHtml:`<div style="display:flex;flex-wrap:wrap;gap:5px">${syns.slice(0,6).map(s=>_heroScoreChip(s.name,s.score,_synColor,30)).join('')}</div>`}
   </div>`:'';
 
   const topCounters=(hero.counters||[]).sort((a,b)=>b.score-a.score).slice(0,_heroInfoExpanded?12:6);
   const countersSection=topCounters.length?`<div style="margin-bottom:16px">
     <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Контрпики</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">${topCounters.map(c=>{
-      const cp=portrait(c.name);const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
-      return`<div style="display:flex;align-items:center;gap:5px;padding:3px 8px 3px 5px;border-radius:6px;background:var(--bg3);border:1px solid ${color}33">
-        ${cp?`<img src="${cp}" style="width:24px;height:24px;border-radius:4px;object-fit:cover" onerror="this.style.display='none'">`:`<div style="width:24px;height:24px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${c.name[0]}</div>`}
-        <span style="font-size:12px;font-weight:600">${c.name}</span>
-        <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:${color}">${c.score}</span>
-      </div>`;
-    }).join('')}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px">${topCounters.map(c=>_heroScoreChip(c.name,c.score,_ctrColor,36)).join('')}</div>
   </div>`:'';
 
   const body=`
     <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
       ${src?`<img src="${src}" style="width:96px;height:96px;object-fit:cover;border-radius:12px;flex-shrink:0;border:2px solid ${rc[hero.role]||'var(--border2)'}" onerror="this.style.display='none'">`:''}
       <div style="flex:1">
-        <div style="font-size:24px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em">${hero.name}</div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">${hero.name}</div>
+          <button onclick="closeTierPreview()" style="background:none;border:1px solid var(--border2);color:var(--text3);font-size:16px;line-height:1;cursor:pointer;padding:3px 8px;border-radius:6px;flex-shrink:0;margin-top:2px" title="Закрыть">×</button>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           ${roleIcon(hero.role,18)}
           <span style="font-family:var(--mono);font-size:12px;color:${rc[hero.role]||'var(--text2)'};text-transform:uppercase;font-weight:700">${hero.role}</span>
@@ -194,10 +205,7 @@ function _openHeroTierPreview(title, body, actions){
   document.getElementById('tierPreviewOverlay')?.remove();
   document.body.insertAdjacentHTML('beforeend',`<div class="tier-preview-overlay" id="tierPreviewOverlay" onclick="if(event.target.id==='tierPreviewOverlay')closeTierPreview()">
     <div class="tier-preview-box hero-preview-box">
-      <div class="tier-preview-head">
-        <div class="tier-preview-title" style="font-size:16px">${title}</div>
-        <button class="tier-preview-close" onclick="closeTierPreview()">×</button>
-      </div>
+      <div class="tier-preview-head" style="display:none"></div>
       <div class="tier-preview-body">${body}</div>
       ${actions?`<div class="tier-preview-actions">${actions}</div>`:''}
     </div>
