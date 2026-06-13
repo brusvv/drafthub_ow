@@ -1,4 +1,4 @@
-// @hash 98cc3f7a 2026-06-13
+// @hash 8119b9d2 2026-06-13
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   const pool=document.getElementById('heroPool');
@@ -167,7 +167,7 @@ function _buildHeroInfoPopup(name){
       <div style="flex:1">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
           <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">${hero.name}</div>
-          <button onclick="closeTierPreview()" style="background:none;border:1px solid var(--border2);color:var(--text3);font-size:16px;line-height:1;cursor:pointer;padding:3px 8px;border-radius:6px;flex-shrink:0;margin-top:2px" title="Закрыть">×</button>
+          <button class="tier-preview-close" onclick="closeTierPreview()" style="flex-shrink:0;margin-top:2px">×</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           ${roleIcon(hero.role,18)}
