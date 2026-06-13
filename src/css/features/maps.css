@@ -7,7 +7,7 @@
 .map-card-body{padding:9px 11px}
 .map-card-name{font-size:15px;font-weight:700;margin-bottom:5px}
 .map-card-meta{display:flex;align-items:center;gap:6px}
-.tier-badge{font-family:var(--mono);font-size:10px;font-weight:700;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tier-badge{font-family:var(--mono);font-size:13px;font-weight:700;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .tier-S{background:rgba(240,160,48,.15);color:var(--tier-s)}
 .tier-A{background:rgba(139,195,74,.15);color:var(--tier-a)}
 .tier-B{background:rgba(91,155,213,.15);color:var(--tier-b)}
