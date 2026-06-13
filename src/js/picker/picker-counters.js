@@ -108,7 +108,7 @@ function setCounterScore(idx,val){
 // Закрываем по клику вне
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('heroModal')?.addEventListener('click',e=>{
-    if(!e.target.closest('.counter-chip')&&!e.target.closest('#counterScorePopup'))
+    if(!e.target.closest('.counter-chip')&&!e.target.closest('.ctr-chip')&&!e.target.closest('#counterScorePopup'))
       _closeCounterPopup();
   });
 });
