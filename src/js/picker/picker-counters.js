@@ -113,6 +113,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 function onMapTypeChange(){
   const t=document.getElementById('mType').value;
   const noAD=NO_ATKDEF.includes(t);
-  document.getElementById('mAtkDefBlock').style.display=noAD?'none':'grid';
+  document.getElementById('mAtkDefBlock').style.display=noAD?'none':'block';
   document.getElementById('mDifBlock').style.display=noAD?'block':'none';
 }
