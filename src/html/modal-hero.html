@@ -23,20 +23,25 @@
       </label>
     </div>
 
-    <!-- Контрпики и синергии — в два столбца -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:.875rem">
-      <!-- Контрпики (левый столбец) -->
-      <div>
-        <label class="form-label">Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(≥8 = бан)</span></label>
-        <div class="sel-heroes" id="selHeroCounters" onclick="openCounterPicker()" style="min-height:36px">
-          <span class="sel-empty">Выбрать</span><span class="sel-edit-hint">✎</span>
-        </div>
+    <!-- Контрпики -->
+    <div class="form-group" style="margin-bottom:.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label class="form-label" style="margin:0;font-size:11px;font-weight:700">
+          Контрпики <span style="font-family:var(--mono);font-size:9px;color:var(--text3);font-weight:400">(≥8 = бан)</span>
+        </label>
+        <button class="btn" onclick="openCounterPicker()"
+          style="font-size:13px;font-weight:700;padding:1px 9px;border-radius:6px;line-height:1.4">+</button>
       </div>
-      <!-- Синергии (правый столбец) -->
-      <div>
-        <label class="form-label">Синергии</label>
-        <div id="heroSynergyBlock"></div>
+      <div id="heroCounterBlock"></div>
+    </div>
+    <!-- Синергии -->
+    <div class="form-group" style="margin-bottom:.875rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label class="form-label" style="margin:0;font-size:11px;font-weight:700">Синергии</label>
+        <button class="btn" onclick="openSynergyPicker()"
+          style="font-size:13px;font-weight:700;padding:1px 9px;border-radius:6px;line-height:1.4">+</button>
       </div>
+      <div id="heroSynergyBlock"></div>
     </div>
 
     <!-- Сила на картах -->
