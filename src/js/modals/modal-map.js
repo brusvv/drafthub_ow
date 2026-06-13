@@ -15,11 +15,17 @@ function openMapModal(map){
   document.getElementById('mInPool').checked=map?map.inPool!==false:true;
   document.getElementById('mapDeleteBtn').style.display=map?'inline-flex':'none';
   onMapTypeChange();
+  // Вставляем SVG-иконки ATK/DEF в редакторе карты
+  const atkIco=document.getElementById('mAtkIcon');
+  const defIco=document.getElementById('mDefIcon');
+  if(atkIco)atkIco.innerHTML=ICON_ATK;
+  if(defIco)defIco.innerHTML=ICON_DEF;
   pickerSelected={
     ...pickerSelected,
     preferred:map?[...map.preferredHeroes]:[],
     bans:map?[...map.bans]:[],
-    comp:map?map.comp.map(c=>c.hero):[]
+    comp:map?map.comp.map(c=>c.hero):[],
+    mapCounters:map?[...(map.counters||[])]:[],
   };
   renderSelPreview();
   initCompSlots(map);
