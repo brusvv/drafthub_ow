@@ -12,9 +12,19 @@ mkdir -p dist
 
 echo "⟳ Сборка Draft Hub..."
 
+# Определяем директорию build.sh — работает и локально, и в GitHub Actions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HASH_SCRIPT="$SCRIPT_DIR/update_hash.py"
+
 # Обновляем @hash во всех JS и CSS исходниках
-if command -v python3 &>/dev/null && [ -f update_hash.py ]; then
-  find src/js src/css \( -name "*.js" -o -name "*.css" \) | xargs python3 update_hash.py 2>/dev/null
+# Файл не трогается если содержимое не изменилось (нет лишних git diff в CI)
+if command -v python3 &>/dev/null && [ -f "$HASH_SCRIPT" ]; then
+  echo "  ↳ обновляем @hash..."
+  find "$SRC/js" "$SRC/css" \( -name "*.js" -o -name "*.css" \) \
+    | sort | xargs python3 "$HASH_SCRIPT" || echo "  ⚠ update_hash: некоторые файлы не обновлены (см. выше)"
+else
+  [ ! -f "$HASH_SCRIPT" ] && echo "  ⚠ update_hash.py не найден — @hash пропущен (путь: $HASH_SCRIPT)"
+  command -v python3 &>/dev/null || echo "  ⚠ python3 не найден — @hash пропущен"
 fi
 
 cat > "$OUT" <<'HEADER'
