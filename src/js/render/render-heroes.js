@@ -128,8 +128,8 @@ function _buildHeroInfoPopup(name){
         const sp=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
         return`<div title="${s.name} — ${s.score}/10" style="position:relative;cursor:default">
-          ${sp?`<img src="${sp}" style="width:34px;height:34px;border-radius:6px;object-fit:cover;border:2px solid ${color}" onerror="this.style.display='none'">`
-            :`<div style="width:34px;height:34px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3);border:2px solid ${color}">${s.name[0]}</div>`}
+          ${sp?`<img src="${sp}" style="width:44px;height:44px;border-radius:7px;object-fit:cover;border:2px solid ${color}" onerror="this.style.display='none'">`
+            :`<div style="width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3);border:2px solid ${color}">${s.name[0]}</div>`}
           <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${s.score}</div>
         </div>`;
       }).join('')}
