@@ -95,14 +95,13 @@ function _buildHeroInfoPopup(name){
     const ms=mapImg(mName);
     const noAD=m?NO_ATKDEF.includes(m.type):false;
     const scoreHtml=showFull&&!noAD
-      ?`<span style="font-family:var(--mono);font-size:11px;color:${_scoreColor(v.atk)}">${v.atk}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">atk</span>
-        <span style="font-family:var(--mono);font-size:11px;color:${_scoreColor(v.def)}">${v.def}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">def</span>`
-      :`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(noAD?v.atk:v.avg)}">${noAD?v.atk:v.avg}</span>`;
-    return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)">
+      // Иконки ATK/DEF вместо текстовых подписей
+      ?`${ICON_ATK}<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(v.atk)}">${v.atk}</span>
+        ${ICON_DEF}<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(v.def)}">${v.def}</span>`
+      :`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${_scoreColor(noAD?v.atk:v.avg)}">${noAD?v.atk:v.avg}</span>`;
+    return`<div style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border)">
       ${m?mapTypeIcon(m.type,18):''}
-      ${ms?`<img src="${ms}" style="width:44px;height:28px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">`:''}
+      ${ms?`<img src="${ms}" style="width:60px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0" onerror="this.style.display='none'">`:'' }
       <span style="font-size:13px;font-weight:600;flex:1">${mName}</span>
       ${scoreHtml}
     </div>`;
