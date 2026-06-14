@@ -1,3 +1,4 @@
+// @hash b431b76e 2026-06-14T08:30
 // ════ SHEETS API ════
 const SID=()=>getSheetId();
 async function sGet(r){const res=await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:SID(),range:r});return res.result.values||[]}

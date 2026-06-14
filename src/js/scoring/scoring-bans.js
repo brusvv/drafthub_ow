@@ -1,3 +1,4 @@
+// @hash 9b9cc644 2026-06-14T08:30
 // ════ SCORING — BANS ════
 
 const BAN_THRESHOLD=5;

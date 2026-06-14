@@ -1,3 +1,4 @@
+// @hash 5d0dbf78 2026-06-14T08:30
 
 // ── Store proxies ──
 Object.defineProperties(window, {

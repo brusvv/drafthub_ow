@@ -1,3 +1,4 @@
+// @hash 2bf424df 2026-06-14T08:30
 // ════ SEED DATA ════
 const SH=[
   ['name','role','subrole','priority','banned','notes','counters'],

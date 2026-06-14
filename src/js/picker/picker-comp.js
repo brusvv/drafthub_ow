@@ -1,3 +1,4 @@
+// @hash 71f80e39 2026-06-14T08:30
 // ════ PICKER — COMP SLOTS & CONFIRM OVERRIDE ════
 
 let compSlots=[

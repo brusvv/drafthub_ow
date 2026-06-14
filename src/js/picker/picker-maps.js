@@ -1,3 +1,4 @@
+// @hash 89008f70 2026-06-14T08:30
 // ════ PICKER — MAP STRENGTH (выбор карт + оценка силы для героя) ════
 
 let mapStrengthPickerHero=null;  // имя героя для которого открыт picker

@@ -1,3 +1,4 @@
+// @hash bd274829 2026-06-14T08:30
 // ════ WRITE — HEROES ════
 
 async function saveHero(){

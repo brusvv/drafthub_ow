@@ -1,3 +1,4 @@
+// @hash d404ca23 2026-06-14T08:30
 // ════ SCORING — MAPS ════
 // Скоринг карт на основе HeroMapStrength
 
