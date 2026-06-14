@@ -1,3 +1,4 @@
+/* @hash 63a42141 2026-06-14T07:05 */
 /* ── HERO MAP STRENGTH TABLE ── */
 .strength-type-group{margin-bottom:14px}
 .strength-type-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:4px}
@@ -17,7 +18,8 @@
 .map-str-chip.has-data{border-color:var(--accent);background:rgba(240,160,48,.06)}
 .map-str-chip-score{font-family:var(--mono);font-size:9px;font-weight:700;color:var(--accent)}
 #mapStrPickerGrid{display:flex;flex-wrap:wrap;gap:6px;padding:4px}
-#mapStrScorePopup{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;z-index:100;min-width:240px}
+/* #mapStrScorePopup positioning теперь задаётся inline в _renderStrengthPopup() —
+   position:fixed якорится к конкретному чипу карты (data-map), а не к центру .picker-box */
 #mapStrScorePopup.hidden{display:none}
 #mapStrPickerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1rem}
 #mapStrPickerOverlay.hidden{display:none}
