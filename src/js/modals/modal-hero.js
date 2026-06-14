@@ -1,4 +1,3 @@
-// @hash 77b4f71e 2026-06-14T07:05
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
@@ -350,7 +349,9 @@ function _renderStrengthPopup(){
   // position:fixed относительно конкретного чипа карты (data-map=${e.map}),
   // а не центр .picker-box — раньше попап всегда открывался в центре
   // независимо от того, какая карта была нажата.
-  const chipEl=document.querySelector(`.map-str-chip[data-map="${e.map.replace(/"/g,'\\"')}"]`);
+  // Экранируем спецсимволы CSS-селектора: " и ' (King's Row и т.п.)
+  const _sel=e.map.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/'/g,"\\'");
+  const chipEl=document.querySelector(`.map-str-chip[data-map="${_sel}"]`);
   if(chipEl){
     const rect=chipEl.getBoundingClientRect();
     const popupW=240;
