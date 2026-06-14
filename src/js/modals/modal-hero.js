@@ -1,7 +1,136 @@
-// @hash ed892fb5 2026-06-13
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
+
+// ════════════════════════════════════════════════════════════
+// УНИФИЦИРОВАННЫЕ ЧИПЫ: Контрпики + Синергии
+//
+// Обе секции (heroCounterBlock / heroSynergyBlock) используют
+// один и тот же визуальный компонент — чип с портретом, именем,
+// оценкой (◆ score) и крестиком удаления. Клик по чипу открывает
+// единый inline-попап с 10-точечной шкалой.
+//
+// Источники данных:
+//   counterPickerSelected — [{name, score}]  (контрпики)
+//   heroSynergyEdits      — [{name, score}]  (синергии)
+//
+// colorFn:
+//   _ctrColor — для контрпиков (>=8 красный «бан»)
+//   _synColor — для синергий   (>=8 зелёный «сильная связка»)
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Рендерит блок чипов героев с оценкой (используется для
+ * контрпиков и синергий — один код для обоих).
+ * @param {string} containerId — id контейнера (#heroCounterBlock / #heroSynergyBlock)
+ * @param {Array<{name,score}>} items — список героев с оценкой
+ * @param {Function} colorFn — (score) => CSS color
+ * @param {string} chipClass — доп. класс чипа ('ctr-chip' | 'syn-chip')
+ * @param {string} kind — 'counter' | 'synergy' — для роутинга кликов
+ */
+function _renderScoreChipBlock(containerId, items, colorFn, chipClass, kind){
+  const el=document.getElementById(containerId);if(!el)return;
+  if(!items.length){
+    el.innerHTML='<span class="sel-empty">Нажми «+» чтобы выбрать</span>';
+    return;
+  }
+  el.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:5px">
+    ${items.map((item,i)=>{
+      const src=portrait(item.name);
+      const color=colorFn(item.score);
+      return`<div class="sel-hero-chip ${chipClass}" style="border-left:2px solid ${color};cursor:pointer"
+                  onclick="openScoreChipPopup('${kind}',${i},this)">
+        ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${item.name[0]}</div>`}
+        <span>${item.name}</span>
+        <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${item.score}</span>
+        <span onclick="event.stopPropagation();removeScoreChip('${kind}',${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/** Удаляет элемент из списка контрпиков/синергий по индексу. */
+function removeScoreChip(kind,idx){
+  if(kind==='counter'){
+    counterPickerSelected.splice(idx,1);
+    renderHeroCounterBlock();
+  }else{
+    heroSynergyEdits.splice(idx,1);
+    renderHeroSynergyBlock();
+  }
+}
+
+// ── Единый inline-попап оценки (position:fixed, анкер — чип) ──
+let _scoreChipPopupState=null; // {kind, idx}
+
+function openScoreChipPopup(kind,idx,chipEl){
+  _closeScoreChipPopup();
+  if(_scoreChipPopupState&&_scoreChipPopupState.kind===kind&&_scoreChipPopupState.idx===idx){
+    _scoreChipPopupState=null;return;
+  }
+  _scoreChipPopupState={kind,idx};
+  const items=kind==='counter'?counterPickerSelected:heroSynergyEdits;
+  const item=items[idx];if(!item)return;
+  const accent=kind==='counter'?'var(--damage)':'var(--support)';
+
+  const popup=document.createElement('div');
+  popup.id='scoreChipPopup';
+
+  // position:fixed относительно чипа — попап появляется рядом с конкретной картой/героем,
+  // а не в центре модалки (старый баг с #mapStrScorePopup был именно в этом)
+  const rect=chipEl.getBoundingClientRect();
+  const popupW=230;
+  const left=rect.right+popupW>window.innerWidth?Math.max(8,rect.right-popupW):rect.left;
+  const spaceBelow=window.innerHeight-(rect.bottom+8);
+  const top=spaceBelow<120?Math.max(8,rect.top-130):rect.bottom+6;
+
+  popup.style.cssText=`position:fixed;z-index:9999;top:${top}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
+  popup.innerHTML=`
+    <div style="font-size:12px;font-weight:700;margin-bottom:8px">${item.name}</div>
+    <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px">
+      ${Array.from({length:10},(_,k)=>{
+        const v=k+1;const filled=v<=item.score;
+        const color=v>=8?accent:v>=5?'var(--accent)':'var(--text3)';
+        return`<span onclick="setScoreChipValue(${idx},${v})" style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
+      }).join('')}
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${accent};margin-left:6px">${item.score}</span>
+    </div>
+    <button class="btn" style="width:100%;font-size:10px" onclick="_closeScoreChipPopup()">Готово</button>`;
+  document.body.appendChild(popup);
+  popup.addEventListener('click',e=>e.stopPropagation());
+}
+
+function setScoreChipValue(idx,val){
+  if(!_scoreChipPopupState)return;
+  const {kind}=_scoreChipPopupState;
+  const items=kind==='counter'?counterPickerSelected:heroSynergyEdits;
+  if(!items[idx])return;
+  items[idx].score=(items[idx].score===val)?val-1:val;
+  _closeScoreChipPopup();
+  if(kind==='counter')renderHeroCounterBlock();else renderHeroSynergyBlock();
+  // Переоткрываем попап для того же чипа после перерисовки
+  const selector=kind==='counter'?'.ctr-chip':'.syn-chip';
+  setTimeout(()=>{
+    const chips=document.querySelectorAll(selector);
+    if(chips[idx])openScoreChipPopup(kind,idx,chips[idx]);
+  },10);
+}
+
+function _closeScoreChipPopup(){
+  document.getElementById('scoreChipPopup')?.remove();
+  _scoreChipPopupState=null;
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ctr-chip')&&!e.target.closest('.syn-chip')&&!e.target.closest('#scoreChipPopup'))
+    _closeScoreChipPopup();
+});
+
+/** Рендерит блок контрпиков героя (#heroCounterBlock). */
+function renderHeroCounterBlock(){
+  _renderScoreChipBlock('heroCounterBlock',counterPickerSelected,_ctrColor,'ctr-chip','counter');
+}
+
 
 function openHeroModal(hero){
   document.getElementById('heroModalTitle').textContent=hero?'Редактировать героя':'Добавить героя';
@@ -25,54 +154,10 @@ function openHeroModal(hero){
   document.getElementById('heroModal').classList.remove('hidden');
 }
 
-
-// ── Counter block (аналогично синергиям, с попапом) ───────────────────
-let _ctrPopupIdx = null;
-
-function renderHeroCounterBlock(){
-  const el=document.getElementById('heroCounterBlock');if(!el)return;
-  el.innerHTML=`
-    <div style="display:flex;flex-wrap:wrap;gap:5px">
-      ${counterPickerSelected.map((c,i)=>{
-        const src=portrait(c.name);
-        const color=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
-        return`<div class="sel-hero-chip ctr-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px"
-                    onclick="openCounterScorePopup(${i},this)">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:36px;height:36px;border-radius:6px;object-fit:cover">`:`<div class="sel-hero-chip-ph" style="width:36px;height:36px;border-radius:6px;font-size:13px">${c.name[0]}</div>`}
-          <span style="font-size:12px;font-weight:600">${c.name}</span>
-          <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:2px">${c.score}</span>
-          <span onclick="event.stopPropagation();removeCounter(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:13px">×</span>
-        </div>`;
-      }).join('')}
-    </div>
-    ${!counterPickerSelected.length?'<span class="empty" style="font-size:11px">Нет контрпиков — нажми «+»</span>':''}`;
-}
-
-function removeCounter(idx){
-  counterPickerSelected.splice(idx,1);
-  renderHeroCounterBlock();
-}
-
-
-// ── Synergy block ──────────────────────────────────────────────
+// ── Synergy block (использует унифицированный _renderScoreChipBlock) ──
 function renderHeroSynergyBlock(){
-  const el=document.getElementById('heroSynergyBlock');if(!el)return;
-  el.innerHTML=`
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
-      ${heroSynergyEdits.map((s,i)=>{
-        const src=portrait(s.name);
-        const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
-        return`<div class="sel-hero-chip syn-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px" onclick="openSynergyScorePopup(${i},this)">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:36px;height:36px;border-radius:6px;object-fit:cover">`:`<div class="sel-hero-chip-ph" style="width:36px;height:36px;border-radius:6px;font-size:13px">${s.name[0]}</div>`}
-          <span class="syn-chip-name" style="font-size:12px;font-weight:600">${s.name}</span>
-          <span class="syn-chip-score" style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:2px">${s.score}</span>
-          <span onclick="event.stopPropagation();removeSynergy(${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:13px">×</span>
-        </div>`;
-      }).join('')}
-    </div>`;
+  _renderScoreChipBlock('heroSynergyBlock',heroSynergyEdits,_synColor,'syn-chip','synergy');
 }
-
-function removeSynergy(idx){heroSynergyEdits.splice(idx,1);renderHeroSynergyBlock();}
 
 function openSynergyPicker(){
   const selfName=document.getElementById('hName').value.trim();
@@ -260,8 +345,24 @@ function _renderStrengthPopup(){
     <button class="btn" style="margin-top:8px;width:100%"
             onclick="toggleStrengthPopup('${esc(e.map)}')">Готово</button>
   `;
-  const box = document.querySelector('#mapStrPickerOverlay .picker-box');
-  if(box) box.appendChild(popup);
+
+  // position:fixed относительно конкретного чипа карты (data-map=${e.map}),
+  // а не центр .picker-box — раньше попап всегда открывался в центре
+  // независимо от того, какая карта была нажата.
+  const chipEl=document.querySelector(`.map-str-chip[data-map="${e.map.replace(/"/g,'\\"')}"]`);
+  if(chipEl){
+    const rect=chipEl.getBoundingClientRect();
+    const popupW=240;
+    const left=Math.min(Math.max(8,rect.left),window.innerWidth-popupW-8);
+    const spaceBelow=window.innerHeight-(rect.bottom+8);
+    const top=spaceBelow<160?Math.max(8,rect.top-170):rect.bottom+6;
+    popup.style.cssText=`position:fixed;z-index:9999;top:${top}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
+    document.body.appendChild(popup);
+  }else{
+    // Фоллбек — центр picker-box, если чип не найден (например, скрыт фильтром)
+    const box = document.querySelector('#mapStrPickerOverlay .picker-box');
+    if(box) box.appendChild(popup);
+  }
 }
 
 function setStrengthDot(mapName, field, val){
@@ -277,93 +378,24 @@ function renderStrengthPreview(){
   if(!el) return;
   const rated = heroStrengthEdits.filter(e => e.atk > 0 || e.def > 0);
   if(!rated.length){
-    el.innerHTML = '<span class="empty" style="font-size:11px">Нет оценок — нажми «↗»</span>';
+    el.innerHTML = '<span class="empty" style="font-size:11px">Нет оценок — нажми «Открыть редактор»</span>';
     return;
   }
-  // Чипы как у контрпиков/синергий: скриншот карты + название + оценка
   el.innerHTML = rated.map(e => {
     const noAD = NO_ATKDEF.includes(e.type);
-    const score = noAD ? e.atk : Math.round((e.atk + e.def) / 2);
     const label = noAD ? `${e.atk}` : `${e.atk}/${e.def}`;
-    const color = score >= 8 ? 'var(--support)' : score >= 6 ? 'var(--accent)' : score >= 4 ? 'var(--text2)' : 'var(--text3)';
-    const src = mapImg(e.map);
-    return `<div class="sel-hero-chip str-chip" style="border-left:3px solid ${color};cursor:pointer;padding:5px 10px 5px 8px;gap:7px" onclick="openMapStrPicker()">
-      ${src ? `<img src="${src}" onerror="this.style.display='none'" style="width:48px;height:28px;border-radius:4px;object-fit:cover">` : `<div style="width:48px;height:28px;border-radius:4px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3)">${e.type}</div>`}
-      <span style="font-size:12px;font-weight:600">${e.map}</span>
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${color};margin-left:auto">${label}</span>
+    const color = e.atk >= 8 ? 'var(--damage)' : e.atk >= 5 ? 'var(--accent)' : 'var(--text3)';
+    return `<div class="hs-map-chip rated" onclick="openMapStrPicker()" style="cursor:pointer">
+      <span class="hs-map-name">${e.map}</span>
+      <span class="hs-map-score" style="color:${color}">${label}</span>
     </div>`;
   }).join('');
   updateMapStrCount();
 }
 
 
-// ── Synergy score popup ────────────────────────────────────────
-let _synPopupIdx = null;
-
-function openSynergyScorePopup(idx, chipEl){
-  _closeSynergyPopup();
-  if(_synPopupIdx === idx){ _synPopupIdx=null; return; }
-  _synPopupIdx = idx;
-  const s = heroSynergyEdits[idx]; if(!s) return;
-  const popup = document.createElement('div');
-  popup.id = 'synergyScorePopup';
-  // position:fixed в body — не обрезается модалкой с overflow:auto
-  popup.style.cssText = 'position:fixed;z-index:2000;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.7)';
-  popup.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      ${portrait(s.name)?`<img src="${portrait(s.name)}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:''}
-      <div style="font-size:13px;font-weight:700">${s.name}</div>
-    </div>
-    <div style="display:flex;gap:3px;align-items:center;margin-bottom:10px">
-      ${Array.from({length:10},(_,k)=>{
-        const v=k+1;const filled=v<=s.score;
-        const color=v>=8?'var(--support)':v>=5?'var(--accent)':'var(--text3)';
-        return`<span onclick="setSynergyScore(${idx},${v})" style="cursor:pointer;font-size:18px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
-      }).join('')}
-      <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);margin-left:6px">${s.score}</span>
-    </div>
-    <button class="btn" style="width:100%;font-size:10px" onclick="_closeSynergyPopup()">Готово</button>
-  `;
-  // Позиционируем под чипом — fixed coords от viewport
-  const rect = chipEl.getBoundingClientRect();
-  const popW = 240;
-  let left = rect.left;
-  let top  = rect.bottom + 6;
-  // Не выходим за правый край экрана
-  if(left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
-  if(top + 140 > window.innerHeight) top = rect.top - 140; // открываем вверх если нет места
-  popup.style.left = left + 'px';
-  popup.style.top  = top + 'px';
-  document.body.appendChild(popup);
-  popup.addEventListener('click', e => e.stopPropagation());
-}
-
-function setSynergyScore(idx, val){
-  if(!heroSynergyEdits[idx]) return;
-  heroSynergyEdits[idx].score = (heroSynergyEdits[idx].score === val) ? val-1 : val;
-  renderHeroSynergyBlock();
-  // Переоткрываем попап для того же индекса
-  _synPopupIdx = null;
-  setTimeout(()=>{
-    const chips = document.querySelectorAll('.syn-chip');
-    if(chips[idx]) openSynergyScorePopup(idx, chips[idx]);
-  }, 10);
-}
-
-function _closeSynergyPopup(){
-  const el = document.getElementById('synergyScorePopup');
-  if(el) el.remove();
-  _synPopupIdx = null;
-}
 
 document.addEventListener('DOMContentLoaded', () => {
   const ov = document.getElementById('mapStrPickerOverlay');
   if(ov) ov.addEventListener('click', e => { if(e.target === ov) closeMapStrPicker(); });
-  const hm = document.getElementById('heroModal');
-  if(hm) hm.addEventListener('click', e => {
-    if(!e.target.closest('.syn-chip') && !e.target.closest('#synergyScorePopup'))
-      _closeSynergyPopup();
-    if(!e.target.closest('.ctr-chip') && !e.target.closest('#counterScorePopup'))
-      _closeCounterPopup();
-  });
 });
