@@ -1,4 +1,4 @@
-// @hash 8119b9d2 2026-06-13
+// @hash af07a439 2026-06-14T07:05
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   const pool=document.getElementById('heroPool');
@@ -155,10 +155,20 @@ function _buildHeroInfoPopup(name){
     ${_heroInfoExpanded?synHtml:`<div style="display:flex;flex-wrap:wrap;gap:5px">${syns.slice(0,6).map(s=>_heroScoreChip(s.name,s.score,_synColor,30)).join('')}</div>`}
   </div>`:'';
 
-  const topCounters=(hero.counters||[]).sort((a,b)=>b.score-a.score).slice(0,_heroInfoExpanded?12:6);
-  const countersSection=topCounters.length?`<div style="margin-bottom:16px">
+  // Контрпики: свёрнутый вид — плоский список топ-6; развёрнутый — сгруппирован
+  // по ролям (как синергии), отсортирован по убыванию score внутри роли.
+  const allCounters=(hero.counters||[]).slice().sort((a,b)=>b.score-a.score);
+  const ctrByRole={Tank:[],Damage:[],Support:[]};
+  allCounters.forEach(c=>{const h=heroMap[c.name];if(h&&ctrByRole[h.role])ctrByRole[h.role].push(c);});
+  const countersExpandedHtml=['Tank','Damage','Support'].filter(r=>ctrByRole[r].length).map(role=>`
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+      ${roleIcon(role,16)}
+      ${ctrByRole[role].map(c=>_heroScoreChip(c.name,c.score,_ctrColor,40)).join('')}
+    </div>`).join('')||'<div class="empty" style="font-size:12px">Нет данных</div>';
+  const countersCollapsedHtml=`<div style="display:flex;flex-wrap:wrap;gap:7px">${allCounters.slice(0,6).map(c=>_heroScoreChip(c.name,c.score,_ctrColor,36)).join('')}</div>`;
+  const countersSection=allCounters.length?`<div style="margin-bottom:16px">
     <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Контрпики</div>
-    <div style="display:flex;flex-wrap:wrap;gap:7px">${topCounters.map(c=>_heroScoreChip(c.name,c.score,_ctrColor,36)).join('')}</div>
+    ${_heroInfoExpanded?countersExpandedHtml:countersCollapsedHtml}
   </div>`:'';
 
   const body=`
