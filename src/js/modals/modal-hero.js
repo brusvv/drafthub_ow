@@ -1,3 +1,4 @@
+// @hash 6b3bc339 2026-06-14T09:17
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
