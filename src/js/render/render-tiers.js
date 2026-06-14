@@ -7,6 +7,7 @@ Object.defineProperties(window, {
   dragItem: { get(){ return store.get('dragItem'); }, set(v){ store.set('dragItem',v); }, configurable:true },
   dragType: { get(){ return store.get('dragType'); }, set(v){ store.set('dragType',v); }, configurable:true },
 });
+
 // ════ TIER LIST — D&D ════
 
 // Состояние тирлистов (сохраняется локально)
