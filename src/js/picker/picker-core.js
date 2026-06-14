@@ -1,3 +1,4 @@
+// @hash 9c8568d3 2026-06-14T07:05
 // ════ PICKER — CORE ════
 
 function openPicker(mode,max=999){
@@ -91,10 +92,16 @@ function renderSelPreview(){
     const el=document.getElementById(elId);if(!el)return;
     const sel=pickerSelected[mode]||[];
     if(!sel.length){el.innerHTML='<span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>';return}
+    // title=имя героя — подсказка при наведении (как в тирлистах/контрпиках).
+    // Клик по портрету открывает карточку героя (stopPropagation, чтобы не
+    // открылся пикер контейнера .sel-heroes); клик по остальной части чипа
+    // открывает пикер как раньше.
     el.innerHTML=sel.map(name=>{
       const h=heroMap[name]||{};const src=portrait(name);
-      return`<div class="sel-hero-chip ${h.role||''}">
-        ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+      return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
+        <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+        </span>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
   });
@@ -108,8 +115,10 @@ function renderRolePoolPreviews(){
     if(!sel.length){el.innerHTML='<span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>';return}
     el.innerHTML=sel.map(name=>{
       const src=portrait(name);
-      return`<div class="sel-hero-chip ${role}">
-        ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+      return`<div class="sel-hero-chip ${role}" title="${esc(name)}">
+        <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+        </span>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
   });
