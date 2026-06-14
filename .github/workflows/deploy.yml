@@ -3,17 +3,15 @@ name: Build & Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    # Не триггеримся на коммиты с [skip ci] — нет петли
     paths-ignore:
       - '**/*.md'
   workflow_dispatch:
 
 permissions:
-  contents: write   # git push обновлённых @hash
-  pages: write      # деплой на GitHub Pages
-  id-token: write   # OIDC токен для deploy-pages
+  contents: write
+  pages: write
+  id-token: write
 
-# Pages сериализует деплои сам — cancel-in-progress: false обязателен
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -29,7 +27,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Нужна полная история чтобы git push @hash работал
           fetch-depth: 0
 
       - name: Set up Python
@@ -37,14 +34,11 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Build (обновляет @hash, собирает dist/index.html)
+      - name: Build
         run: |
           chmod +x build.sh
           ./build.sh
 
-      # Коммитим @hash до деплоя — так они попадают в репо
-      # GITHUB_TOKEN не триггерит новый workflow (это гарантия GitHub)
-      # [skip ci] — дополнительная страховка для сторонних CI систем
       - name: Commit @hash updates
         run: |
           git config user.name  "github-actions[bot]"
@@ -53,9 +47,13 @@ jobs:
           if git diff --cached --quiet; then
             echo "✓ Все @hash актуальны, коммит не нужен"
           else
-            git commit -m "chore: update @hash [skip ci]"
+            # Берём оригинальный commit message (заголовок + тело) от пользователя.
+            # GITHUB_EVENT_PATH содержит JSON события push с полем head_commit.message.
+            # Добавляем [skip ci] в конец — страховка от петли на сторонних CI.
+            ORIGINAL_MSG=$(jq -r '.head_commit.message' "$GITHUB_EVENT_PATH")
+            git commit -m "${ORIGINAL_MSG}" -m "[skip ci]"
             git push origin main
-            echo "✓ @hash обновлены и запушены в репо"
+            echo "✓ @hash обновлены, сообщение: ${ORIGINAL_MSG%%$'\n'*}"
           fi
 
       - name: Проверить dist/index.html
