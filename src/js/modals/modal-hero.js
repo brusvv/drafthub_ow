@@ -1,4 +1,4 @@
-// @hash 78c5bb0f 2026-06-14T09:06
+// @hash 6b3bc339 2026-06-14T09:09
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
@@ -347,25 +347,36 @@ function _renderStrengthPopup(){
             onclick="toggleStrengthPopup('${esc(e.map)}')">Готово</button>
   `;
 
-  // position:fixed относительно конкретного чипа карты (data-map=${e.map}),
-  // а не центр .picker-box — раньше попап всегда открывался в центре
-  // независимо от того, какая карта была нажата.
+  // backdrop-filter на .picker-overlay создаёт stacking context —
+  // position:fixed в body рендерится ПОД оверлеем.
+  // Решение: position:absolute внутри .picker-box (position:relative).
+  const box = document.querySelector('#mapStrPickerOverlay .picker-box');
+  if(!box) return;
+  box.style.position = 'relative';
+
   // Экранируем спецсимволы CSS-селектора: " и ' (King's Row и т.п.)
   const _sel=e.map.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/'/g,"\\'");
   const chipEl=document.querySelector(`.map-str-chip[data-map="${_sel}"]`);
+  const popupW=240;
+
   if(chipEl){
-    const rect=chipEl.getBoundingClientRect();
-    const popupW=240;
-    const left=Math.min(Math.max(8,rect.left),window.innerWidth-popupW-8);
-    const spaceBelow=window.innerHeight-(rect.bottom+8);
-    const top=spaceBelow<160?Math.max(8,rect.top-170):rect.bottom+6;
-    popup.style.cssText=`position:fixed;z-index:9999;top:${top}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
-    document.body.appendChild(popup);
+    const chipRect=chipEl.getBoundingClientRect();
+    const boxRect=box.getBoundingClientRect();
+    // offset чипа внутри box + текущий скролл контейнера
+    const scrollTop=box.scrollTop;
+    let left=chipRect.left - boxRect.left;
+    left=Math.min(Math.max(8,left), boxRect.width-popupW-8);
+    const spaceBelow=boxRect.bottom-(chipRect.bottom+8);
+    const popupH=170;
+    const top=spaceBelow>popupH
+      ? chipRect.bottom - boxRect.top + scrollTop + 6
+      : chipRect.top   - boxRect.top + scrollTop - popupH - 6;
+    popup.style.cssText=`position:absolute;z-index:100;top:${Math.max(8,top)}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   }else{
-    // Фоллбек — центр picker-box, если чип не найден (например, скрыт фильтром)
-    const box = document.querySelector('#mapStrPickerOverlay .picker-box');
-    if(box) box.appendChild(popup);
+    // Фоллбек — центр box
+    popup.style.cssText=`position:absolute;z-index:100;top:50%;left:50%;transform:translate(-50%,-50%);width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   }
+  box.appendChild(popup);
 }
 
 function setStrengthDot(mapName, field, val){
