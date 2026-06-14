@@ -200,26 +200,75 @@ function onDrop(e,type,toTier){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   if(!dragItem||type!==dragType)return;
-  const {name,tier:fromTier}=dragItem;
-  const order=type==='maps'?tierOrderMaps:tierOrderHeroes;
 
-  // Убираем из старого тира
-  order[fromTier]=order[fromTier].filter(n=>n!==name);
-  // Добавляем в новый
-  if(!order[toTier])order[toTier]=[];
+  const{name,tier:fromTier}=dragItem;
 
-  // Определяем позицию по месту дропа
+  // Работаем с явной копией чтобы избежать proxy-мутаций
+  const snap=JSON.parse(JSON.stringify(
+    type==='maps'?store.get('tierOrderMaps'):store.get('tierOrderHeroes')
+  ));
+
+  // 1. Убираем из исходного тира
+  snap[fromTier]=(snap[fromTier]||[]).filter(n=>n!==name);
+  if(!snap[toTier])snap[toTier]=[];
+
   const zone=e.currentTarget;
-  const pills=[...zone.querySelectorAll('[draggable]')].filter(el=>el.dataset.name!==name);
-  let insertIdx=pills.length;
-  for(let i=0;i<pills.length;i++){
-    const rect=pills[i].getBoundingClientRect();
-    if(e.clientX<rect.left+rect.width/2){insertIdx=i;break}
-  }
-  order[toTier].splice(insertIdx,0,name);
 
-  if(type==='maps'){saveTierMaps();renderTierMaps();}
-  else{saveTierHeroes();renderTierHeroes();}
+  // 2. Все пилюли в DOM-порядке (совпадает с порядком в snap[toTier] до удаления)
+  const allPills=[...zone.querySelectorAll('[draggable]')];
+
+  // Индекс перетаскиваемой пилюли — нужен для поправки смещения при drag внутри тира
+  const draggedDomIdx=allPills.findIndex(el=>el.classList.contains('dragging'));
+
+  // Только видимые, не перетаскиваемые пилюли — для расчёта позиции
+  const visPills=allPills.filter(el=>
+    !el.classList.contains('tier-pill-hidden')&&
+    !el.classList.contains('dragging')
+  );
+
+  if(visPills.length===0){
+    // Зона пустая → добавляем в конец
+    snap[toTier].push(name);
+  }else{
+    // 3. Ищем пилюлю, ПЕРЕД которой нужно вставить
+    // Учитываем flex-wrap: сравниваем и Y (строка) и X (позиция в строке)
+    let targetPill=null;
+    for(const pill of visPills){
+      const r=pill.getBoundingClientRect();
+      // Курсор выше начала этой строки → вставить перед ней
+      const aboveRow=e.clientY<r.top;
+      // Курсор на той же строке, в левой половине → тоже перед ней
+      const sameRowLeft=e.clientY<=r.bottom&&e.clientX<r.left+r.width/2;
+      if(aboveRow||sameRowLeft){targetPill=pill;break;}
+    }
+
+    // 4. Переводим DOM-индекс в индекс массива
+    // Если перетаскиваемый элемент стоял ДО целевого в DOM,
+    // то после его удаления из snap всё сдвинулось влево на 1
+    const domToOrderIdx=(domIdx,insertBefore)=>{
+      const shift=(draggedDomIdx!==-1&&draggedDomIdx<domIdx)?1:0;
+      const orderIdx=domIdx-shift;
+      return insertBefore?orderIdx:orderIdx+1;
+    };
+
+    let spliceIdx;
+    if(targetPill){
+      // Вставляем ПЕРЕД целевой пилюлей
+      spliceIdx=domToOrderIdx(allPills.indexOf(targetPill),true);
+    }else{
+      // Курсор после последней видимой → вставляем ПОСЛЕ неё
+      const lastPill=visPills[visPills.length-1];
+      spliceIdx=domToOrderIdx(allPills.indexOf(lastPill),false);
+    }
+
+    // Clamp на случай edge-cases
+    spliceIdx=Math.max(0,Math.min(spliceIdx,snap[toTier].length));
+    snap[toTier].splice(spliceIdx,0,name);
+  }
+
+  // 5. Записываем обратно через proxy-сеттер и сохраняем
+  if(type==='maps'){tierOrderMaps=snap;saveTierMaps();renderTierMaps();}
+  else{tierOrderHeroes=snap;saveTierHeroes();renderTierHeroes();}
 }
 
 function closeTierPreview(){const el=document.getElementById('tierPreviewOverlay');if(el)el.remove();}
