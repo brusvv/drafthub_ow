@@ -3,12 +3,13 @@ name: Build & Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # позволяет запускать вручную из интерфейса GitHub
+  workflow_dispatch:   # ручной запуск из интерфейса GitHub
 
+# Два набора прав: write для src (коммит @hash) + write для Pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write   # нужен для git push обновлённых @hash
+  pages: write      # нужен для деплоя на GitHub Pages
+  id-token: write   # OIDC токен для actions/deploy-pages
 
 concurrency:
   group: pages
@@ -24,15 +25,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # fetch-depth: 0 не нужен — пушим только в HEAD
 
-      - name: Build
+      - name: Build (обновляет @hash в src/, собирает dist/index.html)
         run: |
           chmod +x build.sh
           ./build.sh
 
-      - name: Проверить что dist/index.html существует
+      # ── ВАРИАНТ B: коммитим обновлённые @hash обратно в репо ──────────
+      # Чтобы переключиться на Вариант A (хэши только в dist/),
+      # просто удалите или закомментируйте этот шаг.
+      #
+      # Защита от бесконечного цикла — двойная:
+      #   1. GITHUB_TOKEN-бот не триггерит повторный workflow (встроенная защита GitHub)
+      #   2. [skip ci] в сообщении коммита — страховка для кастомных PAT-токенов
+      - name: Commit @hash updates → src/
         run: |
-          test -f dist/index.html && echo "OK: $(wc -l < dist/index.html) строк"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/js/ src/css/
+
+          if git diff --cached --quiet; then
+            echo "✓ Все @hash актуальны, коммит не нужен"
+          else
+            git commit -m "chore: update @hash [skip ci]"
+            git push
+            echo "✓ @hash обновлены и запушены в репо"
+          fi
+      # ── конец Варианта B ───────────────────────────────────────────────
+
+      - name: Проверить dist/index.html
+        run: test -f dist/index.html && echo "OK: $(wc -l < dist/index.html) строк"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
