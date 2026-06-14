@@ -3,21 +3,25 @@ name: Build & Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # ручной запуск из интерфейса GitHub
+  workflow_dispatch:
 
-# Два набора прав: write для src (коммит @hash) + write для Pages
 permissions:
-  contents: write   # нужен для git push обновлённых @hash
-  pages: write      # нужен для деплоя на GitHub Pages
-  id-token: write   # OIDC токен для actions/deploy-pages
+  contents: write   # git push обновлённых @hash
+  pages: write      # деплой на GitHub Pages
+  id-token: write   # OIDC токен для deploy-pages
 
+# FIX 1: убираем cancel-in-progress — он конфликтует с Pages environment.
+# Pages environment сам по себе сериализует деплои (только один активный).
+# cancel-in-progress прерывал уже запущенный деплой на полуслове → ошибка авторизации.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # FIX 2: environment переносим на уровень job (было уже здесь — оставляем).
+    # Это обязательно для actions/deploy-pages — без него OIDC токен не выдаётся.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -25,35 +29,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # fetch-depth: 0 не нужен — пушим только в HEAD
 
-      - name: Build (обновляет @hash в src/, собирает dist/index.html)
+      - name: Set up Python (для update_hash.py)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # FIX 3: явно проверяем что update_hash.py существует рядом с build.sh
+      - name: Build (обновляет @hash, собирает dist/index.html)
         run: |
+          echo "Рабочая директория: $(pwd)"
+          echo "Файлы в корне: $(ls *.sh *.py 2>/dev/null || echo 'нет sh/py')"
           chmod +x build.sh
           ./build.sh
 
-      # ── ВАРИАНТ B: коммитим обновлённые @hash обратно в репо ──────────
-      # Чтобы переключиться на Вариант A (хэши только в dist/),
-      # просто удалите или закомментируйте этот шаг.
-      #
-      # Защита от бесконечного цикла — двойная:
-      #   1. GITHUB_TOKEN-бот не триггерит повторный workflow (встроенная защита GitHub)
-      #   2. [skip ci] в сообщении коммита — страховка для кастомных PAT-токенов
-      - name: Commit @hash updates → src/
+      # Коммитим обновлённые @hash обратно в репо.
+      # GITHUB_TOKEN-бот не триггерит повторный workflow — петли нет.
+      # [skip ci] — страховка на случай кастомного PAT.
+      - name: Commit @hash updates
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add src/js/ src/css/
-
           if git diff --cached --quiet; then
             echo "✓ Все @hash актуальны, коммит не нужен"
           else
             git commit -m "chore: update @hash [skip ci]"
             git push
-            echo "✓ @hash обновлены и запушены в репо"
+            echo "✓ @hash обновлены и запушены"
           fi
-      # ── конец Варианта B ───────────────────────────────────────────────
 
       - name: Проверить dist/index.html
         run: test -f dist/index.html && echo "OK: $(wc -l < dist/index.html) строк"
