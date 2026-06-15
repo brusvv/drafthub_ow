@@ -3,8 +3,6 @@
 
 function _makeTokenCallback(){
   return resp=>{
-    console.log('OAuth response:',resp);
-
     if(resp.error){
       console.error('OAuth error:',resp);
       toast(resp.error,'err');
@@ -14,8 +12,6 @@ function _makeTokenCallback(){
     localStorage.setItem('draft_logged_in','true');
 
     gapi.client.setToken({access_token:resp.access_token});
-
-    console.log('calling showApp');
 
     showApp();
     loadAllData();
@@ -51,16 +47,11 @@ function initGis(){
 function maybeInit(){
   if(!gapiInited||!gisInited)return;
 
-  console.log('maybeInit');
-  console.log('draft_logged_in=',localStorage.getItem('draft_logged_in'));
-  console.log('gapiInited=',gapiInited);
-  console.log('gisInited=',gisInited);
-
   if(localStorage.getItem('draft_logged_in')==='true'){
-    console.log('Trying silent login...');
     tokenClient.requestAccessToken({prompt:''});
     return;
   }
+}
 
   console.log('No saved login');
 }
