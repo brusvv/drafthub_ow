@@ -6,7 +6,12 @@
 // эти геттеры/сеттеры перенаправляют обращения в store.
 
 // Auth (не в store — нужны до инициализации)
-let tokenClient=null,gapiInited=false,gisInited=false,gisLibReady=false;
+let tokenClient=null,
+    gapiInited=false,
+    gisInited=false,
+    gisLibReady=false,
+    authStarted=false,
+    oauthReady=false;
 
 // Данные из Sheets
 Object.defineProperties(window, {
