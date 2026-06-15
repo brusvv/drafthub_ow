@@ -1,9 +1,14 @@
-// @hash 720dec4e 2026-06-15T07:13
 // ════ AUTH ════
 
 function _makeTokenCallback(){
   return resp=>{
-    if(resp.error){toast('Ошибка авторизации','err');return}
+    console.log('OAuth response:',resp);
+
+    if(resp.error){
+      console.error('OAuth error:',resp);
+      toast(resp.error,'err');
+      return;
+    }
 
     localStorage.setItem('draft_logged_in','true');
 
@@ -43,10 +48,18 @@ function initGis(){
 function maybeInit(){
   if(!gapiInited||!gisInited)return;
 
+  console.log('maybeInit');
+  console.log('draft_logged_in=',localStorage.getItem('draft_logged_in'));
+  console.log('gapiInited=',gapiInited);
+  console.log('gisInited=',gisInited);
+
   if(localStorage.getItem('draft_logged_in')==='true'){
+    console.log('Trying silent login...');
     tokenClient.requestAccessToken({prompt:''});
     return;
   }
+
+  console.log('No saved login');
 }
 
 function signIn(){
