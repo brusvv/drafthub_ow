@@ -3,15 +3,22 @@
 
 function _makeTokenCallback(){
   return resp=>{
+    console.log('OAuth response:',resp);
+
     if(resp.error){
       console.error('OAuth error:',resp);
+      authStarted=false;
       toast(resp.error,'err');
       return;
     }
 
     localStorage.setItem('draft_logged_in','true');
 
-    gapi.client.setToken({access_token:resp.access_token});
+    gapi.client.setToken({
+      access_token:resp.access_token
+    });
+
+    console.log('OAuth success');
 
     showApp();
     loadAllData();
@@ -26,6 +33,10 @@ function handleCredentialResponse(resp){
   if(authStarted)return;
 
   authStarted=true;
+
+  tokenClient.requestAccessToken({
+    prompt:''
+  });
 }
 
 function gapiLoaded(){
