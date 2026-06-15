@@ -1,4 +1,3 @@
-// @hash e051db2d 2026-06-15T07:33
 // ════ AUTH ════
 
 function _makeTokenCallback(){
@@ -14,6 +13,8 @@ function _makeTokenCallback(){
     localStorage.setItem('draft_logged_in','true');
 
     gapi.client.setToken({access_token:resp.access_token});
+
+    console.log('calling showApp');
 
     showApp();
     loadAllData();
@@ -85,6 +86,8 @@ function signOut(){
 }
 
 function showApp(){
+  console.log('showApp');
+
   document.getElementById('authScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
 
