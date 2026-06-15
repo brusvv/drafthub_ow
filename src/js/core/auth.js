@@ -18,6 +18,18 @@ function _makeTokenCallback(){
   };
 }
 
+function handleCredentialResponse(resp){
+  console.log('GIS credential:',resp);
+
+  localStorage.setItem('draft_logged_in','true');
+
+  if(authStarted)return;
+
+  authStarted=true;
+
+  tokenClient.requestAccessToken({prompt:''});
+}
+
 function gapiLoaded(){
   gapi.load('client',async()=>{
     await gapi.client.init({discoveryDocs:[DISCOVERY]});
@@ -28,7 +40,17 @@ function gapiLoaded(){
 
 function gisLoaded(){
   gisLibReady=true;
-  if(getClientId())initGis();
+
+  if(getClientId()){
+    google.accounts.id.initialize({
+      client_id:getClientId(),
+      callback:handleCredentialResponse,
+      auto_select:true,
+      cancel_on_tap_outside:false
+    });
+
+    initGis();
+  }
 }
 
 function initGis(){
