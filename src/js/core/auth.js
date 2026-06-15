@@ -53,9 +53,6 @@ function maybeInit(){
   }
 }
 
-  console.log('No saved login');
-}
-
 function signIn(){
   if(!getClientId()){
     document.getElementById('authConfigBanner').style.display='block';
