@@ -1,4 +1,4 @@
-// @hash 391c9c9d 2026-06-14T08:30
+// @hash 2366901a 2026-06-15T10:35
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -338,6 +338,3 @@ function openTierHeroPreview(name){
 }
 
 function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30)}
-
-// ════ BANS — по ролям ════
-// renderBans() определена в render-bans.js
