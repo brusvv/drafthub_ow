@@ -26,8 +26,6 @@ function handleCredentialResponse(resp){
   if(authStarted)return;
 
   authStarted=true;
-
-  tokenClient.requestAccessToken({prompt:''});
 }
 
 function gapiLoaded(){
@@ -69,10 +67,14 @@ function initGis(){
 function maybeInit(){
   if(!gapiInited||!gisInited)return;
 
+  console.log('maybeInit');
+
   if(localStorage.getItem('draft_logged_in')==='true'){
-    tokenClient.requestAccessToken({prompt:''});
+    google.accounts.id.prompt();
     return;
   }
+
+  console.log('No saved login');
 }
 
 function signIn(){
