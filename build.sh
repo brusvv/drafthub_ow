@@ -111,6 +111,8 @@ JS_MODULES=(
 
   # Modals: hero и map (используют picker и write)
   js/modals/modal-hero.js
+  js/modals/modal-hero-chips.js
+  js/modals/modal-hero-strength.js
   js/modals/modal-map.js
 
   # Render: utils первый (showLoading, showError, esc)
