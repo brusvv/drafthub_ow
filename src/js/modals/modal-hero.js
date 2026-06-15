@@ -1,4 +1,4 @@
-// @hash 6b3bc339 2026-06-14T09:17
+// @hash f3685816 2026-06-15T04:40
 // ════ MODAL — HERO ════
 let heroStrengthEdits=[];   // [{map, type, atk, def}]
 let heroSynergyEdits=[];    // [{name, score}]
@@ -360,17 +360,41 @@ function _renderStrengthPopup(){
   const popupW=240;
 
   if(chipEl){
-    const chipRect=chipEl.getBoundingClientRect();
-    const boxRect=box.getBoundingClientRect();
-    // offset чипа внутри box + текущий скролл контейнера
-    const scrollTop=box.scrollTop;
-    let left=chipRect.left - boxRect.left;
-    left=Math.min(Math.max(8,left), boxRect.width-popupW-8);
-    const spaceBelow=boxRect.bottom-(chipRect.bottom+8);
-    const popupH=170;
-    const top=spaceBelow>popupH
-      ? chipRect.bottom - boxRect.top + scrollTop + 6
-      : chipRect.top   - boxRect.top + scrollTop - popupH - 6;
+    const chipRect  = chipEl.getBoundingClientRect();
+    const boxRect   = box.getBoundingClientRect();
+    // Скроллится picker-grid-wrap, не picker-box
+    const scrollEl  = document.querySelector('#mapStrPickerOverlay .picker-grid-wrap');
+    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+
+    // left в координатах box
+    const popupW2 = popupW;
+    let left = chipRect.left - boxRect.left;
+    left = Math.min(Math.max(8, left), boxRect.width - popupW2 - 8);
+
+    const popupH = 170;
+
+    // Место снизу до края видимой области scrollEl в viewport
+    const scrollBottom = scrollEl
+      ? Math.min(scrollEl.getBoundingClientRect().bottom, window.innerHeight)
+      : window.innerHeight;
+    const spaceBelow = scrollBottom - chipRect.bottom - 8;
+
+    // top в координатах box (position:absolute)
+    // scrollEl начинается на scrollEl.getBoundingClientRect().top - boxRect.top от начала box
+    const scrollOffsetInBox = scrollEl
+      ? scrollEl.getBoundingClientRect().top - boxRect.top
+      : 0;
+    const chipBottomInBox = chipRect.bottom - boxRect.top + scrollOffsetInBox + scrollTop
+                          - scrollOffsetInBox; // упрощается:
+    // Итого: chip bottom в абс. координатах box = chipRect.bottom - boxRect.top + scrollTop
+    // (scrollTop добавляет сдвиг из-за прокрутки внутри scrollEl)
+    const absBottom = chipRect.bottom - boxRect.top + scrollTop;
+    const absTop    = chipRect.top    - boxRect.top + scrollTop;
+
+    const top = spaceBelow >= popupH
+      ? absBottom + 6          // открыть вниз
+      : absTop - popupH - 6;  // открыть вверх
+
     popup.style.cssText=`position:absolute;z-index:100;top:${Math.max(8,top)}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   }else{
     // Фоллбек — центр box
