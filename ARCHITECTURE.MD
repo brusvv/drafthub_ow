@@ -100,7 +100,7 @@ drafthub_ow/
 | Файл | Назначение |
 |------|-----------|
 | `picker-core.js` | Основной пикер героев: `openPicker()`, `openHeroPicker()`, `openRoleHeroPicker()`, `renderPickerGrid()`, `confirmPicker()`, `renderSelPreview()`, `renderRolePoolPreviews()` |
-| `picker-counters.js` | Пикер контрпиков с оценками: `openCounterPicker()`, `renderCounterPickerGrid()`, `renderCounterScores()`, `setCounterScore()`; `onMapTypeChange()` |
+| `picker-counters.js` | Пикер контрпиков (без оценки): `openCounterPicker()`, `renderCounterPickerGrid()`, `toggleCounterHero()`, `confirmCounterPicker()` → `renderHeroCounterBlock()`. Оценка контрпиков (10-точечный попап) — в `modal-hero-chips.js` (`openScoreChipPopup('counter', idx, chipEl)`); `onMapTypeChange()` |
 | `picker-maps.js` | Старый пикер карт (сильные/слабые карты) — legacy, не используется в новом UI |
 | `picker-comp.js` | Comp-слоты в модалке карты: `initCompSlots()`, `renderCompSlots()`, `openCompSlotPicker()` |
 
@@ -112,8 +112,13 @@ drafthub_ow/
 
 | Файл | Назначение |
 |------|-----------|
-| `modal-hero.js` | `openHeroModal()`, редактор силы героя на картах (`openMapStrPicker`, `renderHeroStrengthGrid`, `setStrengthDot`), синергии (`renderHeroSynergyBlock`, попап `openSynergyScorePopup`), `renderStrengthPreview()` |
+| `modal-hero.js` | `openHeroModal()` — инициализация формы героя; синергия-пикер (`openSynergyPicker()`, `renderHeroSynergyBlock()`, override `confirmPicker` для `pickerMode==='synergy'`) |
+| `modal-hero-chips.js` | Унифицированный чип+попап оценки для контрпиков и синергий: `_renderScoreChipBlock()`, `renderHeroCounterBlock()`, `renderHeroSynergyBlock()`-хелпер, `openScoreChipPopup()`/`setScoreChipValue()`/`removeScoreChip()` (`kind: 'counter'\|'synergy'`) |
+| `modal-hero-strength.js` | Редактор силы героя на картах целиком: `openMapStrPicker()`, `renderHeroStrengthGrid()`, фильтры (`mapStrTypeFilter`, `toggleStrengthFilter`), попап оценки `_renderStrengthPopup()` (анкер — чип карты, scroll-aware), `setStrengthDot()`, `renderStrengthPreview()` |
 | `modal-map.js` | `openMapModal()`, `openPlayerModal()`, `closeModal()`, `renderMapAutoPreferred()`, `setDotRating()`, `onPlayerRoleChange()` |
+
+**Порядок: modal-hero → modal-hero-chips → modal-hero-strength → modal-map**
+(`modal-hero.js` вызывает `renderHeroCounterBlock()`/`renderStrengthPreview()` из соседних файлов при открытии модалки — порядок загрузки не критичен для рантайма, но соблюдается для консистентности с остальными модулями).
 
 ---
 
@@ -151,7 +156,7 @@ store → config → auth
 → scoring-maps → scoring-bans → scoring-comp
 → write-hero → write-map → write-player
 → picker-core → picker-counters → picker-maps → picker-comp
-→ modal-hero → modal-map
+→ modal-hero → modal-hero-chips → modal-hero-strength → modal-map
 → render-utils → render-maps → render-heroes → render-tiers
 → render-players → render-roster → render-nav
 → render-bans-core → render-bans-competitive
