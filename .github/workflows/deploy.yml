@@ -2,7 +2,7 @@ name: Build & Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/google-one-tap]
     paths-ignore:
       - '**/*.md'
   workflow_dispatch:
@@ -52,7 +52,7 @@ jobs:
             # Добавляем [skip ci] в конец — страховка от петли на сторонних CI.
             ORIGINAL_MSG=$(jq -r '.head_commit.message' "$GITHUB_EVENT_PATH")
             git commit -m "${ORIGINAL_MSG}" -m "[skip ci]"
-            git push origin main
+            git push origin "${GITHUB_REF_NAME}"
             echo "✓ @hash обновлены, сообщение: ${ORIGINAL_MSG%%$'\n'*}"
           fi
 
