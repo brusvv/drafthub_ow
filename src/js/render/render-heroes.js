@@ -1,4 +1,4 @@
-// @hash af07a439 2026-06-14T07:05
+// @hash a4e5a54f 2026-06-15T04:49
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   const pool=document.getElementById('heroPool');
@@ -118,23 +118,33 @@ function _buildHeroInfoPopup(name){
       ?`${ICON_ATK}<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(v.atk)}">${v.atk}</span>
         ${ICON_DEF}<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${_scoreColor(v.def)}">${v.def}</span>`
       :`<span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${_scoreColor(noAD?v.atk:v.avg)}">${noAD?v.atk:v.avg}</span>`;
-    return`<div style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border)">
-      ${m?mapTypeIcon(m.type,18):''}
-      ${ms?`<img src="${ms}" style="width:60px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0" onerror="this.style.display='none'">`:'' }
-      <span style="font-size:13px;font-weight:600;flex:1">${mName}</span>
+    return`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:7px;background:var(--bg3);border:1px solid var(--border)">
+      ${m?mapTypeIcon(m.type,13):''}
+      ${ms?`<img src="${ms}" style="width:44px;height:26px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.display='none'">`:'' }
+      <span style="font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mName}</span>
       ${scoreHtml}
     </div>`;
   };
 
   const hasMore=(!_heroInfoExpanded&&(allStrong.length>5||allWeak.length>5));
-  const mapsHtml=(allStrong.length===0&&allWeak.length===0)
+
+  // Две колонки: Силён слева, Слаб справа
+  const _col=(label,color,rows)=>rows.length?`
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${label}</div>
+      <div style="display:flex;flex-direction:column;gap:4px">${rows.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>
+    </div>`:'';
+
+  const hasData=allStrong.length||allWeak.length;
+  const mapsHtml=!hasData
     ?'<div class="empty" style="font-size:12px">Нет данных о силе на картах</div>'
-    :`${strongMaps.length?`<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--support);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Силён</div>
-      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">${strongMaps.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>`:''}
-     ${weakMaps.length?`<div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--damage);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Слаб</div>
-      <div style="display:flex;flex-direction:column;gap:5px">${weakMaps.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>`:''}
-     ${hasMore?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Подробнее ↓</button>`:''}
-     ${_heroInfoExpanded?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Свернуть ↑</button>`:''}`;
+    :`<div style="display:flex;gap:10px;align-items:flex-start">
+        ${_col('Силён','var(--support)',strongMaps)}
+        ${allStrong.length&&allWeak.length?'<div style="width:1px;background:var(--border);align-self:stretch;flex-shrink:0"></div>':''}
+        ${_col('Слаб','var(--damage)',weakMaps)}
+      </div>
+      ${hasMore?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Подробнее ↓</button>`:''}
+      ${_heroInfoExpanded?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Свернуть ↑</button>`:''}`;
 
   // Синергии по ролям
   const syns=heroSynergy[hero.name]||[];
@@ -191,11 +201,11 @@ function _buildHeroInfoPopup(name){
         ${hero.banned?'<div style="font-family:var(--mono);font-size:10px;background:rgba(224,85,85,.15);color:var(--damage);border-radius:5px;padding:3px 9px;display:inline-block">В текущем бане</div>':''}
       </div>
     </div>
-    ${synSection}
     <div style="margin-bottom:16px">
       <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Сила на картах</div>
       ${mapsHtml}
     </div>
+    ${synSection}
     ${countersSection}
     ${hero.notes?`<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-top:4px">${hero.notes}</div>`:''}`;
 
