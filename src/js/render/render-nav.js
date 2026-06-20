@@ -1,3 +1,4 @@
+// @hash 47deaab8 2026-06-20T08:48
 // ── Store proxies ──
 Object.defineProperties(window, {
   toastT: { get(){ return store.get('toastT'); }, set(v){ store.set('toastT',v); }, configurable:true },

@@ -1,3 +1,4 @@
+// @hash db3546ae 2026-06-20T08:48
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.

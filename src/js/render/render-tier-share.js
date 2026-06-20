@@ -1,3 +1,4 @@
+// @hash 15365af0 2026-06-20T08:48
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Выделено из render-tiers.js чтобы не превышать лимит строк на файл.
 // Зависимости: render-tiers.js (tierViewMode), db-write.js (loadShareLinks, createShareLink)
