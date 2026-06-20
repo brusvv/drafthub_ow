@@ -1,4 +1,4 @@
-// @hash 9c8568d3 2026-06-14T07:05
+// @hash 0c26d44a 2026-06-20T10:07
 // ════ PICKER — CORE ════
 
 function openPicker(mode,max=999){
@@ -79,7 +79,7 @@ function renderPickerGrid(){
   }).join('');
 }
 
-// Подтверждение — расширяется в picker-comp.js и picker-maps.js
+// Подтверждение — расширяется в picker-comp.js (слоты состава)
 function confirmPicker(){
   closePicker();
   renderSelPreview();
