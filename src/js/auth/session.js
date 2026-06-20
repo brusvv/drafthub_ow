@@ -124,3 +124,6 @@ function _extractJoinToken() {
   const match = window.location.pathname.match(/^\/join\/([A-Za-z0-9_=-]{10,})$/);
   return match ? match[1] : null;
 }
+
+// ── Автозапуск при загрузке страницы ──
+document.addEventListener('DOMContentLoaded', initSession);
