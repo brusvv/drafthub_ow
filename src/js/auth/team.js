@@ -16,23 +16,18 @@ async function loadUserTeams() {
 // Триггер БД (003_custom_roles.sql) автоматически создаёт 4 системные роли
 async function createTeam(name, description = '') {
   if(!name?.trim()) { toast('Укажи название команды', 'err'); return null; }
-  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
   try {
-    const team = await dbInsert('teams', { name: name.trim(), slug, description, created_by: currentUser().id });
-
-    // Роли уже созданы триггером — находим admin-роль и назначаем себя
-    const { data: adminRole, error: roleErr } = await _sb.from('team_roles')
-      .select('id').eq('team_id', team.id).eq('key', 'admin').single();
-    if(roleErr) throw roleErr;
-
-    await dbInsert('team_members', { team_id: team.id, user_id: currentUser().id, role_id: adminRole.id });
-
+    const { data, error } = await _sb.rpc('create_team', {
+      p_name: name.trim(),
+      p_description: description,
+    });
+    if(error) throw error;
+    const team = typeof data === 'string' ? JSON.parse(data) : data;
     toast(`Команда "${team.name}" создана ✓`, 'ok');
     await switchTeam(team.id);
     return team;
   } catch(e) {
-    const msg = e.code === '23505' ? 'Команда с таким именем уже существует' : e.message;
+    const msg = e.message?.includes('23505') ? 'Команда с таким именем уже существует' : e.message;
     toast('Ошибка: ' + msg, 'err');
     return null;
   }
