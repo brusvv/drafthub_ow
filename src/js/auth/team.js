@@ -1,4 +1,4 @@
-// @hash 4f0dba03 2026-06-20T08:48
+// @hash 7fb0a3c0 2026-06-20T15:48
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, инвайтами и кастомными ролями.
 // Зависимости: auth.js (_sb), session.js (currentUser, currentTeam, canManageRoles)
