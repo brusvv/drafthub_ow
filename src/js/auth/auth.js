@@ -12,7 +12,7 @@ const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__'; // заменить при д
 
 // ── Клиент (глобальный синглтон) ─────────────────────────────
 // Supabase JS v2 подключается через CDN в index.html:
-// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession:    true,
