@@ -1,0 +1,12 @@
+# Секреты — никогда не коммитить
+.env
+.env.local
+.env.production
+
+# Сборка
+dist/
+
+# Системное
+.DS_Store
+Thumbs.db
+node_modules/
