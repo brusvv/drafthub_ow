@@ -40,8 +40,44 @@ function filterTierHeroes(role,btn){
 }
 
 function renderTiers(){
+  // Переключатель global/team/personal — рисуется в контейнер над списком
+  const switcherEl = document.getElementById('tierModeSwitcher');
+  if(switcherEl) switcherEl.innerHTML = _renderTierModeSwitcher();
   renderTierMaps();
   renderTierHeroes();
+}
+
+// ── Переключатель уровней тир-листа ──────────────────────────
+// global — публичный (редактирует только суперадмин через dashboard)
+// team   — командный (редактируют admin/coach/роль team_*)
+// personal — личный (редактирует только владелец, можно делиться ссылкой)
+function _renderTierModeSwitcher(){
+  const modes = [
+    { key:'global',   label:'Глобальный', icon:'🌐' },
+    { key:'team',     label:'Командный',  icon:'👥' },
+    { key:'personal', label:'Личный',     icon:'👤' },
+  ];
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+        letter-spacing:.1em;color:var(--text3)">Тир-лист:</span>
+      ${modes.map(m => `
+        <button class="f-btn${tierViewMode===m.key?' active':''}"
+          onclick="switchTierMode('${m.key}')" style="font-size:11px">
+          ${m.icon} ${m.label}
+        </button>`).join('')}
+      ${tierViewMode === 'personal'
+        ? `<button class="btn" onclick="renderTierSharePanel()"
+            style="font-size:10px;margin-left:auto">🔗 Поделиться</button>`
+        : ''}
+    </div>`;
+}
+
+// Может ли пользователь редактировать ТЕКУЩИЙ активный уровень тир-листа
+function _canEditCurrentTier(){
+  if(tierViewMode === 'global')   return false;
+  if(tierViewMode === 'personal') return true;
+  return canWrite();
 }
 
 function initTierMaps(){

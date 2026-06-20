@@ -1,0 +1,191 @@
+// ════ DATA — LOAD (Supabase) ════
+// Замена sheets-load.js. Сохраняет те же глобальные переменные
+// (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
+// render-файлы не меняются.
+//
+// Тир-листы — три уровня: global / team / personal (см. секцию TIERS ниже).
+//
+// Зависимости: auth.js (_sb, dbSelect), session.js (currentTeam, currentUser)
+
+// ════ LOAD ALL ════
+async function loadAllData(){
+  if(!currentTeam()) return;
+  showLoading('mapGrid','card',8); showLoading('heroPool','hero',12); showLoading('playerGrid','player',5);
+  try{
+    await Promise.all([
+      loadPortraits(), loadMapScreenshots(),
+      loadHeroes(), loadMaps(), loadPlayers(),
+      loadTiers(), loadHeroMapStrength(), loadHeroSynergy(),
+    ]);
+    renderCurrentView();
+  }catch(e){ showError('mapGrid','Ошибка: '+e.message); console.error(e); }
+}
+
+const _teamId = () => currentTeam()?.id;
+
+// ════ HEROES ════
+async function loadHeroes(){
+  const { data, error } = await _sb.from('heroes')
+    .select('*').eq('team_id', _teamId()).order('name');
+  if(error){ heroes=[]; throw error; }
+
+  heroes = (data||[]).map(r => ({
+    id: r.id,
+    name: r.name, role: r.role, subrole: r.subrole || '',
+    priority: r.priority ?? 5,
+    banned: !!r.banned,
+    notes: r.notes || '',
+    counters: r.counters || [],
+    strongMaps: [], weakMaps: [],
+  }));
+  heroMap = {}; heroes.forEach(h => heroMap[h.name] = h);
+}
+
+// ════ MAPS ════
+async function loadMaps(){
+  const { data, error } = await _sb.from('maps')
+    .select('*').eq('team_id', _teamId()).order('name');
+  if(error){ maps=[]; throw error; }
+
+  maps = (data||[]).map(r => ({
+    id: r.id,
+    name: r.name, type: r.type, tier: r.tier || 'B',
+    priority: r.priority ?? 5,
+    atk: r.atk ?? 3, def: r.def ?? 3, dif: r.dif ?? 3,
+    notes: r.notes || '',
+    inPool: r.in_pool !== false,
+    preferredHeroes: r.preferred_heroes || [],
+    bans: r.ban_heroes || [],
+    comp: r.comp || [],
+    counters: r.counters || [],
+  }));
+}
+
+// ════ PLAYERS ════
+async function loadPlayers(){
+  const { data, error } = await _sb.from('players')
+    .select('*').eq('team_id', _teamId()).order('name');
+  if(error){ players=[]; throw error; }
+
+  players = (data||[]).map(r => ({
+    id: r.id,
+    name: r.name, btag: r.btag || '',
+    mainRole: r.main_role || '', offRole: r.off_role || '',
+    rankTank: r.rank_tank || '', rankDmg: r.rank_dmg || '', rankSup: r.rank_sup || '',
+    notes: r.notes || '',
+    mainHeroes: r.main_heroes || [],
+    poolHeroes: r.pool_heroes || [],
+    userId: r.user_id || null,
+  }));
+}
+
+// ════ HERO MAP STRENGTH ════
+let heroMapStrength = {};  // { heroName: { mapName: {atk,def,avg} } }
+
+async function loadHeroMapStrength(){
+  heroMapStrength = {};
+  const { data, error } = await _sb.from('hero_map_strength')
+    .select('hero_name, map_name, atk, def').eq('team_id', _teamId());
+  if(error){ console.warn('loadHeroMapStrength error', error); return; }
+
+  (data||[]).forEach(r => {
+    const atk = r.atk || 0;
+    const def = r.def || atk;
+    const avg = def ? Math.round((atk+def)/2) : atk;
+    if(!heroMapStrength[r.hero_name]) heroMapStrength[r.hero_name] = {};
+    heroMapStrength[r.hero_name][r.map_name] = { atk, def, avg };
+  });
+
+  heroes.forEach(h => {
+    const entries = Object.entries(heroMapStrength[h.name] || {});
+    h.strongMaps = entries.filter(([,v]) => v.avg>=7).map(([m])=>m);
+    h.weakMaps   = entries.filter(([,v]) => v.avg<=4).map(([m])=>m);
+  });
+}
+
+// ════ HERO SYNERGY ════
+let heroSynergy = {};  // { heroName: [{name, score}] }
+
+async function loadHeroSynergy(){
+  heroSynergy = {};
+  const { data, error } = await _sb.from('hero_synergy')
+    .select('hero_name, synergy_hero, score').eq('team_id', _teamId());
+  if(error){ console.warn('loadHeroSynergy error', error); return; }
+
+  (data||[]).forEach(r => {
+    if(!heroSynergy[r.hero_name]) heroSynergy[r.hero_name] = [];
+    heroSynergy[r.hero_name].push({ name: r.synergy_hero, score: r.score });
+  });
+}
+
+// ════ TIERS — три уровня: global / team / personal ════
+let tierOrderMaps   = {S:[],A:[],B:[],C:[],D:[]};
+let tierOrderHeroes = {S:[],A:[],B:[],C:[],D:[]};
+
+let globalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
+let globalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
+let teamTierMaps     = {S:[],A:[],B:[],C:[],D:[]};
+let teamTierHeroes   = {S:[],A:[],B:[],C:[],D:[]};
+let personalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
+let personalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
+
+let tierViewMode = 'team'; // 'global' | 'team' | 'personal'
+
+async function loadTiers(){
+  await Promise.all([loadGlobalTiers(), loadTeamTiers(), loadPersonalTiers()]);
+  _applyTierMode(tierViewMode);
+}
+
+async function loadGlobalTiers(){
+  const { data, error } = await _sb.from('global_tier_data').select('entity_type, name, tier');
+  if(error){ console.warn('loadGlobalTiers error', error); return; }
+  globalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
+  globalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
+  _fillTierOrder(data, globalTierMaps, globalTierHeroes);
+}
+
+async function loadTeamTiers(){
+  const { data, error } = await _sb.from('tier_data')
+    .select('entity_type, name, tier')
+    .eq('team_id', _teamId()).eq('scope', 'team');
+  if(error){ console.warn('loadTeamTiers error', error); return; }
+  teamTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
+  teamTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
+  _fillTierOrder(data, teamTierMaps, teamTierHeroes);
+}
+
+async function loadPersonalTiers(){
+  if(!currentUser()) return;
+  const { data, error } = await _sb.from('tier_data')
+    .select('entity_type, name, tier')
+    .eq('team_id', _teamId()).eq('scope', 'personal').eq('user_id', currentUser().id);
+  if(error){ console.warn('loadPersonalTiers error', error); return; }
+  personalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
+  personalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
+  _fillTierOrder(data, personalTierMaps, personalTierHeroes);
+}
+
+function _applyTierMode(mode){
+  tierViewMode = mode;
+  if(mode === 'global'){ tierOrderMaps = globalTierMaps;   tierOrderHeroes = globalTierHeroes; }
+  else if(mode === 'team'){ tierOrderMaps = teamTierMaps;   tierOrderHeroes = teamTierHeroes; }
+  else { tierOrderMaps = personalTierMaps; tierOrderHeroes = personalTierHeroes; }
+}
+
+function switchTierMode(mode){
+  _applyTierMode(mode);
+  renderTiers();
+}
+
+function _fillTierOrder(rows, mapsObj, heroesObj){
+  (rows || []).forEach(r => {
+    const target = r.entity_type === 'map' ? mapsObj : heroesObj;
+    if(target[r.tier]) target[r.tier].push(r.name);
+  });
+}
+
+async function loadSharedTier(token){
+  const { data, error } = await _sb.rpc('view_shared_tier', { p_token: token });
+  if(error) return { error: 'rpc_failed' };
+  return data;
+}

@@ -1,5 +1,5 @@
 <!-- MAIN APP -->
-<div id="mainApp" style="display:none">
+<div id="app" style="display:none">
 <div class="app">
   <div class="header">
     <div class="header-brand">
@@ -7,18 +7,16 @@
       <span class="header-title">Team Analyst</span>
     </div>
     <div class="header-right">
-      <button class="btn" onclick="smartSync()" title="Добавить новых героев/карты не трогая существующие данные">↑ SYNC</button>
-      <button class="btn" onclick="seedSheets()" title="Полная перезапись Heroes и Maps стартовыми данными">⬇ Seed</button>
-      <button class="btn" onclick="loadAllData()">↻ Обновить</button>
+      <div class="team-chip" style="position:relative;cursor:pointer" onclick="renderTeamSwitcher();document.getElementById('teamSwitcherPopup').classList.toggle('hidden')">
+        <span id="headerTeamName" style="font-weight:700;font-size:13px"></span>
+        <span id="headerRoleBadge" style="font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-left:6px"></span>
+        <div id="teamSwitcherPopup" class="hidden" style="position:absolute;top:100%;right:0;margin-top:6px;
+          background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:6px;min-width:180px;z-index:50"></div>
+      </div>
+      <button class="btn" onclick="smartSyncSeed()" title="Добавить новых героев/карты не трогая существующие данные">↑ Sync</button>
       <div class="user-chip"><div class="user-av" id="userInitial">U</div><span id="userName">Пользователь</span></div>
       <button class="btn btn-danger" onclick="signOut()">Выйти</button>
     </div>
-  </div>
-
-  <div id="sheetConfigBanner" class="config-banner" style="display:none">
-    <h3>⚙ Укажи Sheet ID</h3>
-    <p>URL таблицы: <code>spreadsheets/d/<b>ВОТ_ЭТО</b>/edit</code></p>
-    <div class="config-row"><input class="config-input" id="sheetIdInput" placeholder="Sheet ID..."/><button class="config-save" onclick="saveSheetId()">Сохранить</button></div>
   </div>
 
   <nav class="nav">
@@ -28,6 +26,7 @@
     <button class="nav-btn" onclick="showView('bans',this)">Драфт</button>
     <button class="nav-btn" onclick="showView('players',this)">Игроки</button>
     <button class="nav-btn" onclick="showView('roster',this)">Состав</button>
+    <button class="nav-btn" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
   </nav>
 
   <div id="view-maps" class="view active">
@@ -58,6 +57,7 @@
   </div>
 
   <div id="view-tiers" class="view">
+    <div id="tierModeSwitcher"></div>
     <div class="tier-tabs">
       <button class="tier-tab active" onclick="switchTierTab('maps',this)">Карты</button>
       <button class="tier-tab" onclick="switchTierTab('heroes',this)">Герои</button>
@@ -100,6 +100,10 @@
       <button class="btn btn-primary" onclick="openRosterPlayerPicker()">+ Добавить игрока</button>
     </div>
     <div id="rosterContent" style="margin-top:1rem"></div>
+  </div>
+
+  <div id="view-settings" class="view">
+    <!-- рендерится renderTeamSettings() из auth/ui.js -->
   </div>
 </div>
 </div>

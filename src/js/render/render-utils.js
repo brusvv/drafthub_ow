@@ -20,6 +20,7 @@ function renderCurrentView() {
   if (id === 'view-bans')    renderBans();
   if (id === 'view-players') renderPlayers();
   if (id === 'view-roster')  renderRoster();
+  if (id === 'view-settings') renderTeamSettings();
 }
 
 // ── Визуальные хелперы ───────────────────────────────────────
