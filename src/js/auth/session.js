@@ -102,7 +102,7 @@ async function switchTeam(teamId) {
 async function signInWithProvider(provider) {
   const { error } = await _sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.origin, scopes: provider === 'discord' ? 'identify email guilds' : undefined },
+    options: { redirectTo: window.location.origin + '/drafthub_ow/', scopes: provider === 'discord' ? 'identify email guilds' : undefined },
   });
   if(error) toast('Ошибка входа: ' + error.message, 'err');
 }
@@ -113,7 +113,7 @@ async function signInWithEmail(email, password) {
 }
 
 async function signUpWithEmail(email, password) {
-  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin } });
+  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin + '/drafthub_ow/' } });
   if(error) toast('Ошибка регистрации: ' + error.message, 'err');
   else toast('Письмо с подтверждением отправлено', 'ok');
 }
