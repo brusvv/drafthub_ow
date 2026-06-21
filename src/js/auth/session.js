@@ -1,29 +1,36 @@
-// @hash 0dfb67ba 2026-06-20T14:38
+// @hash 0e2e48da 2026-06-21T12:51
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
+// Новая схема: user_roles → roles → role_permissions → permissions
 // Также обрабатывает /tier/TOKEN (просмотр публичных тир-листов БЕЗ авторизации)
 // и /join/TOKEN (принятие инвайта ПОСЛЕ авторизации).
+//
+// _currentTeam = { id, name, slug, role:{key,label,sort_order}, permissions:Set<string> }
 //
 // Зависимости: auth.js (_sb), team.js (loadUserTeams),
 //              render-tiers.js (handleSharedTierUrl)
 
 let _session     = null;   // Supabase Session | null
-let _currentTeam = null;   // { id, name, slug, role:{key,label,...permissions} } | null
+let _currentTeam = null;   // см. форму выше | null
 
 const currentUser = () => _session?.user ?? null;
 const currentTeam = () => _currentTeam;
 const isLoggedIn  = () => !!_session;
 
-const currentRole       = () => _currentTeam?.role ?? null;
-const currentRoleLabel  = () => _currentTeam?.role?.label ?? '';
-const canWrite          = () => !!_currentTeam?.role?.can_write_data;
-const canReadGameData   = () => !!_currentTeam?.role?.can_read_game_data;
-const canReadRoster     = () => !!_currentTeam?.role?.can_read_roster;
-const canManageRoles    = () => !!_currentTeam?.role?.can_manage_roles;
-const canManageInvites  = () => !!_currentTeam?.role?.can_manage_invites;
-const canExportSheets   = () => !!_currentTeam?.role?.can_export_sheets;
-const canDeleteTeam     = () => !!_currentTeam?.role?.can_delete_team;
-const isViewer          = () => !canReadGameData() && !canReadRoster();
+const currentRole      = () => _currentTeam?.role ?? null;
+const currentRoleLabel = () => _currentTeam?.role?.label ?? '';
+
+// Проверка прав через Set<string> permissions
+const _hasPerm = (key) => !!_currentTeam?.permissions?.has(key);
+
+const canWrite          = () => _hasPerm('write_data');
+const canReadGameData    = () => _hasPerm('read_game_data');
+const canReadRoster       = () => _hasPerm('read_roster');
+const canManageRoles      = () => _hasPerm('manage_roles');
+const canManageInvites    = () => _hasPerm('manage_invites');
+const canExportSheets     = () => _hasPerm('export_sheets');
+const canDeleteTeam       = () => _hasPerm('delete_team');
+const isViewer            = () => !canReadGameData() && !canReadRoster();
 
 // ── Инициализация ─────────────────────────────────────────────
 async function initSession() {
@@ -56,7 +63,7 @@ async function _onSignIn(joinToken) {
       if(error) throw error;
       if(data?.ok) {
         toast(`Добавлен в команду как ${data.role} ✓`, 'ok');
-        history.replaceState({}, '', '/');
+        history.replaceState({}, '', '/drafthub_ow/');
       } else {
         toast(data?.error === 'invalid_or_expired' ? 'Инвайт недействителен или истёк' : 'Ошибка инвайта', 'err');
       }
@@ -85,12 +92,29 @@ function _onSignOut() {
 
 // ── Переключение активной команды ────────────────────────────
 async function switchTeam(teamId) {
-  const { data, error } = await _sb.from('team_members')
-    .select('teams(id, name, slug), team_roles(key, label, can_read_game_data, can_read_roster, can_write_data, can_manage_roles, can_manage_invites, can_export_sheets, can_delete_team, is_hidden)')
-    .eq('team_id', teamId).eq('user_id', currentUser().id).single();
+  // Загружаем команду + роль + права через один вложенный select
+  // (roles встречается ОДИН раз — нельзя делать два отдельных roles(...)
+  // в одном select, PostgREST это не поддерживает)
+  const { data, error } = await _sb.from('user_roles')
+    .select(`
+      teams(id, name, slug),
+      roles(id, key, label, sort_order, role_permissions(permissions(key)))
+    `)
+    .eq('team_id', teamId)
+    .eq('user_id', currentUser().id)
+    .single();
   if(error || !data) { toast('Команда не найдена', 'err'); return; }
 
-  _currentTeam = { id: data.teams.id, name: data.teams.name, slug: data.teams.slug, role: data.team_roles };
+  // Собираем Set прав из role_permissions → permissions
+  const permKeys = (data.roles?.role_permissions || [])
+    .map(rp => rp.permissions?.key)
+    .filter(Boolean);
+
+  _currentTeam = {
+    id: data.teams.id, name: data.teams.name, slug: data.teams.slug,
+    role: { key: data.roles.key, label: data.roles.label, sort_order: data.roles.sort_order },
+    permissions: new Set(permKeys),
+  };
   localStorage.setItem('draft_active_team', teamId);
 
   await loadAllData();
