@@ -1,19 +1,23 @@
-// @hash 7fb0a3c0 2026-06-20T15:48
+// @hash 9e877a5f 2026-06-21T12:51
 // ════ AUTH — TEAM & ROLES ════
-// Управление командами, инвайтами и кастомными ролями.
-// Зависимости: auth.js (_sb), session.js (currentUser, currentTeam, canManageRoles)
+// Управление командами, участниками, ролями, инвайтами.
+// Новая схема: user_roles, roles, role_permissions, permissions
+//
+// Зависимости: auth.js (_sb, dbInsert/dbUpdate/dbDelete),
+//              session.js (currentUser, currentTeam, canManageRoles, canManageInvites)
 
 // ── Загрузка команд пользователя ─────────────────────────────
 async function loadUserTeams() {
-  const { data, error } = await _sb.from('team_members')
-    .select('teams(id, name, slug, description), team_roles(key, label)')
-    .eq('user_id', currentUser().id);
+  const { data, error } = await _sb.from('user_roles')
+    .select('teams(id, name, slug, description), roles(key, label)')
+    .eq('user_id', currentUser().id)
+    .not('team_id', 'is', null);  // исключаем глобальные роли (superadmin/admin)
   if(error) throw error;
-  return (data || []).map(r => ({ ...r.teams, role: r.team_roles }));
+  return (data || []).map(r => ({ ...r.teams, role: r.roles }));
 }
 
 // ── Создание команды ──────────────────────────────────────────
-// Триггер БД (003_custom_roles.sql) автоматически создаёт 4 системные роли
+// SECURITY DEFINER RPC — атомарно создаёт команду, роли и добавляет создателя как manager
 async function createTeam(name, description = '') {
   if(!name?.trim()) { toast('Укажи название команды', 'err'); return null; }
   try {
@@ -35,91 +39,122 @@ async function createTeam(name, description = '') {
 
 // ════ ROLES — управление ════
 
-// Все роли команды (для управления — включая скрытые, если есть право)
+// Все роли команды, включая их права
 async function loadTeamRoles() {
-  const { data, error } = await _sb.from('team_roles')
-    .select('*').eq('team_id', currentTeam().id).order('sort_order');
+  const { data, error } = await _sb.from('roles')
+    .select('id, key, label, is_system, max_per_team, sort_order, role_permissions(permissions(key, label))')
+    .eq('team_id', currentTeam().id)
+    .order('sort_order');
+  if(error) throw error;
+  // Нормализуем: добавляем permissions как Set (для проверок) и плоский массив (для рендера)
+  return (data || []).map(r => ({
+    ...r,
+    permKeys: new Set((r.role_permissions || []).map(rp => rp.permissions?.key).filter(Boolean)),
+    permList: (r.role_permissions || []).map(rp => rp.permissions).filter(Boolean),
+  }));
+}
+
+// Все доступные права (справочник)
+async function loadPermissions() {
+  const { data, error } = await _sb.from('permissions').select('*').order('category');
   if(error) throw error;
   return data || [];
 }
 
 // Создать кастомную роль
-async function createCustomRole({ label, permissions = {}, isHidden = false }) {
+async function createCustomRole({ label, permissionKeys = [] }) {
   if(!canManageRoles()) { toast('Нет прав на управление ролями', 'err'); return null; }
   const key = 'custom_' + label.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,20) + '_' + Date.now().toString(36).slice(-4);
   try {
-    const role = await dbInsert('team_roles', {
+    // Создаём роль
+    const role = await dbInsert('roles', {
       team_id: currentTeam().id,
       key, label: label.trim(),
-      can_read_game_data: permissions.can_read_game_data ?? true,
-      can_read_roster:    permissions.can_read_roster ?? true,
-      can_write_data:      permissions.can_write_data ?? false,
-      can_manage_roles:    permissions.can_manage_roles ?? false,
-      can_manage_invites:  permissions.can_manage_invites ?? false,
-      can_export_sheets:   permissions.can_export_sheets ?? false,
-      can_delete_team:     false,             // кастомные роли никогда не могут удалить команду
-      is_hidden: isHidden,
       is_system: false,
+      sort_order: 99,
     });
+    // Назначаем права
+    if(permissionKeys.length) {
+      const { data: perms } = await _sb.from('permissions')
+        .select('id').in('key', permissionKeys);
+      if(perms?.length) {
+        await _sb.from('role_permissions').insert(
+          perms.map(p => ({ role_id: role.id, permission_id: p.id }))
+        );
+      }
+    }
     toast(`Роль "${role.label}" создана ✓`, 'ok');
     return role;
   } catch(e) { toast('Ошибка: ' + e.message, 'err'); return null; }
 }
 
-// Обновить права существующей кастомной роли (системные роли защищены RLS-политикой)
-async function updateRolePermissions(roleId, permissions) {
+// Обновить права роли — заменяем весь набор целиком
+async function updateRolePermissions(roleId, permissionKeys = []) {
   if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
   try {
-    await dbUpdate('team_roles', roleId, permissions);
+    // Удаляем старые права
+    await _sb.from('role_permissions').delete().eq('role_id', roleId);
+    // Вставляем новые
+    if(permissionKeys.length) {
+      const { data: perms } = await _sb.from('permissions')
+        .select('id').in('key', permissionKeys);
+      if(perms?.length) {
+        await _sb.from('role_permissions').insert(
+          perms.map(p => ({ role_id: roleId, permission_id: p.id }))
+        );
+      }
+    }
     toast('Права обновлены ✓', 'ok');
     renderRolesAdminPanel();
-  } catch(e) {
-    const msg = e.message.includes('is_system') ? 'Системные роли нельзя менять' : e.message;
-    toast('Ошибка: ' + msg, 'err');
-  }
+  } catch(e) { toast('Ошибка: ' + e.message, 'err'); }
 }
 
 async function deleteCustomRole(roleId) {
   if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
   // Проверяем что роль не назначена никому
-  const { count } = await _sb.from('team_members')
+  const { count } = await _sb.from('user_roles')
     .select('id', { count:'exact', head:true }).eq('role_id', roleId);
   if(count > 0) { toast(`Роль назначена ${count} участникам — сначала смени им роль`, 'err'); return; }
 
   if(!confirm('Удалить роль?')) return;
-  try { await dbDelete('team_roles', roleId); toast('Роль удалена', 'ok'); renderRolesAdminPanel(); }
+  try { await dbDelete('roles', roleId); toast('Роль удалена', 'ok'); renderRolesAdminPanel(); }
   catch(e) { toast('Ошибка: ' + e.message, 'err'); }
 }
 
 // ════ MEMBERS ════
 async function loadTeamMembers() {
-  const { data, error } = await _sb.from('team_members')
-    .select(`id, joined_at, role_id, team_roles(id,key,label,is_hidden), users:user_id(id,email,raw_user_meta_data)`)
-    .eq('team_id', currentTeam().id).order('joined_at');
+  const { data, error } = await _sb.from('user_roles')
+    .select(`
+      id, joined_at, role_id,
+      roles(id, key, label, sort_order, is_system),
+      users:user_id(id, email, raw_user_meta_data)
+    `)
+    .eq('team_id', currentTeam().id)
+    .order('joined_at');
   if(error) throw error;
   return data || [];
 }
 
-async function setMemberRole(memberId, roleId) {
+async function setMemberRole(userRoleId, newRoleId) {
   if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  // Не даём оставить команду без управляющих ролью ролей (can_manage_roles)
-  const members = await loadTeamMembers();
-  const managers = members.filter(m => m.team_roles?.key === 'admin' || m.team_roles?.can_manage_roles);
-  const target   = members.find(m => m.id === memberId);
-  const newRole  = (await loadTeamRoles()).find(r => r.id === roleId);
-  if(target?.team_roles?.key === 'admin' && !newRole?.can_manage_roles && managers.length === 1) {
-    toast('Нельзя оставить команду без управляющей роли', 'err'); return;
+  // Не даём оставить команду без менеджера
+  const members  = await loadTeamMembers();
+  const managers = members.filter(m => m.roles?.key === 'manager');
+  const target   = members.find(m => m.id === userRoleId);
+  const newRole  = (await loadTeamRoles()).find(r => r.id === newRoleId);
+  if(target?.roles?.key === 'manager' && newRole?.key !== 'manager' && managers.length === 1) {
+    toast('Нельзя оставить команду без менеджера', 'err'); return;
   }
 
-  await dbUpdate('team_members', memberId, { role_id: roleId });
+  await dbUpdate('user_roles', userRoleId, { role_id: newRoleId });
   toast('Роль обновлена ✓', 'ok');
   renderTeamSettingsPanel();
 }
 
-async function removeMember(memberId, userId) {
+async function removeMember(userRoleId, userId) {
   if(!canManageRoles() && userId !== currentUser().id) { toast('Нет прав', 'err'); return; }
   if(!confirm('Удалить участника из команды?')) return;
-  await dbDelete('team_members', memberId);
+  await dbDelete('user_roles', userRoleId);
   toast('Участник удалён', 'ok');
   if(userId === currentUser().id) {
     _currentTeam = null;
@@ -146,7 +181,7 @@ async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
 
 async function loadTeamInvites() {
   const { data, error } = await _sb.from('team_invites')
-    .select('id, token, max_uses, uses, expires_at, created_at, team_roles(label)')
+    .select('id, token, max_uses, uses, expires_at, created_at, roles(label)')
     .eq('team_id', currentTeam().id)
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending:false });
