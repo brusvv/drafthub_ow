@@ -1,4 +1,4 @@
-// @hash dd88ec9f 2026-06-20T08:48
+// @hash a422747d 2026-06-21T21:35
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
@@ -157,13 +157,48 @@ async function loadTeamTiers(){
 
 async function loadPersonalTiers(){
   if(!currentUser()) return;
-  const { data, error } = await _sb.from('tier_data')
+
+  // Загружаем список сетов и активный
+  await loadTierSets();
+
+  // Загружаем данные активного сета (или всех личных если сета нет)
+  let query = _sb.from('tier_data')
     .select('entity_type, name, tier')
     .eq('team_id', _teamId()).eq('scope', 'personal').eq('user_id', currentUser().id);
+  if(activeTierSetId) query = query.eq('tier_set_id', activeTierSetId);
+
+  const { data, error } = await query;
   if(error){ console.warn('loadPersonalTiers error', error); return; }
   personalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
   personalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
   _fillTierOrder(data, personalTierMaps, personalTierHeroes);
+}
+
+// ════ PERSONAL TIER SETS ════
+let tierSets      = [];       // [{id, name, is_default}]
+let activeTierSetId = null;   // uuid | null
+
+async function loadTierSets(){
+  if(!currentUser()) return;
+  const { data, error } = await _sb.from('personal_tier_sets')
+    .select('id, name, is_default')
+    .eq('team_id', _teamId())
+    .eq('user_id', currentUser().id)
+    .order('created_at');
+  if(error){ console.warn('loadTierSets error', error); return; }
+  tierSets = data || [];
+  // Активный сет — дефолтный или первый
+  if(!activeTierSetId || !tierSets.find(s => s.id === activeTierSetId)){
+    const def = tierSets.find(s => s.is_default) ?? tierSets[0];
+    activeTierSetId = def?.id ?? null;
+  }
+}
+
+async function switchTierSet(setId){
+  activeTierSetId = setId;
+  await loadPersonalTiers();
+  _applyTierMode('personal');
+  renderTiers();
 }
 
 function _applyTierMode(mode){
