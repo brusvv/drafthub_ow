@@ -1,4 +1,4 @@
-// @hash db3546ae 2026-06-20T08:48
+// @hash 7ca2a64a 2026-06-21T21:35
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -237,6 +237,8 @@ async function saveTierOrder(entityType, tierObj){
     ...r, team_id: _teamId(),
     scope: isPersonal ? 'personal' : 'team',
     user_id: isPersonal ? currentUser().id : null,
+    // Привязываем к активному сету если личный
+    tier_set_id: isPersonal ? (activeTierSetId ?? null) : null,
   }));
 
   if(rows.length){
@@ -258,6 +260,60 @@ function _tierObjToRows(entityType, tierObj){
   return rows;
 }
 
+// ════ PERSONAL TIER SETS — CRUD ════
+async function createTierSet(name){
+  if(!currentUser()) return null;
+  const isFirst = tierSets.length === 0;
+  try {
+    const { data, error } = await _sb.rpc('create_tier_set', {
+      p_team_id:    _teamId(),
+      p_name:       name.trim(),
+      p_set_default: isFirst,
+    });
+    if(error) throw error;
+    toast(`Тир-лист "${name}" создан ✓`, 'ok');
+    await loadTierSets();
+    activeTierSetId = data;
+    renderTiers();
+    return data;
+  } catch(e){
+    const msg = e.message?.includes('max_personal_tier_sets')
+      ? 'Максимум 10 личных тир-листов'
+      : e.message;
+    toast('Ошибка: ' + msg, 'err');
+    return null;
+  }
+}
+
+async function deleteTierSet(setId){
+  if(!confirm('Удалить этот тир-лист и все его записи?')) return;
+  const { error } = await _sb.from('personal_tier_sets').delete().eq('id', setId);
+  if(error){ toast('Ошибка: ' + error.message, 'err'); return; }
+  toast('Тир-лист удалён', 'ok');
+  if(activeTierSetId === setId) activeTierSetId = null;
+  await loadTierSets();
+  await loadPersonalTiers();
+  renderTiers();
+}
+
+async function renameTierSet(setId, newName){
+  const { error } = await _sb.from('personal_tier_sets')
+    .update({ name: newName }).eq('id', setId);
+  if(error){ toast('Ошибка: ' + error.message, 'err'); return; }
+  toast('Переименовано ✓', 'ok');
+  await loadTierSets();
+  renderTiers();
+}
+
+async function setDefaultTierSet(setId){
+  try {
+    const { error } = await _sb.rpc('set_default_tier_set', { p_set_id: setId });
+    if(error) throw error;
+    await loadTierSets();
+    renderTiers();
+  } catch(e){ toast('Ошибка: ' + e.message, 'err'); }
+}
+
 // ════ SHARE LINKS — для личного тир-листа ════
 async function loadShareLinks(){
   const { data, error } = await _sb.from('tier_share_links')
@@ -269,9 +325,13 @@ async function loadShareLinks(){
 
 async function createShareLink({ entityType = 'both', label = '', isPublic = true, expiresInDays = null }){
   const row = {
-    user_id: currentUser().id, team_id: _teamId(),
-    entity_type: entityType, label: label || null, is_public: isPublic,
-    expires_at: expiresInDays ? new Date(Date.now() + expiresInDays*86400_000).toISOString() : null,
+    user_id:     currentUser().id,
+    team_id:     _teamId(),
+    entity_type: entityType,
+    label:       label || null,
+    is_public:   isPublic,
+    tier_set_id: activeTierSetId ?? null,   // привязываем к конкретному сету
+    expires_at:  expiresInDays ? new Date(Date.now() + expiresInDays*86400_000).toISOString() : null,
   };
   const { data, error } = await _sb.from('tier_share_links').insert(row).select('token').single();
   if(error){ toast('Ошибка создания ссылки', 'err'); return null; }
