@@ -1,6 +1,8 @@
-// @hash 271dd572 2026-06-20T08:48
+// @hash 8debfbd7 2026-06-21T12:51
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
+// Новая схема: roles, role_permissions, permissions, user_roles
+//
 // Зависимости: session.js, team.js
 
 function renderAuthUI(state) {
@@ -91,9 +93,10 @@ function _renderHeader() {
   if(teamSel) teamSel.textContent = team?.name ?? '';
   if(roleBdg) {
     roleBdg.textContent = role?.label?.toUpperCase() ?? '';
-    roleBdg.style.color = role?.key==='admin' ? 'var(--damage)'
-      : role?.key==='coach' ? 'var(--accent)'
-      : role?.key==='player' ? 'var(--support)'
+    roleBdg.style.color = role?.key==='manager' ? 'var(--damage)'
+      : role?.key==='coach'   ? 'var(--accent)'
+      : role?.key==='captain' ? 'var(--support)'
+      : role?.key==='player'  ? 'var(--text2)'
       : 'var(--text3)';
   }
   if(userEl) userEl.textContent = user?.email?.split('@')[0] ?? 'Пользователь';
@@ -110,7 +113,7 @@ async function renderTeamSwitcher() {
 }
 
 // ════ ПАНЕЛЬ НАСТРОЕК — участники + роли + инвайты ════
-let _settingsTab = 'members'; // 'members' | 'roles' | 'invites'
+let _settingsTab = 'members'; // 'members' | 'roles' | 'invites' | 'sheets'
 
 async function renderTeamSettings() {
   const el = document.getElementById('view-settings'); if(!el) return;
@@ -118,9 +121,9 @@ async function renderTeamSettings() {
     <div style="max-width:680px">
       <div class="settings-tabs" style="display:flex;gap:6px;margin-bottom:16px">
         <button class="f-btn${_settingsTab==='members'?' active':''}" onclick="_switchSettingsTab('members')">Участники</button>
-        ${canManageRoles() ? `<button class="f-btn${_settingsTab==='roles'?' active':''}" onclick="_switchSettingsTab('roles')">Роли</button>` : ''}
-        ${canManageInvites() ? `<button class="f-btn${_settingsTab==='invites'?' active':''}" onclick="_switchSettingsTab('invites')">Инвайты</button>` : ''}
-        ${canExportSheets() ? `<button class="f-btn${_settingsTab==='sheets'?' active':''}" onclick="_switchSettingsTab('sheets')">Sheets экспорт</button>` : ''}
+        ${canManageRoles()   ? `<button class="f-btn${_settingsTab==='roles'  ?' active':''}" onclick="_switchSettingsTab('roles')">Роли</button>`            : ''}
+        ${canManageInvites() ? `<button class="f-btn${_settingsTab==='invites'?' active':''}" onclick="_switchSettingsTab('invites')">Инвайты</button>`        : ''}
+        ${canExportSheets()  ? `<button class="f-btn${_settingsTab==='sheets' ?' active':''}" onclick="_switchSettingsTab('sheets')">Sheets экспорт</button>`  : ''}
       </div>
       <div id="settingsTabContent"></div>
     </div>`;
@@ -140,14 +143,13 @@ async function _renderSettingsTabContent(){
 // ── Участники ──
 async function _renderMembersTab(el){
   const [members, roles] = await Promise.all([loadTeamMembers(), loadTeamRoles()]);
-  // Скрытые роли видны только тем кто может управлять ролями (уже отфильтровано RLS)
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px">
       ${members.map(m => {
         const name  = m.users?.raw_user_meta_data?.full_name ?? m.users?.email ?? '—';
         const email = m.users?.email ?? '';
         const isSelf= m.users?.id === currentUser()?.id;
-        const roleLabel = m.team_roles?.label || '—';
+        const roleLabel = m.roles?.label || '—';
         return `<div class="member-row">
           <div class="member-av">${name[0]?.toUpperCase()}</div>
           <div style="flex:1;min-width:0">
@@ -156,7 +158,7 @@ async function _renderMembersTab(el){
           </div>
           ${canManageRoles() && !isSelf ? `
             <select class="form-select" style="width:130px;font-size:11px" onchange="setMemberRole('${m.id}',this.value)">
-              ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}${r.is_hidden?' 🔒':''}</option>`).join('')}
+              ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
             </select>
             <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')">✕</button>
           ` : `<span class="role-tag" style="font-size:10px">${roleLabel}</span>`}
@@ -167,15 +169,7 @@ async function _renderMembersTab(el){
 
 // ── Роли (админка) ──
 async function _renderRolesTab(el){
-  const roles = await loadTeamRoles();
-  const permLabels = {
-    can_read_game_data: 'Видит героев/карты',
-    can_read_roster:    'Видит состав',
-    can_write_data:     'Редактирует данные',
-    can_manage_roles:   'Управляет ролями',
-    can_manage_invites: 'Создаёт инвайты',
-    can_export_sheets:  'Экспорт в Sheets',
-  };
+  const [roles, allPerms] = await Promise.all([loadTeamRoles(), loadPermissions()]);
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
       ${roles.map(r => `
@@ -184,17 +178,16 @@ async function _renderRolesTab(el){
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:13px;font-weight:700">${r.label}</span>
               ${r.is_system?'<span class="role-tag" style="font-size:9px">встроенная</span>':''}
-              ${r.is_hidden?'<span class="role-tag" style="font-size:9px;color:var(--damage)">🔒 скрытая</span>':''}
             </div>
             ${!r.is_system?`<button class="btn btn-danger" style="font-size:9px;padding:3px 8px" onclick="deleteCustomRole('${r.id}')">Удалить</button>`:''}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            ${Object.entries(permLabels).map(([key,label]) => `
+            ${allPerms.map(p => `
               <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);
                 ${r.is_system?'opacity:.5;cursor:not-allowed':'cursor:pointer'}">
-                <input type="checkbox" ${r[key]?'checked':''} ${r.is_system?'disabled':''}
-                  onchange="updateRolePermissions('${r.id}',{${key}:this.checked})">
-                ${label}
+                <input type="checkbox" data-perm="${p.key}" ${r.permKeys.has(p.key)?'checked':''} ${r.is_system?'disabled':''}
+                  onchange="_toggleRolePerm('${r.id}',this)">
+                ${p.label}
               </label>`).join('')}
           </div>
         </div>`).join('')}
@@ -202,12 +195,31 @@ async function _renderRolesTab(el){
     <button class="btn btn-primary" onclick="_showCreateRoleForm()" style="font-size:11px">+ Создать роль</button>
     <div id="createRoleForm" style="display:none;margin-top:12px" class="role-card">
       <div class="form-group"><input class="form-input" id="newRoleLabel" placeholder="Название роли (напр. Аналитик)"></div>
-      <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:10px;cursor:pointer">
-        <input type="checkbox" id="newRoleHidden">
-        Скрытая роль — видна только тем, кто управляет ролями
-      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        ${allPerms.map(p=>`
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <input type="checkbox" name="newRolePerm" value="${p.key}">
+            ${p.label}
+          </label>`).join('')}
+      </div>
       <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateRole()">Создать</button>
     </div>`;
+}
+
+// Переключение одного права у существующей роли — читаем permission key
+// прямо из data-perm на чекбоксе и пересохраняем весь набор прав роли
+async function _toggleRolePerm(roleId, checkbox){
+  const permKey = checkbox.dataset.perm;
+  if(!permKey) return;
+  const roles = await loadTeamRoles();
+  const role  = roles.find(r => r.id === roleId);
+  if(!role) return;
+
+  const perms = new Set(role.permKeys);
+  if(checkbox.checked) perms.add(permKey);
+  else perms.delete(permKey);
+
+  await updateRolePermissions(roleId, [...perms]);
 }
 
 function _showCreateRoleForm(){
@@ -216,10 +228,10 @@ function _showCreateRoleForm(){
 }
 
 async function _submitCreateRole(){
-  const label  = document.getElementById('newRoleLabel')?.value;
-  const hidden = document.getElementById('newRoleHidden')?.checked;
+  const label = document.getElementById('newRoleLabel')?.value;
   if(!label?.trim()) { toast('Укажи название роли', 'err'); return; }
-  await createCustomRole({ label, isHidden: hidden, permissions:{} });
+  const checkedPerms = [...document.querySelectorAll('[name="newRolePerm"]:checked')].map(cb => cb.value);
+  await createCustomRole({ label, permissionKeys: checkedPerms });
   document.getElementById('newRoleLabel').value = '';
   _renderSettingsTabContent();
 }
@@ -230,7 +242,7 @@ async function _renderInvitesTab(el){
   el.innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
       <select class="form-select" id="inviteRoleSelect" style="width:160px;font-size:11px">
-        ${roles.map(r=>`<option value="${r.id}">${r.label}${r.is_hidden?' 🔒':''}</option>`).join('')}
+        ${roles.map(r=>`<option value="${r.id}">${r.label}</option>`).join('')}
       </select>
       <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateInvite()">+ Создать инвайт</button>
     </div>
@@ -239,7 +251,7 @@ async function _renderInvitesTab(el){
         ${invites.map(inv => `
           <div class="member-row" style="gap:6px;font-size:11px">
             <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/join/${inv.token}</code>
-            <span style="color:var(--text3)">${inv.team_roles?.label||''}</span>
+            <span style="color:var(--text3)">${inv.roles?.label||''}</span>
             <span style="color:var(--text3)">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
             <button class="btn btn-danger" style="font-size:9px;padding:2px 6px" onclick="deleteInvite('${inv.id}')">✕</button>
           </div>`).join('')}
