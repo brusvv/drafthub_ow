@@ -416,4 +416,38 @@ GRANT EXECUTE ON FUNCTION public.app_role()                 TO authenticated, an
 GRANT EXECUTE ON FUNCTION public.is_superadmin()            TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_app_admin()             TO authenticated;
 
+-- ════ RPC: get_my_team_context ════
+-- Возвращает команду + роль + массив прав за один запрос.
+-- Используется в switchTeam() вместо трёхуровневого PostgREST JOIN
+-- (user_roles → roles → role_permissions → permissions),
+-- который ненадёжно работает в разных версиях PostgREST.
+CREATE OR REPLACE FUNCTION get_my_team_context(p_team_id uuid)
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
+DECLARE
+  v_result json;
+BEGIN
+  SELECT json_build_object(
+    'team',        json_build_object('id', t.id, 'name', t.name, 'slug', t.slug),
+    'role',        json_build_object('id', r.id, 'key', r.key, 'label', r.label, 'sort_order', r.sort_order),
+    'permissions', COALESCE(
+      (SELECT json_agg(p.key)
+       FROM role_permissions rp
+       JOIN permissions p ON p.id = rp.permission_id
+       WHERE rp.role_id = r.id),
+      '[]'::json
+    )
+  )
+  INTO v_result
+  FROM user_roles ur
+  JOIN teams t  ON t.id = ur.team_id
+  JOIN roles r  ON r.id = ur.role_id
+  WHERE ur.team_id = p_team_id
+    AND ur.user_id = auth.uid();
+
+  RETURN v_result;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_my_team_context(uuid) TO authenticated;
+
 NOTIFY pgrst, 'reload schema';
