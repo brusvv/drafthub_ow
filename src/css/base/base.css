@@ -1,4 +1,3 @@
-/* @hash 55e0ca2e 2026-06-14T08:30 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -144,3 +143,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* Кнопка активного пула карт */
 .pool-active{border-color:rgba(43,189,142,.5)!important;color:var(--support)!important}
+
+/* ── Публичный режим (анонимный посетитель, Фаза 3) ──
+   body.public-mode добавляется/убирается в auth/session.js (renderPublicMode)
+   и auth/ui.js (renderAuthUI при возврате в обычный режим).
+   Анонимный посетитель видит только вкладку Tier List (global). */
+body.public-mode .authed-only      { display: none !important; }
+body.public-mode #headerLoginBtn   { display: inline-flex !important; }
+body.public-mode #headerTeamName_public { display: inline !important; }
+
+/* ── Глобальная админка (Фаза 7) ──
+   Показывается через JS (_renderHeader в auth/ui.js) только для
+   isAdmin()/isSuperAdmin() — по умолчанию скрыта, в т.ч. в public-mode,
+   где _renderHeader() вообще не вызывается. */
+.admin-only { display: none; }
