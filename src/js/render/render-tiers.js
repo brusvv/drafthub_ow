@@ -1,4 +1,3 @@
-// @hash 597521d6 2026-06-22T07:32
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -178,13 +177,19 @@ function _renameTierSetPrompt(setId, currentName){
 
 // Может ли пользователь редактировать ТЕКУЩИЙ активный уровень тир-листа
 function _canEditCurrentTier(){
-  if(isPublicMode())          return false;   // фаза 3
-  if(tierViewMode === 'global')   return false;
+  if(isPublicMode())              return false;   // фаза 3
+  if(tierViewMode === 'global')   return isSuperAdmin();   // фаза 7
   if(tierViewMode === 'personal') return true;
   return canWrite();
 }
 
 function initTierMaps(){
+  // Глобальный тир-лист не привязан к ростеру конкретной команды — нет
+  // массива maps, по которому можно проверить «устарела запись или нет».
+  // Без этой ранней проверки строки tierOrderMaps (= globalTierMaps)
+  // были бы вычищены целиком, т.к. maps=[] для анонимного/глобального режима.
+  if(tierViewMode === 'global') return;
+
   // В Supabase-версии данные приходят через loadTiers() → tierOrderMaps уже заполнен.
   // Сохраняем совместимость: добавляем новые карты которых нет ни в одном тире.
   const allNames = maps.map(m => m.name);
@@ -201,6 +206,8 @@ function initTierMaps(){
 }
 
 function initTierHeroes(){
+  if(tierViewMode === 'global') return;   // см. initTierMaps
+
   const allNames = heroes.map(h => h.name);
   const inTiers  = new Set(Object.values(tierOrderHeroes).flat());
   allNames.filter(n => !inTiers.has(n)).forEach(n => {
