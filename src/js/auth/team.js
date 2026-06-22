@@ -1,4 +1,4 @@
-// @hash 9e877a5f 2026-06-21T12:51
+// @hash 6151b59a 2026-06-22T06:54
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -40,17 +40,34 @@ async function createTeam(name, description = '') {
 // ════ ROLES — управление ════
 
 // Все роли команды, включая их права
+// Два запроса вместо трёхуровневого JOIN (role_permissions→permissions)
+// который ненадёжно работает в PostgREST
 async function loadTeamRoles() {
-  const { data, error } = await _sb.from('roles')
-    .select('id, key, label, is_system, max_per_team, sort_order, role_permissions(permissions(key, label))')
+  const { data: roles, error } = await _sb.from('roles')
+    .select('id, key, label, is_system, max_per_team, sort_order')
     .eq('team_id', currentTeam().id)
     .order('sort_order');
   if(error) throw error;
-  // Нормализуем: добавляем permissions как Set (для проверок) и плоский массив (для рендера)
-  return (data || []).map(r => ({
+  if(!roles?.length) return [];
+
+  // Загружаем права для всех ролей одним запросом
+  const roleIds = roles.map(r => r.id);
+  const { data: rpRows, error: rpErr } = await _sb.from('role_permissions')
+    .select('role_id, permissions(key, label)')
+    .in('role_id', roleIds);
+  if(rpErr) throw rpErr;
+
+  // Группируем права по role_id
+  const permsByRole = {};
+  (rpRows || []).forEach(rp => {
+    if(!permsByRole[rp.role_id]) permsByRole[rp.role_id] = [];
+    if(rp.permissions) permsByRole[rp.role_id].push(rp.permissions);
+  });
+
+  return roles.map(r => ({
     ...r,
-    permKeys: new Set((r.role_permissions || []).map(rp => rp.permissions?.key).filter(Boolean)),
-    permList: (r.role_permissions || []).map(rp => rp.permissions).filter(Boolean),
+    permKeys: new Set((permsByRole[r.id] || []).map(p => p.key)),
+    permList: permsByRole[r.id] || [],
   }));
 }
 
