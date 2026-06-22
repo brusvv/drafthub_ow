@@ -255,10 +255,14 @@ BEGIN
 
   RETURN jsonb_build_object(
     'ok', true,
-    'label',       v_link.label,
-    'user_id',     v_link.user_id,
-    'team_id',     v_link.team_id,
-    'entity_type', v_link.entity_type,
+    'label',         v_link.label,
+    'user_id',       v_link.user_id,
+    'team_id',       v_link.team_id,
+    'entity_type',   v_link.entity_type,
+    -- Фаза 6: имя сета для отображения на странице просмотра
+    'tier_set_name', (
+      SELECT name FROM personal_tier_sets WHERE id = v_link.tier_set_id
+    ),
     'tiers', (
       SELECT jsonb_agg(jsonb_build_object('entity_type',entity_type,'name',name,'tier',tier))
       FROM tier_data
@@ -266,6 +270,8 @@ BEGIN
         AND user_id = v_link.user_id
         AND scope = 'personal'
         AND (v_link.entity_type = 'both' OR entity_type = v_link.entity_type)
+        -- Фаза 6: если ссылка привязана к конкретному сету — фильтруем по нему
+        AND (v_link.tier_set_id IS NULL OR tier_set_id = v_link.tier_set_id)
     )
   );
 END;
