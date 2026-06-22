@@ -1,7 +1,6 @@
-// @hash 15365af0 2026-06-20T08:48
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
-// Выделено из render-tiers.js чтобы не превышать лимит строк на файл.
-// Зависимости: render-tiers.js (tierViewMode), db-write.js (loadShareLinks, createShareLink)
+// Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
+//              db-write.js (loadShareLinks, createShareLink)
 
 // ════ SHARE PANEL — для личного тир-листа ════
 async function renderTierSharePanel(){
@@ -9,18 +8,26 @@ async function renderTierSharePanel(){
   if(existing){ existing.remove(); return; }
 
   const links = await loadShareLinks();
+
+  // Фаза 6: показываем к какому сету привязана панель
+  const activeSet  = tierSets.find(s => s.id === activeTierSetId);
+  const setLabel   = activeSet ? `«${activeSet.name}»` : 'текущего тир-листа';
+
   const panel = document.createElement('div');
   panel.id = 'tierSharePanel';
   panel.className = 'role-card';
   panel.style.cssText = 'margin-top:16px;max-width:580px';
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700">Поделиться тир-листом</div>
+      <div>
+        <div style="font-size:13px;font-weight:700">Поделиться тир-листом</div>
+        ${activeSet ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">Сет: ${activeSet.name}</div>` : ''}
+      </div>
       <button onclick="document.getElementById('tierSharePanel').remove()"
         style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">×</button>
     </div>
     <p style="font-size:11px;color:var(--text3);margin-bottom:12px">
-      Ссылка позволяет другим видеть твой личный тир-лист — редактировать они не смогут.
+      Ссылка позволяет другим видеть ${setLabel} — редактировать они не смогут.
     </p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <select class="form-select" id="shareEntityType" style="width:130px;font-size:11px">
@@ -38,10 +45,21 @@ async function renderTierSharePanel(){
     </div>
     ${links.length ? `
       <div style="display:flex;flex-direction:column;gap:5px">
-        ${links.map(l => `
+        ${links.map(l => {
+          // Фаза 6: показываем имя сета к которому привязана ссылка
+          const linkSet  = tierSets.find(s => s.id === l.tier_set_id);
+          const setChip  = linkSet
+            ? `<span style="font-family:var(--mono);font-size:8px;color:var(--accent);
+                background:rgba(99,179,237,.1);padding:1px 5px;border-radius:4px;white-space:nowrap">
+                📋 ${linkSet.name}</span>`
+            : '';
+          return `
           <div class="member-row" style="gap:8px;font-size:11px">
             <div style="flex:1;min-width:0">
-              <div style="font-weight:600">${l.label || _shareEntityLabel(l.entity_type)}</div>
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                <span style="font-weight:600">${l.label || _shareEntityLabel(l.entity_type)}</span>
+                ${setChip}
+              </div>
               <code style="font-family:var(--mono);font-size:9px;color:var(--text3);
                 display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 /tier/${l.token}
@@ -56,7 +74,8 @@ async function renderTierSharePanel(){
               class="btn" style="font-size:9px;padding:3px 8px">Скопировать</button>
             <button onclick="deleteShareLink('${l.id}')"
               class="btn btn-danger" style="font-size:9px;padding:3px 8px">✕</button>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>` : '<div class="empty" style="font-size:11px">Нет активных ссылок</div>'}`;
 
   const tierEl = document.getElementById('view-tiers');
@@ -75,8 +94,9 @@ async function _submitCreateShareLink(){
   const entityType = document.getElementById('shareEntityType')?.value;
   const label      = document.getElementById('shareLinkLabel')?.value.trim();
   const isPublic   = document.getElementById('shareIsPublic')?.checked ?? true;
+  // tier_set_id подставляется автоматически через activeTierSetId в db-write.js
   await createShareLink({ entityType, label, isPublic });
-  renderTierSharePanel();
+  renderTierSharePanel();  // перерисовываем с новым списком
 }
 
 // ════ ОБРАБОТКА /tier/TOKEN — публичный просмотр без авторизации ════
@@ -129,10 +149,14 @@ function _renderSharedTierView(data){
   const showMaps   = data.entity_type === 'both' || data.entity_type === 'map';
   const showHeroes = data.entity_type === 'both' || data.entity_type === 'hero';
 
+  // Фаза 6: заголовок — label ссылки → имя сета → дефолт
+  const title = data.label || data.tier_set_name || 'Тир-лист';
+
   document.body.innerHTML = `
     <div style="max-width:800px;margin:0 auto;padding:2rem 1rem;font-family:Inter,sans-serif;color:#e0e0e8;background:#0d0d0f;min-height:100vh">
       <div style="margin-bottom:20px">
-        <div style="font-size:22px;font-weight:800;margin-bottom:4px">${data.label || 'Тир-лист'}</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:4px">${title}</div>
+        ${data.tier_set_name && data.label ? `<div style="font-size:11px;color:#666;margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
         <div style="font-size:11px;font-family:monospace;color:#666">Draft Hub · Read only</div>
       </div>
       ${showMaps ? `<div style="font-family:monospace;font-size:9px;text-transform:uppercase;
