@@ -1,4 +1,3 @@
-// @hash 8debfbd7 2026-06-21T12:51
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -11,6 +10,9 @@ function renderAuthUI(state) {
   if(!authScreen || !appEl) return;
 
   if(state === 'app') {
+    // Возврат из публичного режима (Фаза 3) — снимаем класс,
+    // который прячет Настройки/Sync/Выйти и т.д. (см. base.css)
+    document.body.classList.remove('public-mode');
     authScreen.style.display = 'none';
     appEl.style.display = '';
     _renderHeader();
@@ -100,9 +102,16 @@ function _renderHeader() {
       : 'var(--text3)';
   }
   if(userEl) userEl.textContent = user?.email?.split('@')[0] ?? 'Пользователь';
+
+  // Фаза 7: вкладка «Админ» — только для admin/superadmin (app_metadata),
+  // независимо от роли в текущей команде.
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin() ? '' : 'none';
+  });
 }
 
 async function renderTeamSwitcher() {
+  if(!isLoggedIn()) return;   // публичный режим — переключателя команд нет
   const teams = await loadUserTeams();
   if(teams.length <= 1) return;
   const el = document.getElementById('teamSwitcherPopup'); if(!el) return;
