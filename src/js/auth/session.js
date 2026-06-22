@@ -1,4 +1,4 @@
-// @hash 0e2e48da 2026-06-21T12:51
+// @hash acba5636 2026-06-22T06:54
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -92,28 +92,19 @@ function _onSignOut() {
 
 // ── Переключение активной команды ────────────────────────────
 async function switchTeam(teamId) {
-  // Загружаем команду + роль + права через один вложенный select
-  // (roles встречается ОДИН раз — нельзя делать два отдельных roles(...)
-  // в одном select, PostgREST это не поддерживает)
-  const { data, error } = await _sb.from('user_roles')
-    .select(`
-      teams(id, name, slug),
-      roles(id, key, label, sort_order, role_permissions(permissions(key)))
-    `)
-    .eq('team_id', teamId)
-    .eq('user_id', currentUser().id)
-    .single();
+  // Используем RPC вместо трёхуровневого PostgREST JOIN
+  // (user_roles → roles → role_permissions → permissions ненадёжно работает)
+  const { data, error } = await _sb.rpc('get_my_team_context', { p_team_id: teamId });
   if(error || !data) { toast('Команда не найдена', 'err'); return; }
 
-  // Собираем Set прав из role_permissions → permissions
-  const permKeys = (data.roles?.role_permissions || [])
-    .map(rp => rp.permissions?.key)
-    .filter(Boolean);
+  const ctx = typeof data === 'string' ? JSON.parse(data) : data;
 
   _currentTeam = {
-    id: data.teams.id, name: data.teams.name, slug: data.teams.slug,
-    role: { key: data.roles.key, label: data.roles.label, sort_order: data.roles.sort_order },
-    permissions: new Set(permKeys),
+    id:          ctx.team.id,
+    name:        ctx.team.name,
+    slug:        ctx.team.slug,
+    role:        ctx.role,
+    permissions: new Set(ctx.permissions || []),
   };
   localStorage.setItem('draft_active_team', teamId);
 
