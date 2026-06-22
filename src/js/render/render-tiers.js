@@ -1,4 +1,3 @@
-// @hash 6c13fa7e 2026-06-20T08:48
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -10,12 +9,6 @@ Object.defineProperties(window, {
 });
 
 // ════ TIER LIST — D&D ════
-
-// Состояние тирлистов (сохраняется локально)
-// [store] tierOrderMaps → store.state
-// [store] tierOrderHeroes → store.state
-// [store] tierMapTypeFilter → store.state
-// [store] tierHeroRoleFilter → store.state
 
 function switchTierTab(tab,btn){
   document.querySelectorAll('.tier-tab').forEach(b=>b.classList.remove('active'));
@@ -40,18 +33,31 @@ function filterTierHeroes(role,btn){
 }
 
 function renderTiers(){
-  // Переключатель global/team/personal — рисуется в контейнер над списком
   const switcherEl = document.getElementById('tierModeSwitcher');
   if(switcherEl) switcherEl.innerHTML = _renderTierModeSwitcher();
+
+  // ── Фаза 4: выпадающее меню сетов в personal режиме ──
+  const setsEl = document.getElementById('tierSetSelector');
+  if(setsEl) setsEl.innerHTML = tierViewMode === 'personal' ? _renderTierSetSelector() : '';
+
   renderTierMaps();
   renderTierHeroes();
 }
 
 // ── Переключатель уровней тир-листа ──────────────────────────
-// global — публичный (редактирует только суперадмин через dashboard)
-// team   — командный (редактируют admin/coach/роль team_*)
-// personal — личный (редактирует только владелец, можно делиться ссылкой)
 function _renderTierModeSwitcher(){
+  // Фаза 3: в публичном режиме показываем только global без кнопок переключения
+  if(isPublicMode()) {
+    return `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+        <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+          letter-spacing:.1em;color:var(--text3)">🌐 Глобальный тир-лист</span>
+        <span style="margin-left:auto">
+          <button class="btn" onclick="renderAuthUI('login')" style="font-size:10px">Войти</button>
+        </span>
+      </div>`;
+  }
+
   const modes = [
     { key:'global',   label:'Глобальный', icon:'🌐' },
     { key:'team',     label:'Командный',  icon:'👥' },
@@ -73,79 +79,156 @@ function _renderTierModeSwitcher(){
     </div>`;
 }
 
+// ── Фаза 4: выпадающее меню тир-сетов ────────────────────────
+function _renderTierSetSelector(){
+  if(!tierSets.length) {
+    // Нет сетов — показываем только кнопку создания
+    return `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--text3)">Нет личных тир-листов</span>
+        <button class="btn btn-primary" onclick="_showCreateTierSetForm()" style="font-size:10px">+ Создать</button>
+      </div>
+      <div id="createTierSetForm" style="display:none"></div>`;
+  }
+
+  const active = tierSets.find(s => s.id === activeTierSetId);
+  return `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div class="tier-set-menu" style="position:relative">
+        <button class="f-btn active" onclick="_toggleTierSetDropdown()" style="font-size:11px;min-width:120px">
+          📋 ${active?.name ?? 'Тир-лист'} ▾
+        </button>
+        <div id="tierSetDropdown" style="display:none;position:absolute;top:100%;left:0;z-index:100;
+          background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+          min-width:200px;padding:4px;margin-top:4px;box-shadow:0 4px 16px rgba(0,0,0,.4)">
+          ${tierSets.map(s => `
+            <div style="display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:5px;
+              background:${s.id===activeTierSetId?'var(--bg3)':'transparent'};cursor:pointer"
+              onclick="switchTierSet('${s.id}');_closeTierSetDropdown()">
+              <span style="flex:1;font-size:12px">${s.name}</span>
+              ${s.is_default?'<span style="font-size:9px;color:var(--text3)">по умолчанию</span>':''}
+              <button class="btn" onclick="event.stopPropagation();_openTierSetMenu('${s.id}','${esc(s.name)}')"
+                style="font-size:9px;padding:1px 5px">⋯</button>
+            </div>`).join('')}
+          <div style="border-top:1px solid var(--border);margin:4px 0;padding-top:4px">
+            <button class="btn btn-primary" onclick="_showCreateTierSetForm();_closeTierSetDropdown()"
+              style="width:100%;font-size:10px">+ Создать тир-лист</button>
+          </div>
+        </div>
+      </div>
+      <span style="font-size:10px;color:var(--text3)">${tierSets.length}/10</span>
+    </div>
+    <div id="createTierSetForm" style="display:none;margin-bottom:10px"></div>`;
+}
+
+function _toggleTierSetDropdown(){
+  const el = document.getElementById('tierSetDropdown');
+  if(!el) return;
+  const isOpen = el.style.display !== 'none';
+  if(isOpen) { _closeTierSetDropdown(); return; }
+  el.style.display = 'block';
+  // Закрываем при клике снаружи
+  setTimeout(() => document.addEventListener('click', _closeTierSetDropdown, { once: true }), 0);
+}
+
+function _closeTierSetDropdown(){
+  const el = document.getElementById('tierSetDropdown');
+  if(el) el.style.display = 'none';
+}
+
+function _showCreateTierSetForm(){
+  const el = document.getElementById('createTierSetForm');
+  if(!el) return;
+  if(el.style.display !== 'none') { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:flex;gap:6px;align-items:center">
+      <input class="form-input" id="newTierSetName" placeholder="Название (напр. S14 Meta)"
+        style="font-size:11px;padding:5px 8px" maxlength="40"
+        onkeydown="if(event.key==='Enter')_submitCreateTierSet()">
+      <button class="btn btn-primary" onclick="_submitCreateTierSet()" style="font-size:10px">Создать</button>
+      <button class="btn" onclick="this.closest('#createTierSetForm').style.display='none'" style="font-size:10px">✕</button>
+    </div>`;
+  document.getElementById('newTierSetName')?.focus();
+}
+
+async function _submitCreateTierSet(){
+  const name = document.getElementById('newTierSetName')?.value?.trim();
+  if(!name) { toast('Укажи название', 'err'); return; }
+  await createTierSet(name);  // db-write.js
+  // renderTiers() вызывается внутри createTierSet
+}
+
+function _openTierSetMenu(setId, setName){
+  // Контекстное меню для конкретного сета: переименовать / сделать дефолтным / удалить
+  const active = tierSets.find(s => s.id === setId);
+  openTierPreview(`📋 ${setName}`, `
+    <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
+      <button class="btn" onclick="_renameTierSetPrompt('${setId}','${esc(setName)}');closeTierPreview()" style="width:100%;text-align:left">✎ Переименовать</button>
+      ${!active?.is_default ? `<button class="btn" onclick="setDefaultTierSet('${setId}');closeTierPreview()" style="width:100%;text-align:left">★ Сделать по умолчанию</button>` : ''}
+      <button class="btn btn-danger" onclick="deleteTierSet('${setId}');closeTierPreview()" style="width:100%;text-align:left">✕ Удалить</button>
+    </div>`);
+}
+
+function _renameTierSetPrompt(setId, currentName){
+  const name = prompt('Новое название:', currentName);
+  if(name?.trim()) renameTierSet(setId, name.trim());  // db-write.js
+}
+
 // Может ли пользователь редактировать ТЕКУЩИЙ активный уровень тир-листа
 function _canEditCurrentTier(){
+  if(isPublicMode())          return false;   // фаза 3
   if(tierViewMode === 'global')   return false;
   if(tierViewMode === 'personal') return true;
   return canWrite();
 }
 
 function initTierMaps(){
-  // Prefer Sheets data (loaded into tierOrderMaps by loadTiers), fallback to localStorage
-  const saved=Object.values(tierOrderMaps).some(a=>a.length)
-    ? null
-    : JSON.parse(localStorage.getItem('draft_tier_maps')||'null');
-  if(saved) tierOrderMaps=saved;
-  // Merge new maps not yet in any tier
-  const allNames=maps.map(m=>m.name);
-  const inTiers=new Set(Object.values(tierOrderMaps).flat());
-  allNames.filter(n=>!inTiers.has(n)).forEach(n=>{
-    const m=maps.find(x=>x.name===n);
-    const tier=m?m.tier:'B';
-    if(!tierOrderMaps[tier])tierOrderMaps[tier]=[];
+  // В Supabase-версии данные приходят через loadTiers() → tierOrderMaps уже заполнен.
+  // Сохраняем совместимость: добавляем новые карты которых нет ни в одном тире.
+  const allNames = maps.map(m => m.name);
+  const inTiers  = new Set(Object.values(tierOrderMaps).flat());
+  allNames.filter(n => !inTiers.has(n)).forEach(n => {
+    const m = maps.find(x => x.name === n);
+    const tier = m ? m.tier : 'B';
+    if(!tierOrderMaps[tier]) tierOrderMaps[tier] = [];
     tierOrderMaps[tier].push(n);
   });
-  // Remove stale entries (maps deleted from sheet)
-  const nameSet=new Set(allNames);
-  ['S','A','B','C','D'].forEach(t=>{tierOrderMaps[t]=(tierOrderMaps[t]||[]).filter(n=>nameSet.has(n))});
+  // Удаляем устаревшие записи
+  const nameSet = new Set(allNames);
+  ['S','A','B','C','D'].forEach(t => { tierOrderMaps[t] = (tierOrderMaps[t]||[]).filter(n => nameSet.has(n)); });
 }
 
 function initTierHeroes(){
-  const saved=Object.values(tierOrderHeroes).some(a=>a.length)
-    ? null
-    : JSON.parse(localStorage.getItem('draft_tier_heroes')||'null');
-  if(saved) tierOrderHeroes=saved;
-  const allNames=heroes.map(h=>h.name);
-  const inTiers=new Set(Object.values(tierOrderHeroes).flat());
-  allNames.filter(n=>!inTiers.has(n)).forEach(n=>{
-    const h=heroes.find(x=>x.name===n);
-    const tier=h?(h.priority>=9?'S':h.priority>=7?'A':h.priority>=5?'B':h.priority>=3?'C':'D'):'C';
-    if(!tierOrderHeroes[tier])tierOrderHeroes[tier]=[];
+  const allNames = heroes.map(h => h.name);
+  const inTiers  = new Set(Object.values(tierOrderHeroes).flat());
+  allNames.filter(n => !inTiers.has(n)).forEach(n => {
+    const h = heroes.find(x => x.name === n);
+    const tier = h ? (h.priority>=9?'S':h.priority>=7?'A':h.priority>=5?'B':h.priority>=3?'C':'D') : 'C';
+    if(!tierOrderHeroes[tier]) tierOrderHeroes[tier] = [];
     tierOrderHeroes[tier].push(n);
   });
-  const nameSet=new Set(allNames);
-  ['S','A','B','C','D'].forEach(t=>{tierOrderHeroes[t]=(tierOrderHeroes[t]||[]).filter(n=>nameSet.has(n))});
+  const nameSet = new Set(allNames);
+  ['S','A','B','C','D'].forEach(t => { tierOrderHeroes[t] = (tierOrderHeroes[t]||[]).filter(n => nameSet.has(n)); });
 }
 
-let _tmTimer=null,_thTimer=null;
+// ── Сохранение через Supabase (db-write.js) вместо Google Sheets ──
+let _tmTimer = null, _thTimer = null;
+
 function saveTierMaps(){
-  localStorage.setItem('draft_tier_maps',JSON.stringify(tierOrderMaps));
-  clearTimeout(_tmTimer);_tmTimer=setTimeout(saveTierMapsSheets,1500);
+  clearTimeout(_tmTimer);
+  _tmTimer = setTimeout(() => {
+    if(_canEditCurrentTier()) saveTierOrder('map', tierOrderMaps);  // db-write.js
+  }, 800);
 }
 function saveTierHeroes(){
-  localStorage.setItem('draft_tier_heroes',JSON.stringify(tierOrderHeroes));
-  clearTimeout(_thTimer);_thTimer=setTimeout(saveTierHeroesSheets,1500);
-}
-async function saveTierMapsSheets(){
-  if(!SID())return;
-  const rows=[['name','tier'],...Object.entries(tierOrderMaps).flatMap(([t,ns])=>ns.map(n=>[n,t]))];
-  try{
-    await sUp('TierMaps!A1:B'+rows.length,rows);
-    if(rows.length<500)await sClear('TierMaps!A'+(rows.length+1)+':B500');
-  }catch(e){console.warn('TierMaps save error:',e.message)}
-}
-async function saveTierHeroesSheets(){
-  if(!SID())return;
-  const rows=[['name','tier'],...Object.entries(tierOrderHeroes).flatMap(([t,ns])=>ns.map(n=>[n,t]))];
-  try{
-    await sUp('TierHeroes!A1:B'+rows.length,rows);
-    if(rows.length<500)await sClear('TierHeroes!A'+(rows.length+1)+':B500');
-  }catch(e){console.warn('TierHeroes save error:',e.message)}
+  clearTimeout(_thTimer);
+  _thTimer = setTimeout(() => {
+    if(_canEditCurrentTier()) saveTierOrder('hero', tierOrderHeroes);  // db-write.js
+  }, 800);
 }
 
 // drag state
-// [store] dragItem/dragType → store.state
-
 function renderTierMaps(){
   initTierMaps();
   const el=document.getElementById('tierListMaps');
@@ -161,7 +244,7 @@ function renderTierMaps(){
         ${items.map((name,idx)=>{
           const m=maps.find(x=>x.name===name);
           const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
-          return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="true"
+          return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="maps" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
@@ -192,7 +275,7 @@ function renderTierHeroes(){
           const src=portrait(name);
           const hidden=tierHeroRoleFilter!=='all'&&(!h||h.role!==tierHeroRoleFilter);
           const tipText=h.subrole?`${name} · ${h.subrole}`:name;
-          return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="true"
+          return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h.role||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
@@ -208,6 +291,7 @@ function renderTierHeroes(){
 
 // ── Drag & Drop ──
 function onDragStart(e,type,fromTier,idx){
+  if(!_canEditCurrentTier()){ e.preventDefault(); return; }
   const order=type==='maps'?tierOrderMaps:tierOrderHeroes;
   const name=(order[fromTier]||[])[idx];
   dragItem={name,tier:fromTier};
@@ -222,67 +306,51 @@ function onDragEnd(e){
   document.querySelectorAll('.tier-maps').forEach(z=>z.classList.remove('drag-over'));
   dragItem=null;dragType=null;
 }
- 
+
 function onDragOver(e,type,tier){
-  if(type!==dragType)return;
+  if(!_canEditCurrentTier()||type!==dragType)return;
   e.preventDefault();
   e.dataTransfer.dropEffect='move';
   e.currentTarget.classList.add('drag-over');
 }
- 
+
 function onDragLeave(e){
   e.currentTarget.classList.remove('drag-over');
 }
- 
+
 function onDrop(e,type,toTier){
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  if(!dragItem||type!==dragType)return;
+  if(!dragItem||type!==dragType||!_canEditCurrentTier())return;
 
   const{name,tier:fromTier}=dragItem;
 
-  // Работаем с явной копией чтобы избежать proxy-мутаций
   const snap=JSON.parse(JSON.stringify(
     type==='maps'?store.get('tierOrderMaps'):store.get('tierOrderHeroes')
   ));
 
-  // 1. Убираем из исходного тира
   snap[fromTier]=(snap[fromTier]||[]).filter(n=>n!==name);
   if(!snap[toTier])snap[toTier]=[];
 
   const zone=e.currentTarget;
-
-  // 2. Все пилюли в DOM-порядке (совпадает с порядком в snap[toTier] до удаления)
   const allPills=[...zone.querySelectorAll('[draggable]')];
-
-  // Индекс перетаскиваемой пилюли — нужен для поправки смещения при drag внутри тира
   const draggedDomIdx=allPills.findIndex(el=>el.classList.contains('dragging'));
-
-  // Только видимые, не перетаскиваемые пилюли — для расчёта позиции
   const visPills=allPills.filter(el=>
     !el.classList.contains('tier-pill-hidden')&&
     !el.classList.contains('dragging')
   );
 
   if(visPills.length===0){
-    // Зона пустая → добавляем в конец
     snap[toTier].push(name);
   }else{
-    // 3. Ищем пилюлю, ПЕРЕД которой нужно вставить
-    // Учитываем flex-wrap: сравниваем и Y (строка) и X (позиция в строке)
     let targetPill=null;
     for(const pill of visPills){
       const r=pill.getBoundingClientRect();
-      // Курсор выше начала этой строки → вставить перед ней
       const aboveRow=e.clientY<r.top;
-      // Курсор на той же строке, в левой половине → тоже перед ней
       const sameRowLeft=e.clientY<=r.bottom&&e.clientX<r.left+r.width/2;
       if(aboveRow||sameRowLeft){targetPill=pill;break;}
     }
 
-    // 4. Переводим DOM-индекс в индекс массива
-    // Если перетаскиваемый элемент стоял ДО целевого в DOM,
-    // то после его удаления из snap всё сдвинулось влево на 1
     const domToOrderIdx=(domIdx,insertBefore)=>{
       const shift=(draggedDomIdx!==-1&&draggedDomIdx<domIdx)?1:0;
       const orderIdx=domIdx-shift;
@@ -291,20 +359,16 @@ function onDrop(e,type,toTier){
 
     let spliceIdx;
     if(targetPill){
-      // Вставляем ПЕРЕД целевой пилюлей
       spliceIdx=domToOrderIdx(allPills.indexOf(targetPill),true);
     }else{
-      // Курсор после последней видимой → вставляем ПОСЛЕ неё
       const lastPill=visPills[visPills.length-1];
       spliceIdx=domToOrderIdx(allPills.indexOf(lastPill),false);
     }
 
-    // Clamp на случай edge-cases
     spliceIdx=Math.max(0,Math.min(spliceIdx,snap[toTier].length));
     snap[toTier].splice(spliceIdx,0,name);
   }
 
-  // 5. Записываем обратно через proxy-сеттер и сохраняем
   if(type==='maps'){tierOrderMaps=snap;saveTierMaps();renderTierMaps();}
   else{tierOrderHeroes=snap;saveTierHeroes();renderTierHeroes();}
 }
@@ -327,7 +391,6 @@ function openTierMapPreview(name){
   const m=maps.find(x=>x.name===name);if(!m)return;
   const src=mapImg(m.name);const noAD=NO_ATKDEF.includes(m.type);
 
-  // Preferred heroes — grouped by role
   const byRole={Tank:[],Damage:[],Support:[]};
   (m.preferredHeroes||[]).forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(n);});
   const prefHtml=['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
@@ -341,7 +404,6 @@ function openTierMapPreview(name){
       </div>
     </div>`).join('');
 
-  // Bans — grouped by role
   const banByRole={Tank:[],Damage:[],Support:[]};
   (m.bans||[]).forEach(n=>{const h=heroMap[n];const role=h?h.role:'Damage';if(!banByRole[role])banByRole[role]=[];banByRole[role].push(n);});
   const bansHtml=['Tank','Damage','Support'].filter(r=>banByRole[r].length).map(r=>`
@@ -365,12 +427,13 @@ function openTierMapPreview(name){
     ${prefHtml?`<div class="tier-preview-section"><div class="tier-preview-section-title">Предпочтительные герои</div>${prefHtml}</div>`:''}
     ${bansHtml?`<div class="tier-preview-section"><div class="tier-preview-section-title">Цели для банов</div>${bansHtml}</div>`:''}
     ${m.notes?`<div class="tier-preview-notes">${m.notes}</div>`:''}`;
-  const actions=`<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`;
+  const actions=_canEditCurrentTier()
+    ? `<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button><button class="btn btn-primary" onclick="closeTierPreview();openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>`
+    : `<button class="btn" onclick="closeTierPreview();goToMap('${esc(m.name)}')">Открыть карточку</button>`;
   openTierPreview(m.name,body,actions);
 }
 function openTierHeroPreview(name){
-  // Используем единый попап из render-heroes.js
   if(typeof openHeroInfoPopup === 'function') openHeroInfoPopup(name);
 }
 
-function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30)}
+function goToMap(name){showView('maps',document.querySelectorAll('.nav-btn')[0]);mapFilter='all';document.querySelectorAll('#mapFilters .f-btn').forEach((b,i)=>b.classList.toggle('active',i===0));renderMaps();setTimeout(()=>showMapDetail(name),30);}
