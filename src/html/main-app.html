@@ -7,26 +7,29 @@
       <span class="header-title">Team Analyst</span>
     </div>
     <div class="header-right">
-      <div class="team-chip" style="position:relative;cursor:pointer" onclick="renderTeamSwitcher();document.getElementById('teamSwitcherPopup').classList.toggle('hidden')">
+      <div class="team-chip authed-only" style="position:relative;cursor:pointer" onclick="renderTeamSwitcher();document.getElementById('teamSwitcherPopup').classList.toggle('hidden')">
         <span id="headerTeamName" style="font-weight:700;font-size:13px"></span>
         <span id="headerRoleBadge" style="font-family:var(--mono);font-size:9px;text-transform:uppercase;margin-left:6px"></span>
         <div id="teamSwitcherPopup" class="hidden" style="position:absolute;top:100%;right:0;margin-top:6px;
           background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:6px;min-width:180px;z-index:50"></div>
       </div>
-      <button class="btn" onclick="smartSyncSeed()" title="Добавить новых героев/карты не трогая существующие данные">↑ Sync</button>
-      <div class="user-chip"><div class="user-av" id="userInitial">U</div><span id="userName">Пользователь</span></div>
-      <button class="btn btn-danger" onclick="signOut()">Выйти</button>
+      <span id="headerTeamName_public" style="font-weight:700;font-size:13px;display:none"></span>
+      <button class="btn authed-only" onclick="smartSyncSeed()" title="Добавить новых героев/карты не трогая существующие данные">↑ Sync</button>
+      <div class="user-chip authed-only"><div class="user-av" id="userInitial">U</div><span id="userName">Пользователь</span></div>
+      <button class="btn btn-danger authed-only" onclick="signOut()">Выйти</button>
+      <button class="btn btn-primary" id="headerLoginBtn" style="display:none" onclick="renderAuthUI('login')">Войти</button>
     </div>
   </div>
 
   <nav class="nav">
-    <button class="nav-btn active" onclick="showView('maps',this)">Карты</button>
-    <button class="nav-btn" onclick="showView('heroes',this)">Герои</button>
-    <button class="nav-btn" onclick="showView('tiers',this)">Tier List</button>
-    <button class="nav-btn" onclick="showView('bans',this)">Драфт</button>
-    <button class="nav-btn" onclick="showView('players',this)">Игроки</button>
-    <button class="nav-btn" onclick="showView('roster',this)">Состав</button>
-    <button class="nav-btn" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
+    <button class="nav-btn active authed-only" onclick="showView('maps',this)">Карты</button>
+    <button class="nav-btn authed-only" onclick="showView('heroes',this)">Герои</button>
+    <button class="nav-btn" id="navTiersBtn" onclick="showView('tiers',this)">Tier List</button>
+    <button class="nav-btn authed-only" onclick="showView('bans',this)">Драфт</button>
+    <button class="nav-btn authed-only" onclick="showView('players',this)">Игроки</button>
+    <button class="nav-btn authed-only" onclick="showView('roster',this)">Состав</button>
+    <button class="nav-btn authed-only" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
+    <button class="nav-btn admin-only" onclick="showView('admin',this)" id="navAdminBtn">Админ</button>
   </nav>
 
   <div id="view-maps" class="view active">
@@ -105,6 +108,10 @@
 
   <div id="view-settings" class="view">
     <!-- рендерится renderTeamSettings() из auth/ui.js -->
+  </div>
+
+  <div id="view-admin" class="view">
+    <!-- рендерится renderAdmin() из render/render-admin.js — Фаза 7 -->
   </div>
 </div>
 </div>
