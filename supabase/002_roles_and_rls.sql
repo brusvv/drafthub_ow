@@ -229,53 +229,10 @@ BEGIN
 END;
 $$;
 
--- ════ RPC: view_shared_tier ════
-CREATE OR REPLACE FUNCTION view_shared_tier(p_token text)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE
-  v_link tier_share_links%ROWTYPE;
-BEGIN
-  SELECT * INTO v_link FROM tier_share_links
-  WHERE token = p_token
-    AND (expires_at IS NULL OR expires_at > now())
-  FOR UPDATE;
-
-  IF NOT FOUND THEN RETURN jsonb_build_object('error','not_found'); END IF;
-
-  IF NOT v_link.is_public THEN
-    IF auth.uid() IS NULL THEN
-      RETURN jsonb_build_object('error','private_link_requires_auth');
-    END IF;
-    IF auth.uid() != v_link.user_id AND NOT is_app_admin() THEN
-      RETURN jsonb_build_object('error','no_access');
-    END IF;
-  END IF;
-
-  UPDATE tier_share_links SET views = views + 1 WHERE id = v_link.id;
-
-  RETURN jsonb_build_object(
-    'ok', true,
-    'label',         v_link.label,
-    'user_id',       v_link.user_id,
-    'team_id',       v_link.team_id,
-    'entity_type',   v_link.entity_type,
-    -- Фаза 6: имя сета для отображения на странице просмотра
-    'tier_set_name', (
-      SELECT name FROM personal_tier_sets WHERE id = v_link.tier_set_id
-    ),
-    'tiers', (
-      SELECT jsonb_agg(jsonb_build_object('entity_type',entity_type,'name',name,'tier',tier))
-      FROM tier_data
-      WHERE team_id = v_link.team_id
-        AND user_id = v_link.user_id
-        AND scope = 'personal'
-        AND (v_link.entity_type = 'both' OR entity_type = v_link.entity_type)
-        -- Фаза 6: если ссылка привязана к конкретному сету — фильтруем по нему
-        AND (v_link.tier_set_id IS NULL OR tier_set_id = v_link.tier_set_id)
-    )
-  );
-END;
-$$;
+-- view_shared_tier определена в 005_personal_tiers.sql —
+-- там добавляется tier_set_id в tier_share_links которая нужна этой функции.
+-- Здесь намеренно не объявляем чтобы избежать ошибки при применении 002
+-- до 005 (колонка tier_set_id ещё не существует).
 
 -- ════ RLS — включаем на всех таблицах ════
 ALTER TABLE teams            ENABLE ROW LEVEL SECURITY;
@@ -398,8 +355,8 @@ CREATE POLICY "players: read"  ON players FOR SELECT USING (can_read_roster(team
 CREATE POLICY "players: write" ON players FOR ALL    USING (can_write_team(team_id));
 
 -- ── tier_data ──
-CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT USING (scope = 'team' AND can_read_game_data(team_id) OR is_app_admin());
-CREATE POLICY "tiers: team write" ON tier_data FOR ALL    USING (scope = 'team' AND can_write_team(team_id));
+CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT USING (scope = 'team' AND (can_read_game_data(team_id) OR is_app_admin()));
+CREATE POLICY "tiers: team write" ON tier_data FOR ALL    USING (scope = 'team' AND (can_write_team(team_id) OR is_app_admin()));
 -- Политики для scope='personal' — в 005_personal_tiers.sql (scope добавляется там же)
 
 -- ── global_tier_data — пишет только superadmin ──
@@ -417,7 +374,7 @@ CREATE POLICY "sheets: write" ON sheets_tokens FOR ALL    USING (can_export_shee
 -- ════ GRANTS для функций ════
 GRANT EXECUTE ON FUNCTION public.create_team(text, text)    TO authenticated;
 GRANT EXECUTE ON FUNCTION public.accept_invite(text)        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.view_shared_tier(text)     TO anon, authenticated;
+-- view_shared_tierGranted в 005 (там же где объявлена)
 GRANT EXECUTE ON FUNCTION public.app_role()                 TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.is_superadmin()            TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_app_admin()             TO authenticated;
