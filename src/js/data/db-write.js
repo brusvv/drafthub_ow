@@ -316,11 +316,17 @@ async function setDefaultTierSet(setId){
 
 // ════ SHARE LINKS — для личного тир-листа ════
 async function loadShareLinks(){
+  // Фаза 6: join на personal_tier_sets чтобы получить имя сета для отображения
   const { data, error } = await _sb.from('tier_share_links')
-    .select('*').eq('user_id', currentUser().id).eq('team_id', _teamId())
+    .select('*, personal_tier_sets(name)')
+    .eq('user_id', currentUser().id).eq('team_id', _teamId())
     .order('created_at', { ascending: false });
   if(error) throw error;
-  return data || [];
+  // Нормализуем: tier_set_name на верхний уровень
+  return (data || []).map(l => ({
+    ...l,
+    tier_set_name: l.personal_tier_sets?.name ?? null,
+  }));
 }
 
 async function createShareLink({ entityType = 'both', label = '', isPublic = true, expiresInDays = null }){
