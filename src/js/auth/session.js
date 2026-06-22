@@ -1,4 +1,3 @@
-// @hash acba5636 2026-06-22T06:54
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -87,7 +86,43 @@ async function _onSignIn(joinToken) {
 
 function _onSignOut() {
   _session = null; _currentTeam = null;
-  renderAuthUI('login');
+  // Незалогиненный видит глобальный тир-лист (публичный режим).
+  // Форма входа появится только если пользователь нажмёт «Войти».
+  renderPublicMode();
+}
+
+// ── Публичный режим — глобальный тир-лист без авторизации ────
+const isPublicMode = () => !_session && document.getElementById('app')?.style.display !== 'none';
+
+async function renderPublicMode() {
+  const authScreen = document.getElementById('authScreen');
+  const appEl      = document.getElementById('app');
+  if(!authScreen || !appEl) return;
+
+  authScreen.style.display = 'none';
+  appEl.style.display      = '';
+
+  // Загружаем только то что доступно anon через RLS
+  try {
+    await Promise.all([loadPortraits(), loadMapScreenshots(), loadGlobalTiers()]);
+  } catch(e) {
+    console.warn('renderPublicMode: failed to load global data', e.message);
+  }
+
+  switchTierMode('global');   // всегда показываем global, без team/personal
+  _renderPublicHeader();
+}
+
+function _renderPublicHeader() {
+  const teamEl  = document.getElementById('headerTeamName');
+  const roleEl  = document.getElementById('headerRoleBadge');
+  const userEl  = document.getElementById('userName');
+  const loginEl = document.getElementById('headerLoginBtn');  // опционально
+
+  if(teamEl)  teamEl.textContent  = 'DraftHub OW';
+  if(roleEl)  { roleEl.textContent = ''; roleEl.style.color = ''; }
+  if(userEl)  userEl.textContent  = '';
+  if(loginEl) loginEl.style.display = '';   // показываем кнопку «Войти» если есть
 }
 
 // ── Переключение активной команды ────────────────────────────
