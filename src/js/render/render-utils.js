@@ -1,4 +1,3 @@
-// @hash 2c7a34ac 2026-06-20T08:48
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -21,6 +20,7 @@ function renderCurrentView() {
   if (id === 'view-players') renderPlayers();
   if (id === 'view-roster')  renderRoster();
   if (id === 'view-settings') renderTeamSettings();
+  if (id === 'view-admin')    renderAdmin();
 }
 
 // ── Визуальные хелперы ───────────────────────────────────────
