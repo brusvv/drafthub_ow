@@ -1,4 +1,3 @@
-// @hash 0e38b81d 2026-06-22T07:27
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -31,6 +30,14 @@ const canManageInvites    = () => _hasPerm('manage_invites');
 const canExportSheets     = () => _hasPerm('export_sheets');
 const canDeleteTeam       = () => _hasPerm('delete_team');
 const isViewer            = () => !canReadGameData() && !canReadRoster();
+
+// ── Глобальные роли (Фаза 7) ──────────────────────────────────
+// Хранятся в auth.users.app_metadata.app_role — НЕ в user_roles,
+// т.к. app_metadata нельзя подделать через клиентский SDK
+// (см. supabase/002_roles_and_rls.sql, supabase/006_admin_roles.sql).
+const _appRole     = () => currentUser()?.app_metadata?.app_role ?? null;
+const isSuperAdmin = () => _appRole() === 'superadmin';
+const isAdmin      = () => isSuperAdmin() || _appRole() === 'admin';
 
 // ── Инициализация ─────────────────────────────────────────────
 async function initSession() {
@@ -100,6 +107,10 @@ async function renderPublicMode() {
   const appEl      = document.getElementById('app');
   if(!authScreen || !appEl) return;
 
+  // Класс на body — CSS прячет всё, что требует авторизации
+  // (Настройки, Sync, Выйти, остальные вкладки) — см. base.css
+  document.body.classList.add('public-mode');
+
   authScreen.style.display = 'none';
   appEl.style.display      = '';
 
@@ -110,20 +121,14 @@ async function renderPublicMode() {
     console.warn('renderPublicMode: failed to load global data', e.message);
   }
 
-  switchTierMode('global');   // всегда показываем global, без team/personal
+  _applyTierMode('global');   // всегда показываем global, без team/personal
+  showView('tiers', document.getElementById('navTiersBtn'));
   _renderPublicHeader();
 }
 
 function _renderPublicHeader() {
-  const teamEl  = document.getElementById('headerTeamName');
-  const roleEl  = document.getElementById('headerRoleBadge');
-  const userEl  = document.getElementById('userName');
-  const loginEl = document.getElementById('headerLoginBtn');  // опционально
-
-  if(teamEl)  teamEl.textContent  = 'DraftHub OW';
-  if(roleEl)  { roleEl.textContent = ''; roleEl.style.color = ''; }
-  if(userEl)  userEl.textContent  = '';
-  if(loginEl) loginEl.style.display = '';   // показываем кнопку «Войти» если есть
+  const teamEl  = document.getElementById('headerTeamName_public');
+  if(teamEl) teamEl.textContent = 'DraftHub OW';
 }
 
 // ── Переключение активной команды ────────────────────────────
