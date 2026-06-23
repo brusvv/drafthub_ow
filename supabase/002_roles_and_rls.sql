@@ -43,11 +43,28 @@ $$;
 
 -- Получить sort_order роли (для проверки иерархии инвайтов)
 CREATE OR REPLACE FUNCTION my_role_sort_order(p_team_id uuid)
-RETURNS int LANGUAGE sql SECURITY DEFINER STABLE AS $$
+RETURNS int LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public AS $$
   SELECT r.sort_order FROM user_roles ur
   JOIN roles r ON r.id = ur.role_id
   WHERE ur.team_id = p_team_id AND ur.user_id = auth.uid()
   LIMIT 1;
+$$;
+
+-- Проверяет может ли текущий пользователь видеть других участников команды
+-- (sort_order <= 2 означает manager/coach/captain).
+-- SECURITY DEFINER — обходит RLS на user_roles, иначе бесконечная рекурсия:
+-- политика user_roles → EXISTS(user_roles) → политика user_roles → ...
+CREATE OR REPLACE FUNCTION can_see_team_members(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM user_roles ur
+    JOIN roles r ON r.id = ur.role_id
+    WHERE ur.team_id = p_team_id
+      AND ur.user_id = auth.uid()
+      AND r.sort_order <= 2
+  );
 $$;
 
 -- Проверка конкретного права через role_permissions
@@ -308,10 +325,7 @@ CREATE POLICY "user_roles: self and managers read" ON user_roles FOR SELECT
     user_id = auth.uid()
     OR is_app_admin()
     OR can_manage_roles(team_id)
-    OR EXISTS (SELECT 1 FROM user_roles ur2
-               JOIN roles r ON r.id = ur2.role_id
-               WHERE ur2.team_id = user_roles.team_id AND ur2.user_id = auth.uid()
-                 AND r.sort_order <= 2)  -- manager, coach, captain видят всех
+    OR can_see_team_members(team_id)  -- manager/coach/captain видят всех; SECURITY DEFINER избегает рекурсии
   );
 CREATE POLICY "user_roles: managers insert" ON user_roles FOR INSERT
   WITH CHECK (
