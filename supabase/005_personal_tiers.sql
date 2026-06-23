@@ -154,8 +154,15 @@ FOR SELECT
 USING (is_app_admin());
 
 -- ════ 4. RLS — tier_data (личные записи) ════
--- Командные политики ('tiers: team read/write') уже определены в 002_roles_and_rls.sql.
--- Здесь добавляем только политики для scope='personal'.
+-- Командные политики ('tiers: team read/write') определены в 002 БЕЗ scope-фильтра
+-- (потому что колонка scope не существует на момент применения 002).
+-- Здесь — после ADD COLUMN scope — пересоздаём их с правильным фильтром.
+DROP POLICY IF EXISTS "tiers: team read"  ON tier_data;
+DROP POLICY IF EXISTS "tiers: team write" ON tier_data;
+CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT
+  USING (scope = 'team' AND (can_read_game_data(team_id) OR is_app_admin()));
+CREATE POLICY "tiers: team write" ON tier_data FOR ALL
+  USING (scope = 'team' AND (can_write_team(team_id) OR is_app_admin()));
 
 -- Личный: владелец + manager команды + по share_link
 CREATE POLICY "tiers: personal read"
