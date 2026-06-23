@@ -1,125 +1,488 @@
-// @hash 9d571e75 2026-06-23T10:40
-// ════ RENDER — ADMIN (Фаза 7) ════
-// Глобальная админ-панель: список команд, пользователи + назначение
-// глобальных ролей, ссылка на редактирование глобального тир-листа.
-//
-// Сам редактор глобального тир-листа — НЕ отдельный UI, а обычная
-// вкладка Tier List в режиме «Глобальный»: saveTierOrder() уже пишет
-// в global_tier_data при tierViewMode==='global' (db-write.js),
-// а _canEditCurrentTier() уже разрешает это только isSuperAdmin()
-// (см. render-tiers.js). Здесь только команды + пользователи/роли.
-//
-// Вкладка видна при isAdmin() (см. auth/ui.js _renderHeader →
-// .admin-only). Назначение ролей (set_app_role RPC) — только
-// isSuperAdmin(), на уровне и UI, и базы (002/006 SQL).
-//
-// Зависимости: session.js (isAdmin, isSuperAdmin), auth.js (_sb),
-//              render-nav.js (toast, esc), render-tiers.js (switchTierMode)
+// @hash a4665023 2026-06-23T18:49
+// ════ ADMIN / SUPERADMIN UI ════
+// Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
+// Зависимости: session.js (isLoggedIn, is_app_admin через app_role в JWT),
+//              db-write.js или прямые RPC-вызовы через _sb
 
-let _adminTab = 'teams'; // 'teams' | 'users' | 'tiers'
+// ── Проверка доступа ──
+const _isAdmin      = () => ['admin','superadmin'].includes(_currentTeam === null ? null : null)
+  || (window._jwtAppRole && ['admin','superadmin'].includes(window._jwtAppRole));
+const _isSuperAdmin = () => window._jwtAppRole === 'superadmin';
 
-async function renderAdmin(){
-  const el = document.getElementById('view-admin'); if(!el) return;
-  if(!isAdmin()){
-    el.innerHTML = '<div class="empty">Нет доступа</div>';
+// Читаем app_role из JWT при загрузке сессии
+async function _loadAppRole() {
+  const { data: { session } } = await _sb.auth.getSession();
+  window._jwtAppRole = session?.user?.app_metadata?.app_role ?? null;
+}
+
+// ── Главный рендер ──
+async function renderAdminPanel() {
+  await _loadAppRole();
+  const el = document.getElementById('view-admin');
+  if(!el) return;
+
+  if(!_isAdmin()) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div>
+      <div class="empty-title">Нет доступа</div>
+      <div class="empty-desc">Раздел доступен только администраторам</div></div>`;
     return;
   }
+
   el.innerHTML = `
-    <div style="max-width:760px">
-      <div class="settings-tabs" style="display:flex;gap:6px;margin-bottom:16px">
-        <button class="f-btn${_adminTab==='teams'?' active':''}" onclick="_switchAdminTab('teams')">Команды</button>
-        <button class="f-btn${_adminTab==='users'?' active':''}" onclick="_switchAdminTab('users')">Пользователи</button>
-        <button class="f-btn${_adminTab==='tiers'?' active':''}" onclick="_switchAdminTab('tiers')">Глобальный тир-лист</button>
+    <div style="max-width:780px">
+      <div class="admin-tabs" style="display:flex;gap:6px;margin-bottom:16px">
+        <button class="f-btn active" onclick="_switchAdminTab('import',this)">📥 Импорт CSV</button>
+        <button class="f-btn" onclick="_switchAdminTab('teams',this)">👥 Команды</button>
+        ${_isSuperAdmin() ? `<button class="f-btn" onclick="_switchAdminTab('users',this)">🔑 Пользователи</button>` : ''}
+        <button class="f-btn" onclick="_switchAdminTab('global_tiers',this)">🌐 Глобальный тир</button>
       </div>
       <div id="adminTabContent"></div>
     </div>`;
-  await _renderAdminTabContent();
+
+  _renderAdminTab('import');
 }
 
-function _switchAdminTab(tab){ _adminTab = tab; _renderAdminTabContent(); }
-
-async function _renderAdminTabContent(){
-  const el = document.getElementById('adminTabContent'); if(!el) return;
-  if(_adminTab === 'teams') return _renderAdminTeamsTab(el);
-  if(_adminTab === 'users') return _renderAdminUsersTab(el);
-  if(_adminTab === 'tiers') return _renderAdminTiersTab(el);
+function _switchAdminTab(tab, btn) {
+  document.querySelectorAll('.admin-tabs .f-btn').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+  _renderAdminTab(tab);
 }
 
-// ── Команды — admin/superadmin видят все через RLS (teams: members read) ──
-async function _renderAdminTeamsTab(el){
-  el.innerHTML = '<div class="empty">Загрузка...</div>';
-  const { data, error } = await _sb.from('teams')
-    .select('id, name, slug, description, created_at')
-    .order('created_at', { ascending:false });
-  if(error){ el.innerHTML = `<div class="error-state">⚠ ${error.message}</div>`; return; }
+async function _renderAdminTab(tab) {
+  const el = document.getElementById('adminTabContent');
+  if(!el) return;
+  if(tab === 'import')       return _renderImportTab(el);
+  if(tab === 'teams')        return _renderTeamsTab(el);
+  if(tab === 'users')        return _renderUsersTab(el);
+  if(tab === 'global_tiers') return _renderGlobalTiersTab(el);
+}
 
+// ════ ИМПОРТ CSV ════
+function _renderImportTab(el) {
   el.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:6px">
-      ${(data||[]).map(t => `
-        <div class="member-row">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">${esc(t.name)}</div>
-            <div style="font-size:11px;color:var(--text3)">${esc(t.slug || '')}${t.description ? ' · ' + esc(t.description) : ''}</div>
-          </div>
-          <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${new Date(t.created_at).toLocaleDateString('ru-RU')}</span>
-        </div>`).join('') || '<div class="empty">Команд пока нет</div>'}
+    <div class="admin-section">
+      <div class="admin-section-title">Импорт данных из CSV</div>
+      <p class="admin-desc">
+        CSV должен содержать заголовки. Импорт идемпотентный — повторный запуск обновит данные без дублей.
+        Выбери команду и тип данных, затем загрузи файл.
+      </p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <select class="form-select" id="adminImportTeam" style="min-width:180px;font-size:12px">
+          <option value="">— Выбери команду —</option>
+        </select>
+        <select class="form-select" id="adminImportType" style="min-width:160px;font-size:12px"
+          onchange="_onImportTypeChange()">
+          <option value="heroes">Герои (Heroes)</option>
+          <option value="maps">Карты (Maps)</option>
+          <option value="players">Игроки (Players)</option>
+          <option value="hero_map_strength">Сила героев на картах</option>
+          <option value="hero_synergy">Синергии героев</option>
+          <option value="global_tiers">Глобальный тир-лист</option>
+        </select>
+      </div>
+
+      <div class="admin-csv-hint" id="adminCsvHint"></div>
+
+      <div style="margin-bottom:12px">
+        <label class="admin-file-label">
+          <input type="file" id="adminCsvFile" accept=".csv" onchange="_onCsvFileSelected(this)"
+            style="display:none">
+          <span class="btn" onclick="document.getElementById('adminCsvFile').click()">
+            📂 Выбрать CSV файл
+          </span>
+          <span id="adminCsvFileName" style="font-size:11px;color:var(--text3);margin-left:8px">Файл не выбран</span>
+        </label>
+      </div>
+
+      <div id="adminCsvPreview" style="margin-bottom:12px"></div>
+
+      <button class="btn btn-primary" id="adminImportBtn" onclick="_submitCsvImport()"
+        style="display:none;font-size:12px">
+        ▶ Импортировать
+      </button>
+
+      <div id="adminImportLog" style="margin-top:12px"></div>
     </div>`;
+
+  // Заполняем список команд
+  _loadAdminTeams().then(teams => {
+    const sel = document.getElementById('adminImportTeam');
+    if(!sel) return;
+    teams.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id; opt.textContent = t.name;
+      sel.appendChild(opt);
+    });
+    // Предвыбираем текущую команду
+    if(currentTeam()?.id) sel.value = currentTeam().id;
+  });
+
+  _onImportTypeChange();
 }
 
-// ── Пользователи / глобальные роли ──
-async function _renderAdminUsersTab(el){
-  el.innerHTML = '<div class="empty">Загрузка...</div>';
-  const { data, error } = await _sb.rpc('list_app_users');
-  if(error){ el.innerHTML = `<div class="error-state">⚠ ${error.message}</div>`; return; }
+// Подсказка по формату для каждого типа
+const _CSV_HINTS = {
+  heroes: `Обязательные колонки: <b>name, role</b> (Tank/Damage/Support)<br>
+    Опциональные: subrole, priority (1-10), banned (TRUE/FALSE), notes,
+    counters (<code>Hero:score,Hero:score</code>)`,
+  maps: `Обязательные: <b>name, type</b> (Hybrid/Escort/Control/Push/Flashpoint/Clash)<br>
+    Опциональные: tier (S/A/B/C/D), priority, atk, def, dif (1-5), notes, in_pool (TRUE/FALSE)`,
+  players: `Обязательные: <b>name, main_role</b><br>
+    Опциональные: btag, off_role, rank_tank, rank_dmg, rank_sup, notes`,
+  hero_map_strength: `Обязательные: <b>hero_name, map_name, atk</b> (0-10)<br>
+    Опциональные: def (0-10, если нет — равно atk)`,
+  hero_synergy: `Обязательные: <b>hero_name, synergy_hero, score</b> (1-10)`,
+  global_tiers: `Обязательные: <b>entity_type</b> (map/hero), <b>name, tier</b> (S/A/B/C/D)<br>
+    Не требует команды — обновляет глобальный тир-лист`,
+};
 
-  const canAssign = isSuperAdmin();
-  el.innerHTML = `
-    ${!canAssign
-      ? `<div class="admin-warning">Назначать роли может только superadmin — у тебя доступ только на просмотр.</div>`
-      : `<div class="admin-warning">Изменение применится у пользователя после обновления токена (обычно в течение часа) или повторного входа — не сразу.</div>`}
-    <div style="display:flex;flex-direction:column;gap:6px">
-      ${(data||[]).map(u => `
-        <div class="member-row">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">${esc(u.email || '—')}</div>
-            <div style="font-size:11px;color:var(--text3)">с ${new Date(u.created_at).toLocaleDateString('ru-RU')}${u.last_sign_in_at ? ' · был(а) ' + new Date(u.last_sign_in_at).toLocaleDateString('ru-RU') : ''}</div>
-          </div>
-          ${canAssign ? `
-            <select class="form-select" style="width:140px;font-size:11px" onchange="_setUserAppRole('${u.id}',this.value)">
-              <option value=""${!u.app_role?' selected':''}>— нет —</option>
-              <option value="admin"${u.app_role==='admin'?' selected':''}>Admin</option>
-              <option value="superadmin"${u.app_role==='superadmin'?' selected':''}>Superadmin</option>
-            </select>
-          ` : `<span class="role-tag" style="font-size:10px">${esc(u.app_role || '—')}</span>`}
-        </div>`).join('') || '<div class="empty">Пользователей нет</div>'}
-    </div>`;
+function _onImportTypeChange() {
+  const type = document.getElementById('adminImportType')?.value;
+  const hint = document.getElementById('adminCsvHint');
+  if(hint && type) hint.innerHTML = `<div class="admin-hint">${_CSV_HINTS[type] || ''}</div>`;
 }
 
-async function _setUserAppRole(userId, role){
-  if(!confirm(role ? `Назначить роль "${role}"?` : 'Снять глобальную роль?')) { _renderAdminTabContent(); return; }
-  try {
-    const { error } = await _sb.rpc('set_app_role', { p_user_id: userId, p_role: role || null });
-    if(error) throw error;
-    toast('Роль обновлена ✓', 'ok');
-  } catch(e) {
-    toast('Ошибка: ' + e.message, 'err');
+let _csvParsed = null;
+
+function _onCsvFileSelected(input) {
+  const file = input.files[0];
+  if(!file) return;
+  document.getElementById('adminCsvFileName').textContent = file.name;
+  document.getElementById('adminCsvPreview').innerHTML = '';
+  document.getElementById('adminImportBtn').style.display = 'none';
+  _csvParsed = null;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      _csvParsed = _parseCsv(e.target.result);
+      _renderCsvPreview(_csvParsed);
+    } catch(err) {
+      document.getElementById('adminCsvPreview').innerHTML =
+        `<div class="admin-error">Ошибка парсинга: ${err.message}</div>`;
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function _parseCsv(text) {
+  // Удаляем BOM если есть
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(lines.length < 2) throw new Error('CSV пустой или содержит только заголовок');
+
+  const headers = _parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+  const rows = lines.slice(1)
+    .map(line => {
+      const vals = _parseCsvLine(line);
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = (vals[i] ?? '').trim());
+      return obj;
+    })
+    .filter(r => Object.values(r).some(v => v)); // убираем пустые строки
+
+  return { headers, rows };
+}
+
+function _parseCsvLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for(let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if(ch === '"') { inQ = !inQ; continue; }
+    if(ch === ',' && !inQ) { result.push(cur); cur = ''; continue; }
+    cur += ch;
   }
-  _renderAdminTabContent();
+  result.push(cur);
+  return result;
 }
 
-// ── Глобальный тир-лист — переход на существующую вкладку Tier List ──
-function _renderAdminTiersTab(el){
-  el.innerHTML = `
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;max-width:480px">
-      Глобальный тир-лист редактируется прямо во вкладке <b>Tier List</b> —
-      переключи режим на «🌐 Глобальный»: если ты superadmin, перетаскивание
-      карт/героев между тирами сохраняется в <code>global_tier_data</code>
-      и сразу видно всем пользователям и анонимным посетителям.
+function _renderCsvPreview(parsed) {
+  const { headers, rows } = parsed;
+  const preview = rows.slice(0, 5);
+  document.getElementById('adminCsvPreview').innerHTML = `
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px">
+      Найдено строк: <b>${rows.length}</b> · Колонки: ${headers.join(', ')}
     </div>
-    <button class="btn btn-primary" onclick="_goToGlobalTierList()">Открыть Tier List → Глобальный</button>`;
+    <div style="overflow-x:auto;max-height:160px;overflow-y:auto">
+      <table class="admin-table">
+        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(r =>
+          `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table>
+    </div>
+    ${rows.length > 5 ? `<div style="font-size:10px;color:var(--text3);margin-top:4px">... и ещё ${rows.length - 5} строк</div>` : ''}`;
+  document.getElementById('adminImportBtn').style.display = '';
 }
 
-function _goToGlobalTierList(){
-  showView('tiers', document.getElementById('navTiersBtn'));
-  switchTierMode('global');
+async function _submitCsvImport() {
+  if(!_csvParsed) return;
+  const type    = document.getElementById('adminImportType')?.value;
+  const teamId  = document.getElementById('adminImportTeam')?.value;
+  const log     = document.getElementById('adminImportLog');
+  const btn     = document.getElementById('adminImportBtn');
+
+  if(type !== 'global_tiers' && !teamId) {
+    toast('Выбери команду', 'err'); return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Импорт...';
+  log.innerHTML = '';
+
+  try {
+    const { imported, skipped, errors } = await _importCsv(type, teamId, _csvParsed.rows);
+    log.innerHTML = `
+      <div class="admin-log">
+        <div class="admin-log-ok">✓ Импортировано: <b>${imported}</b></div>
+        ${skipped  ? `<div class="admin-log-warn">⚠ Пропущено: ${skipped}</div>` : ''}
+        ${errors.length ? `<div class="admin-log-err">✗ Ошибок: ${errors.length}<br>
+          <code style="font-size:9px">${errors.slice(0,5).join('<br>')}</code></div>` : ''}
+      </div>`;
+    toast(`Импорт завершён: ${imported} строк`, 'ok');
+  } catch(e) {
+    log.innerHTML = `<div class="admin-error">Ошибка: ${e.message}</div>`;
+    toast('Ошибка импорта', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ Импортировать';
+  }
+}
+
+// ── Импорт по типам ──
+async function _importCsv(type, teamId, rows) {
+  if(type === 'heroes')           return _importHeroes(teamId, rows);
+  if(type === 'maps')             return _importMaps(teamId, rows);
+  if(type === 'players')          return _importPlayers(teamId, rows);
+  if(type === 'hero_map_strength')return _importHeroMapStrength(teamId, rows);
+  if(type === 'hero_synergy')     return _importHeroSynergy(teamId, rows);
+  if(type === 'global_tiers')     return _importGlobalTiers(rows);
+  throw new Error('Неизвестный тип: ' + type);
+}
+
+// Батч-хелпер: делим на чанки и делаем upsert
+async function _batchUpsert(table, rows, conflict, chunkSize = 100) {
+  let imported = 0; const errors = [];
+  for(let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error } = await _sb.from(table).upsert(chunk, { onConflict: conflict });
+    if(error) errors.push(`[${i}-${i+chunk.length}]: ${error.message}`);
+    else imported += chunk.length;
+  }
+  return { imported, skipped: 0, errors };
+}
+
+async function _importHeroes(teamId, rows) {
+  const mapped = rows
+    .filter(r => r.name && r.role)
+    .map(r => ({
+      team_id:  teamId,
+      name:     r.name,
+      role:     r.role,
+      subrole:  r.subrole || '',
+      priority: parseInt(r.priority) || 5,
+      banned:   (r.banned || '').toUpperCase() === 'TRUE',
+      notes:    r.notes || '',
+      counters: _parseCountersCsv(r.counters || ''),
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('heroes', mapped, 'team_id,name');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+async function _importMaps(teamId, rows) {
+  const validTypes = ['Hybrid','Escort','Control','Push','Flashpoint','Clash'];
+  const mapped = rows
+    .filter(r => r.name && r.type && validTypes.includes(r.type))
+    .map(r => ({
+      team_id:  teamId,
+      name:     r.name,
+      type:     r.type,
+      tier:     ['S','A','B','C','D'].includes(r.tier) ? r.tier : 'B',
+      priority: parseInt(r.priority) || 5,
+      atk:      Math.min(5, Math.max(1, parseInt(r.atk) || 3)),
+      def:      Math.min(5, Math.max(1, parseInt(r.def) || 3)),
+      dif:      Math.min(5, Math.max(1, parseInt(r.dif) || 3)),
+      notes:    r.notes || '',
+      in_pool:  (r.in_pool || 'TRUE').toUpperCase() !== 'FALSE',
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('maps', mapped, 'team_id,name');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+async function _importPlayers(teamId, rows) {
+  const mapped = rows
+    .filter(r => r.name && r.main_role)
+    .map(r => ({
+      team_id:   teamId,
+      name:      r.name,
+      btag:      r.btag || '',
+      main_role: r.main_role,
+      off_role:  r.off_role || '',
+      rank_tank: r.rank_tank || '',
+      rank_dmg:  r.rank_dmg || '',
+      rank_sup:  r.rank_sup || '',
+      notes:     r.notes || '',
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('players', mapped, 'team_id,name');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+async function _importHeroMapStrength(teamId, rows) {
+  const mapped = rows
+    .filter(r => r.hero_name && r.map_name && r.atk)
+    .map(r => ({
+      team_id:   teamId,
+      hero_name: r.hero_name,
+      map_name:  r.map_name,
+      atk:       Math.min(10, Math.max(0, parseInt(r.atk) || 0)),
+      def:       Math.min(10, Math.max(0, parseInt(r.def) || parseInt(r.atk) || 0)),
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('hero_map_strength', mapped, 'team_id,hero_name,map_name');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+async function _importHeroSynergy(teamId, rows) {
+  const mapped = rows
+    .filter(r => r.hero_name && r.synergy_hero && r.score)
+    .map(r => ({
+      team_id:      teamId,
+      hero_name:    r.hero_name,
+      synergy_hero: r.synergy_hero,
+      score:        Math.min(10, Math.max(1, parseInt(r.score) || 5)),
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('hero_synergy', mapped, 'team_id,hero_name,synergy_hero');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+async function _importGlobalTiers(rows) {
+  const mapped = rows
+    .filter(r => r.entity_type && r.name && r.tier && ['S','A','B','C','D'].includes(r.tier))
+    .map(r => ({
+      entity_type: r.entity_type,
+      name:        r.name,
+      tier:        r.tier,
+      updated_by:  currentUser()?.id,
+    }));
+  const skipped = rows.length - mapped.length;
+  const result = await _batchUpsert('global_tier_data', mapped, 'entity_type,name');
+  return { ...result, skipped: result.skipped + skipped };
+}
+
+function _parseCountersCsv(str) {
+  if(!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const sep = s.lastIndexOf(':');
+    if(sep < 0) return { name: s, score: 5 };
+    const score = parseInt(s.slice(sep+1));
+    return { name: s.slice(0, sep).trim(), score: isFinite(score) ? score : 5 };
+  });
+}
+
+// ════ КОМАНДЫ ════
+async function _loadAdminTeams() {
+  const { data } = await _sb.rpc('admin_get_all_teams');
+  return data || [];
+}
+
+async function _renderTeamsTab(el) {
+  el.innerHTML = '<div style="color:var(--text3);font-size:12px">Загрузка...</div>';
+  const teams = await _loadAdminTeams();
+  if(!teams.length) { el.innerHTML = '<div class="empty">Нет команд</div>'; return; }
+  el.innerHTML = `
+    <div class="admin-section">
+      <div class="admin-section-title">Все команды (${teams.length})</div>
+      <table class="admin-table">
+        <thead><tr><th>Название</th><th>Slug</th><th>Участников</th><th>Создана</th></tr></thead>
+        <tbody>
+          ${teams.map(t => `<tr>
+            <td style="font-weight:600">${t.name}</td>
+            <td><code style="font-size:10px">${t.slug}</code></td>
+            <td>${t.member_count}</td>
+            <td style="font-size:10px;color:var(--text3)">${new Date(t.created_at).toLocaleDateString('ru')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ════ ПОЛЬЗОВАТЕЛИ (только superadmin) ════
+async function _renderUsersTab(el) {
+  if(!_isSuperAdmin()) { el.innerHTML = '<div class="empty">Только для superadmin</div>'; return; }
+  el.innerHTML = '<div style="color:var(--text3);font-size:12px">Загрузка...</div>';
+  const { data: users } = await _sb.rpc('admin_get_all_users');
+  if(!users?.length) { el.innerHTML = '<div class="empty">Нет пользователей</div>'; return; }
+  el.innerHTML = `
+    <div class="admin-section">
+      <div class="admin-section-title">Пользователи (${users.length})</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">
+        Изменить app_role: введи email и выбери роль.
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <input class="form-input" id="adminRoleEmail" placeholder="email пользователя" style="flex:1;min-width:200px;font-size:11px">
+        <select class="form-select" id="adminRoleValue" style="width:130px;font-size:11px">
+          <option value="">— снять роль —</option>
+          <option value="admin">admin</option>
+          <option value="superadmin">superadmin</option>
+        </select>
+        <button class="btn btn-primary" onclick="_submitSetAppRole()" style="font-size:11px">Назначить</button>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>Email</th><th>App role</th><th>Зарегистрирован</th></tr></thead>
+        <tbody>
+          ${users.map(u => `<tr>
+            <td>${u.email}</td>
+            <td>${u.app_role
+              ? `<span class="role-tag" style="font-size:9px;background:rgba(99,179,237,.15);color:var(--accent)">${u.app_role}</span>`
+              : '<span style="color:var(--text3);font-size:10px">—</span>'}</td>
+            <td style="font-size:10px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('ru')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function _submitSetAppRole() {
+  const email = document.getElementById('adminRoleEmail')?.value?.trim();
+  const role  = document.getElementById('adminRoleValue')?.value;
+  if(!email) { toast('Введи email', 'err'); return; }
+  const { data, error } = await _sb.rpc('set_user_app_role', { p_email: email, p_role: role });
+  if(error || !data?.ok) { toast('Ошибка: ' + (data?.error || error?.message), 'err'); return; }
+  toast(`Роль ${role || 'снята'} для ${email} ✓`, 'ok');
+  _renderAdminTab('users');
+}
+
+// ════ ГЛОБАЛЬНЫЙ ТИР-ЛИСТ ════
+async function _renderGlobalTiersTab(el) {
+  el.innerHTML = '<div style="color:var(--text3);font-size:12px">Загрузка...</div>';
+  const { data, error } = await _sb.from('global_tier_data').select('entity_type,name,tier').order('entity_type').order('tier');
+  if(error) { el.innerHTML = `<div class="admin-error">${error.message}</div>`; return; }
+
+  const byType = { map:{S:[],A:[],B:[],C:[],D:[]}, hero:{S:[],A:[],B:[],C:[],D:[]} };
+  (data||[]).forEach(r => { if(byType[r.entity_type]?.[r.tier]) byType[r.entity_type][r.tier].push(r.name); });
+
+  const renderType = (label, type) => `
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">${label}</div>
+      ${['S','A','B','C','D'].map(t => byType[type][t].length ? `
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
+          <span class="tier-badge tier-${t}" style="width:24px;height:24px;font-size:11px;flex-shrink:0">${t}</span>
+          <span style="font-size:11px;color:var(--text2)">${byType[type][t].join(', ')}</span>
+        </div>` : '').join('')}
+    </div>`;
+
+  el.innerHTML = `
+    <div class="admin-section">
+      <div class="admin-section-title">Глобальный тир-лист
+        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:8px">${data?.length || 0} записей</span>
+      </div>
+      <p class="admin-desc">Редактировать через вкладку Tier List (режим «Глобальный»), или через импорт CSV выше.</p>
+      ${renderType('Карты', 'map')}
+      ${renderType('Герои', 'hero')}
+    </div>`;
 }
