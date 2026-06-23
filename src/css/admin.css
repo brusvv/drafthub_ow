@@ -1,20 +1,94 @@
-/* @hash 3229842d 2026-06-23T10:40 */
-/* ════ ADMIN PANEL (Фаза 7) — render/render-admin.js ════
-   Большая часть вёрстки переиспользует существующие классы
-   (.member-row, .role-tag, .empty, .error-state, .f-btn,
-   .form-select, .settings-tabs из modals.css/players.css/auth.css) —
-   здесь только то, что специфично для админки. */
+/* @hash 560ec35e 2026-06-23T18:49 */
+/* ════ ADMIN PANEL ════ */
 
-/* Вкладка «Админ» выделена среди остальных — это чувствительная зона */
-#navAdminBtn.active{background:var(--damage);border-color:var(--damage);color:#fff}
+.admin-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
 
-/* Предупреждение/инфо-плашка в админ-панели (только просмотр, задержка применения роли) */
-.admin-warning{
-  font-size:11px;
-  color:var(--text3);
-  background:var(--bg2);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:8px 10px;
-  margin-bottom:10px;
+.admin-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-desc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.admin-hint {
+  font-size: 11px;
+  color: var(--text2);
+  background: rgba(99,179,237,.08);
+  border: 1px solid rgba(99,179,237,.2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  line-height: 1.7;
+}
+
+.admin-hint code {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.admin-table th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text3);
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  color: var(--text2);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: var(--bg3); }
+
+.admin-log {
+  background: var(--bg3);
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-log-ok   { color: var(--support); }
+.admin-log-warn { color: #e0a028; }
+.admin-log-err  { color: var(--damage); }
+
+.admin-error {
+  color: var(--damage);
+  font-size: 11px;
+  background: rgba(224,85,85,.08);
+  border: 1px solid rgba(224,85,85,.2);
+  border-radius: 6px;
+  padding: 8px 10px;
 }
