@@ -23,7 +23,8 @@ RETURNS TABLE (
   app_role        text,
   created_at      timestamptz,
   last_sign_in_at timestamptz
-) LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
+) LANGUAGE plpgsql SECURITY DEFINER STABLE
+SET search_path = public AS $$
 BEGIN
   IF NOT is_app_admin() THEN
     RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
@@ -49,7 +50,8 @@ GRANT EXECUTE ON FUNCTION public.list_app_users() TO authenticated;
 -- пользователя «на лету» — изменение применится после следующего
 -- обновления токена (обычно в течение часа) или после повторного входа.
 CREATE OR REPLACE FUNCTION set_app_role(p_user_id uuid, p_role text DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
 BEGIN
   IF NOT is_superadmin() THEN
     RAISE EXCEPTION 'forbidden' USING ERRCODE = '42501';
