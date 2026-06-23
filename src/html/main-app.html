@@ -29,6 +29,7 @@
     <button class="nav-btn authed-only" onclick="showView('players',this)">Игроки</button>
     <button class="nav-btn authed-only" onclick="showView('roster',this)">Состав</button>
     <button class="nav-btn authed-only" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
+    <button class="nav-btn" onclick="showView('admin',this)" id="navAdminBtn" style="display:none">⚙ Админ</button>
     <button class="nav-btn admin-only" onclick="showView('admin',this)" id="navAdminBtn">Админ</button>
   </nav>
 
@@ -108,6 +109,10 @@
 
   <div id="view-settings" class="view">
     <!-- рендерится renderTeamSettings() из auth/ui.js -->
+  </div>
+
+  <div id="view-admin" class="view">
+    <!-- рендерится renderAdminPanel() из render/render-admin.js -->
   </div>
 
   <div id="view-admin" class="view">
