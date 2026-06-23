@@ -1,4 +1,3 @@
-// @hash d9808b6e 2026-06-23T11:30
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -109,6 +108,8 @@ function _renderHeader() {
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = isAdmin() ? '' : 'none';
   });
+
+  renderAppModeSwitcher();
 }
 
 async function renderTeamSwitcher() {
