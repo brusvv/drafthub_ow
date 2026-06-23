@@ -1,4 +1,4 @@
-// @hash 4d993c1c 2026-06-22T08:11
+// @hash 0e374c79 2026-06-23T18:49
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -153,6 +153,12 @@ async function switchTeam(teamId) {
   await loadAllData();
   renderAuthUI('app');
   renderCurrentView();
+
+  // Показываем вкладку Админ если есть app_role
+  const appRole = (await _sb.auth.getSession())?.data?.session?.user?.app_metadata?.app_role;
+  window._jwtAppRole = appRole ?? null;
+  const adminBtn = document.getElementById('navAdminBtn');
+  if(adminBtn) adminBtn.style.display = appRole ? '' : 'none';
 }
 
 // ── OAuth / email вход ──────────────────────────────────────
