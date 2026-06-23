@@ -355,13 +355,18 @@ CREATE POLICY "players: read"  ON players FOR SELECT USING (can_read_roster(team
 CREATE POLICY "players: write" ON players FOR ALL    USING (can_write_team(team_id));
 
 -- ── tier_data ──
-CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT USING (scope = 'team' AND (can_read_game_data(team_id) OR is_app_admin()));
-CREATE POLICY "tiers: team write" ON tier_data FOR ALL    USING (scope = 'team' AND (can_write_team(team_id) OR is_app_admin()));
+-- ВАЖНО: колонка scope добавляется в 005_personal_tiers.sql.
+-- Здесь не используем scope в USING — иначе политика падает при применении 002
+-- до 005. В 005 эти политики будут пересозданы с учётом scope.
+CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT USING (can_read_game_data(team_id) OR is_app_admin());
+CREATE POLICY "tiers: team write" ON tier_data FOR ALL    USING (can_write_team(team_id) OR is_app_admin());
 -- Политики для scope='personal' — в 005_personal_tiers.sql (scope добавляется там же)
 
--- ── global_tier_data — пишет только superadmin ──
-CREATE POLICY "global_tiers: read"  ON global_tier_data FOR SELECT USING (auth.uid() IS NOT NULL OR auth.role() = 'anon');
-CREATE POLICY "global_tiers: write" ON global_tier_data FOR ALL   USING (is_superadmin());
+-- ── global_tier_data ──
+-- Политика чтения (USING true, включая anon) определена в 005_personal_tiers.sql —
+-- там же DROP IF EXISTS чтобы не было конфликта. Здесь только write.
+-- Пишет только superadmin — глобальный тир-лист меняет только admin UI.
+CREATE POLICY "global_tiers: write" ON global_tier_data FOR ALL USING (is_superadmin());
 
 -- ── tier_share_links ──
 CREATE POLICY "share_links: owner"       ON tier_share_links FOR ALL    USING (user_id = auth.uid());
