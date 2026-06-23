@@ -14,6 +14,12 @@
           background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:6px;min-width:180px;z-index:50"></div>
       </div>
       <span id="headerTeamName_public" style="font-weight:700;font-size:13px;display:none"></span>
+
+      <!-- ── Переключатель режима приложения ── -->
+      <div id="appModeSwitcher" class="app-mode-switcher">
+        <!-- Рендерится renderAppModeSwitcher() из render-nav.js -->
+      </div>
+
       <button class="btn authed-only" onclick="smartSyncSeed()" title="Добавить новых героев/карты не трогая существующие данные">↑ Sync</button>
       <div class="user-chip authed-only"><div class="user-av" id="userInitial">U</div><span id="userName">Пользователь</span></div>
       <button class="btn btn-danger authed-only" onclick="signOut()">Выйти</button>
@@ -29,7 +35,6 @@
     <button class="nav-btn authed-only" onclick="showView('players',this)">Игроки</button>
     <button class="nav-btn authed-only" onclick="showView('roster',this)">Состав</button>
     <button class="nav-btn authed-only" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
-    <button class="nav-btn" onclick="showView('admin',this)" id="navAdminBtn" style="display:none">⚙ Админ</button>
     <button class="nav-btn admin-only" onclick="showView('admin',this)" id="navAdminBtn">Админ</button>
   </nav>
 
@@ -113,10 +118,6 @@
 
   <div id="view-admin" class="view">
     <!-- рендерится renderAdminPanel() из render/render-admin.js -->
-  </div>
-
-  <div id="view-admin" class="view">
-    <!-- рендерится renderAdmin() из render/render-admin.js — Фаза 7 -->
   </div>
 </div>
 </div>
