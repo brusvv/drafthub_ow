@@ -1,4 +1,4 @@
-/* @hash c74eb3be 2026-06-14T08:30 */
+/* @hash 08cc237e 2026-06-23T18:22 */
 /* ── PLAYERS ── */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .player-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s}
@@ -55,6 +55,9 @@
   padding: 3rem 1.5rem;
   text-align: center;
   gap: .5rem;
+  /* Занимаем всю строку грида чтобы центрироваться по ширине */
+  grid-column: 1 / -1;
+  width: 100%;
 }
 .empty-icon  { font-size: 2.5rem; line-height: 1; margin-bottom: .25rem; }
 .empty-title { font-size: 16px; font-weight: 700; color: var(--text); }
