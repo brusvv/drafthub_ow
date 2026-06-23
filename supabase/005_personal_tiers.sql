@@ -137,8 +137,17 @@ FOR SELECT
 USING (is_app_admin());
 
 -- ════ 4. RLS — tier_data (личные записи) ════
--- Командные политики ('tiers: team read/write') уже определены в 002_roles_and_rls.sql.
--- Здесь добавляем только политики для scope='personal'.
+-- Пересоздаём командные политики с правильным scope='team' —
+-- в 002 они были без scope (колонки ещё не было).
+-- Теперь scope уже добавлен в секции 2 этого файла.
+DROP POLICY IF EXISTS "tiers: team read"  ON tier_data;
+DROP POLICY IF EXISTS "tiers: team write" ON tier_data;
+
+-- Командный тир-лист: читает кто имеет read_game_data, пишет кто имеет write_data
+CREATE POLICY "tiers: team read"  ON tier_data
+  FOR SELECT USING (scope = 'team' AND (can_read_game_data(team_id) OR is_app_admin()));
+CREATE POLICY "tiers: team write" ON tier_data
+  FOR ALL    USING (scope = 'team' AND (can_write_team(team_id)    OR is_app_admin()));
 
 -- Личный: владелец + manager команды + по share_link
 CREATE POLICY "tiers: personal read"
@@ -179,13 +188,14 @@ ON global_tier_data
 FOR ALL
 USING (is_superadmin());
 
--- ════ 6. RLS — tier_share_links ════
--- Базовые политики ('share_links: owner manage', 'share_links: public read')
--- уже определены в 002_roles_and_rls.sql.
--- Добавляем tier_set_id к таблице — остальное наследуется.
+-- ════ 6. РАСШИРЯЕМ tier_share_links ════
+-- tier_set_id — к какому именно набору ведёт ссылка.
+-- NULL = ссылка на «текущий активный» личный тир-лист пользователя.
+-- ВАЖНО: этот ALTER идёт ДО функций view_shared_tier и RLS-политик,
+-- которые ссылаются на sl.tier_set_id.
 ALTER TABLE tier_share_links
-ADD COLUMN IF NOT EXISTS tier_set_id uuid
-REFERENCES personal_tier_sets(id) ON DELETE CASCADE;
+  ADD COLUMN IF NOT EXISTS tier_set_id uuid
+  REFERENCES personal_tier_sets(id) ON DELETE CASCADE;
 
 -- ════ 7. RPC: create_tier_set ════
 -- Создаёт именованный тир-лист; если первый — делает его дефолтным
