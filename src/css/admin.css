@@ -1,0 +1,20 @@
+/* @hash 3229842d 2026-06-23T10:40 */
+/* ════ ADMIN PANEL (Фаза 7) — render/render-admin.js ════
+   Большая часть вёрстки переиспользует существующие классы
+   (.member-row, .role-tag, .empty, .error-state, .f-btn,
+   .form-select, .settings-tabs из modals.css/players.css/auth.css) —
+   здесь только то, что специфично для админки. */
+
+/* Вкладка «Админ» выделена среди остальных — это чувствительная зона */
+#navAdminBtn.active{background:var(--damage);border-color:var(--damage);color:#fff}
+
+/* Предупреждение/инфо-плашка в админ-панели (только просмотр, задержка применения роли) */
+.admin-warning{
+  font-size:11px;
+  color:var(--text3);
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 10px;
+  margin-bottom:10px;
+}
