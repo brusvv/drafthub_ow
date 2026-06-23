@@ -1,4 +1,4 @@
-// @hash b4ae478c 2026-06-22T07:46
+// @hash 7a786d1b 2026-06-23T11:30
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -151,7 +151,8 @@ async function savePlayer(){
   const mainRole = document.getElementById('pMainRole').value;
   if(!name || !mainRole){ toast('Заполни никнейм и основную роль', 'err'); return; }
 
-  const editId  = document.getElementById('playerEditRow').value || null;
+  const _rawId  = document.getElementById('playerEditRow').value;
+  const editId  = (_rawId && _rawId !== 'undefined') ? _rawId : null;
   const isFlex  = mainRole === 'Flex';
   const offRole = document.getElementById('pOffRole').value;
   const roles   = isFlex ? ['Tank','Damage','Support'] : [mainRole, offRole].filter(Boolean);
@@ -198,7 +199,8 @@ async function savePlayer(){
 
 async function deletePlayer(){
   if(!_requireWrite()) return;
-  const id = document.getElementById('playerEditRow').value; if(!id) return;
+  const id = document.getElementById('playerEditRow').value;
+  if(!id || id === 'undefined') { toast('Игрок не выбран', 'err'); return; }
   if(!confirm('Удалить игрока?')) return;
   try{
     await dbDelete('players', id);
@@ -266,9 +268,9 @@ async function createTierSet(name){
   const isFirst = tierSets.length === 0;
   try {
     const { data, error } = await _sb.rpc('create_tier_set', {
-      p_team_id:    _teamId(),
-      p_name:       name.trim(),
-      p_set_default: isFirst,
+      p_team_id: _teamId(),
+      p_name:    name.trim(),
+      // p_set_default убран — 005 определяет is_default автоматически (первый сет = дефолт)
     });
     if(error) throw error;
     toast(`Тир-лист "${name}" создан ✓`, 'ok');
