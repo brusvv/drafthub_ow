@@ -1,4 +1,4 @@
-// @hash 459a9f78 2026-06-22T08:12
+// @hash d9808b6e 2026-06-23T11:30
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -127,8 +127,19 @@ let _settingsTab = 'members'; // 'members' | 'roles' | 'invites' | 'sheets'
 
 async function renderTeamSettings() {
   const el = document.getElementById('view-settings'); if(!el) return;
+  const team = currentTeam();
   el.innerHTML = `
     <div style="max-width:680px">
+      ${canManageRoles() ? `
+      <div class="role-card" style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text2)">Настройки команды</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="form-input" id="teamNameInput" value="${team?.name ?? ''}"
+            placeholder="Название команды" style="flex:1;font-size:13px"
+            onkeydown="if(event.key==='Enter')_submitRenameTeam()">
+          <button class="btn btn-primary" onclick="_submitRenameTeam()" style="font-size:11px">Сохранить</button>
+        </div>
+      </div>` : ''}
       <div class="settings-tabs" style="display:flex;gap:6px;margin-bottom:16px">
         <button class="f-btn${_settingsTab==='members'?' active':''}" onclick="_switchSettingsTab('members')">Участники</button>
         ${canManageRoles()   ? `<button class="f-btn${_settingsTab==='roles'  ?' active':''}" onclick="_switchSettingsTab('roles')">Роли</button>`            : ''}
@@ -297,4 +308,9 @@ async function _submitCreateTeam() {
 function _showCreateTeamForm() {
   const el = document.getElementById('createTeamForm');
   if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+async function _submitRenameTeam() {
+  const name = document.getElementById('teamNameInput')?.value;
+  await updateTeamSettings(name);
 }
