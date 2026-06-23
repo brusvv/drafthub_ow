@@ -1,4 +1,4 @@
-// @hash 4f8c319b 2026-06-13
+// @hash 1e04e489 2026-06-23T11:30
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
@@ -70,7 +70,7 @@ function renderMapAutoPreferred(map){
 // ── Player modal ──
 function openPlayerModal(player){
   document.getElementById('playerModalTitle').textContent=player?'Редактировать игрока':'Добавить игрока';
-  document.getElementById('playerEditRow').value=player?player.rowIndex:'';
+  document.getElementById('playerEditRow').value=player?player.id:'';
   document.getElementById('pName').value=player?player.name:'';
   document.getElementById('pBtag').value=player?player.btag:'';
   document.getElementById('pMainRole').value=player?player.mainRole:'';
