@@ -57,6 +57,7 @@ CSS_FILES=(
   css/modals/strength.css
   css/draft/bans.css
   css/draft/draft-comp.css
+  css/admin.css
   css/base/responsive.css
 )
 for f in "${CSS_FILES[@]}"; do
@@ -131,6 +132,7 @@ JS_MODULES=(
   js/render/render-tier-share.js
   js/render/render-players.js
   js/render/render-roster.js
+  js/render/render-admin.js
   js/render/render-nav.js
 
   # Draft: core первый (общие хелперы для competitive и tournament)
