@@ -1,360 +1,423 @@
 -- ════════════════════════════════════════════════════════════
--- DraftHub — 005_personal_tiers.sql
--- Несколько личных тир-листов + share-ссылки + глобальный тир-лист.
--- Применять после 002_roles_and_rls.sql
---
--- Что добавляет этот файл:
---   1. personal_tier_sets       — именованные наборы (до 10 на user+team)
---   2. tier_share_links.tier_set_id — ЗДЕСЬ, до всех политик и функций
---   3. tier_data                — добавляет tier_set_id + scope + user_id
---   4. global_tier_data         — только RLS (таблица уже в 001)
---   5. tier_share_links         — только RLS (базовые политики в 002)
---   6. RPC: create_tier_set, set_default_tier_set, view_shared_tier
---
--- ВАЖНО: порядок секций не случаен.
---   tier_share_links.tier_set_id добавляется в секции 2 — ДО создания
---   RLS-политики "tiers: personal read" которая ссылается на sl.tier_set_id.
---   PostgreSQL парсит RLS-выражения сразу при CREATE POLICY (не лениво),
---   поэтому колонка обязана существовать на момент создания политики.
+-- DraftHub — 002_roles_and_rls.sql
+-- Системные роли, RLS, вспомогательные функции.
+-- Применять после 001_initial_schema.sql
 -- ════════════════════════════════════════════════════════════
 
--- ════ 1. PERSONAL TIER SETS ════
--- Именованный набор тир-листов пользователя внутри команды.
--- Примеры: "Основной", "Мета S14", "Для Ilios пула"
--- Лимит 10 на (user_id, team_id) — реализован триггером ниже.
+-- ════ СИСТЕМНЫЕ РОЛИ ДЛЯ КОМАНД ════
+-- Создаются для каждой команды триггером при INSERT в teams.
+-- Ключи: manager | coach | captain | player | viewer
+-- manager  — создатель команды, полный доступ, 1 на команду
+-- coach    — тренер, пишет данные, управляет инвайтами
+-- captain  — капитан, близко к coach, назначается manager/coach, 1 на команду
+-- player   — игрок, читает данные
+-- viewer   — минимальные права (санкция или технический доступ)
 
-CREATE TABLE personal_tier_sets (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-  name text NOT NULL DEFAULT 'Мой тирлист',
-  is_default boolean DEFAULT false,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE(user_id, team_id, name)
-);
+-- ════ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ════
 
--- Только один is_default=true на (user_id, team_id)
-CREATE UNIQUE INDEX idx_tier_set_default
-ON personal_tier_sets(user_id, team_id)
-WHERE is_default = true;
+-- Проверить глобальную роль через app_metadata JWT
+-- Надёжнее отдельной таблицы: нельзя подделать через API
+CREATE OR REPLACE FUNCTION app_role()
+RETURNS text LANGUAGE sql STABLE AS $$
+  SELECT auth.jwt() -> 'app_metadata' ->> 'app_role';
+$$;
 
--- Триггер: лимит 10 сетов на пользователя в команде
-CREATE OR REPLACE FUNCTION _check_tier_set_limit()
-RETURNS TRIGGER
-LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION is_superadmin()
+RETURNS bool LANGUAGE sql STABLE AS $$
+  SELECT app_role() = 'superadmin';
+$$;
+
+CREATE OR REPLACE FUNCTION is_app_admin()
+RETURNS bool LANGUAGE sql STABLE AS $$
+  SELECT app_role() IN ('superadmin', 'admin');
+$$;
+
+-- Получить роль пользователя в команде
+CREATE OR REPLACE FUNCTION my_team_role(p_team_id uuid)
+RETURNS text LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT r.key FROM user_roles ur
+  JOIN roles r ON r.id = ur.role_id
+  WHERE ur.team_id = p_team_id AND ur.user_id = auth.uid()
+  LIMIT 1;
+$$;
+
+-- Получить sort_order роли (для проверки иерархии инвайтов)
+CREATE OR REPLACE FUNCTION my_role_sort_order(p_team_id uuid)
+RETURNS int LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT r.sort_order FROM user_roles ur
+  JOIN roles r ON r.id = ur.role_id
+  WHERE ur.team_id = p_team_id AND ur.user_id = auth.uid()
+  LIMIT 1;
+$$;
+
+-- Проверка конкретного права через role_permissions
+CREATE OR REPLACE FUNCTION has_permission(p_team_id uuid, p_permission_key text)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM user_roles ur
+    JOIN role_permissions rp ON rp.role_id = ur.role_id
+    JOIN permissions p ON p.id = rp.permission_id
+    WHERE ur.team_id = p_team_id
+      AND ur.user_id = auth.uid()
+      AND p.key = p_permission_key
+  );
+$$;
+
+-- Шорткаты для часто используемых прав
+CREATE OR REPLACE FUNCTION can_write_team(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'write_data') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_manage_roles(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'manage_roles') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_manage_invites(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'manage_invites') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_read_game_data(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'read_game_data') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_read_roster(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'read_roster') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_export_sheets(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'export_sheets') OR is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION can_delete_team_perm(p_team_id uuid)
+RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_permission(p_team_id, 'delete_team') OR is_superadmin();
+$$;
+
+-- ════ ТРИГГЕР: системные роли при создании команды ════
+-- SECURITY DEFINER — пользователь ещё не член команды, RLS блокирует INSERT
+CREATE OR REPLACE FUNCTION _create_default_roles(p_team_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_perm_ids  jsonb;
+  v_role_id   uuid;
+
+  -- Права по роли: ключи permissions.key
+  manager_perms text[] := ARRAY['read_game_data','write_data','read_roster','write_roster',
+                                  'manage_invites','manage_roles','export_sheets','delete_team'];
+  coach_perms   text[] := ARRAY['read_game_data','write_data','read_roster','write_roster',
+                                  'manage_invites','export_sheets'];
+  captain_perms text[] := ARRAY['read_game_data','read_roster'];
+  player_perms  text[] := ARRAY['read_game_data','read_roster'];
+  viewer_perms  text[] := ARRAY[]::text[];
+
+  role_def RECORD;
 BEGIN
-  IF (
-    SELECT COUNT(*)
-    FROM personal_tier_sets
-    WHERE user_id = NEW.user_id
-      AND team_id = NEW.team_id
-  ) >= 10 THEN
-    RAISE EXCEPTION 'Максимум 10 тир-листов на команду';
-  END IF;
+  -- Создаём роли и сразу назначаем права
+  FOR role_def IN SELECT * FROM (VALUES
+    ('manager', 'Manager', true, 1, 0, manager_perms),
+    ('coach',   'Coach',   true, NULL, 1, coach_perms),
+    ('captain', 'Captain', true, 1, 2, captain_perms),
+    ('player',  'Player',  true, NULL, 3, player_perms),
+    ('viewer',  'Viewer',  true, NULL, 4, viewer_perms)
+  ) AS t(key, label, is_system, max_per_team, sort_order, perms)
+  LOOP
+    INSERT INTO roles (team_id, key, label, is_system, max_per_team, sort_order)
+    VALUES (p_team_id, role_def.key, role_def.label, role_def.is_system,
+            role_def.max_per_team, role_def.sort_order)
+    RETURNING id INTO v_role_id;
 
+    -- Назначаем права для этой роли
+    INSERT INTO role_permissions (role_id, permission_id)
+    SELECT v_role_id, p.id FROM permissions p
+    WHERE p.key = ANY(role_def.perms);
+  END LOOP;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION _trg_create_default_roles()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  PERFORM _create_default_roles(NEW.id);
   RETURN NEW;
 END;
 $$;
 
-CREATE TRIGGER trg_tier_set_limit
-BEFORE INSERT ON personal_tier_sets
-FOR EACH ROW
-EXECUTE FUNCTION _check_tier_set_limit();
+DROP TRIGGER IF EXISTS trg_team_created_roles ON teams;
+CREATE TRIGGER trg_team_created_roles
+  AFTER INSERT ON teams
+  FOR EACH ROW EXECUTE FUNCTION _trg_create_default_roles();
 
--- Триггер: при удалении дефолтного сета — назначаем следующий дефолтным
-CREATE OR REPLACE FUNCTION _reassign_default_tier_set()
-RETURNS TRIGGER
-LANGUAGE plpgsql AS $$
+-- ════ RPC: create_team ════
+-- Атомарно создаёт команду и добавляет создателя как manager
+CREATE OR REPLACE FUNCTION create_team(p_name text, p_description text DEFAULT '')
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_team       teams%ROWTYPE;
+  v_manager_id uuid;
 BEGIN
-  IF OLD.is_default THEN
-    UPDATE personal_tier_sets
-    SET is_default = true
-    WHERE id = (
-      SELECT id
-      FROM personal_tier_sets
-      WHERE user_id = OLD.user_id
-        AND team_id = OLD.team_id
-        AND id <> OLD.id
-      ORDER BY created_at
-      LIMIT 1
-    );
+  INSERT INTO teams (name, slug, description, created_by)
+  VALUES (
+    p_name,
+    lower(regexp_replace(p_name, '[^a-zA-Z0-9]+', '-', 'g')),
+    p_description,
+    auth.uid()
+  )
+  RETURNING * INTO v_team;
+
+  -- Триггер уже создал роли, находим manager
+  SELECT id INTO v_manager_id FROM roles
+  WHERE team_id = v_team.id AND key = 'manager';
+
+  -- Добавляем создателя
+  INSERT INTO user_roles (user_id, role_id, team_id)
+  VALUES (auth.uid(), v_manager_id, v_team.id);
+
+  RETURN to_json(v_team);
+END;
+$$;
+
+-- ════ RPC: accept_invite ════
+CREATE OR REPLACE FUNCTION accept_invite(p_token text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  v_invite    team_invites%ROWTYPE;
+  v_user_id   uuid := auth.uid();
+  v_role_key  text;
+  v_inv_order int;
+  v_my_order  int;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('error','not_authenticated');
   END IF;
 
-  RETURN OLD;
+  SELECT * INTO v_invite FROM team_invites
+  WHERE token = p_token
+    AND (expires_at IS NULL OR expires_at > now())
+    AND (max_uses IS NULL OR uses < max_uses)
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('error','invalid_or_expired');
+  END IF;
+
+  -- Проверяем: нельзя принять инвайт на роль выше своей
+  SELECT sort_order INTO v_inv_order FROM roles WHERE id = v_invite.role_id;
+  SELECT sort_order INTO v_my_order  FROM roles r
+    JOIN user_roles ur ON ur.role_id = r.id
+    WHERE ur.team_id = v_invite.team_id AND ur.user_id = v_user_id
+    LIMIT 1;
+
+  -- Если уже член команды и роль в инвайте выше текущей — запрещаем
+  IF v_my_order IS NOT NULL AND v_inv_order < v_my_order THEN
+    RETURN jsonb_build_object('error','cannot_upgrade_own_role');
+  END IF;
+
+  INSERT INTO user_roles (user_id, role_id, team_id, invited_by)
+  VALUES (v_user_id, v_invite.role_id, v_invite.team_id, v_invite.created_by)
+  ON CONFLICT (user_id, role_id, team_id) DO NOTHING;
+
+  UPDATE team_invites SET uses = uses + 1 WHERE id = v_invite.id;
+
+  SELECT key INTO v_role_key FROM roles WHERE id = v_invite.role_id;
+  RETURN jsonb_build_object('ok', true, 'team_id', v_invite.team_id, 'role', v_role_key);
 END;
 $$;
 
-CREATE TRIGGER trg_tier_set_reassign_default
-AFTER DELETE ON personal_tier_sets
-FOR EACH ROW
-EXECUTE FUNCTION _reassign_default_tier_set();
+-- view_shared_tier определена в 005_personal_tiers.sql —
+-- там добавляется tier_set_id в tier_share_links которая нужна этой функции.
+-- Здесь намеренно не объявляем чтобы избежать ошибки при применении 002
+-- до 005 (колонка tier_set_id ещё не существует).
 
-CREATE TRIGGER trg_tier_set_updated
-BEFORE UPDATE ON personal_tier_sets
-FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
+-- ════ RLS — включаем на всех таблицах ════
+ALTER TABLE teams            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roles            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE team_invites     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE heroes           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE maps             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hero_map_strength ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hero_synergy     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tier_data        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE global_tier_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tier_share_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sheets_tokens    ENABLE ROW LEVEL SECURITY;
+-- permissions — публичный справочник, RLS не нужен
+-- user_roles — RLS ниже
 
--- ════ 2. РАСШИРЯЕМ tier_share_links ════
--- tier_set_id добавляется ЗДЕСЬ — до любого CREATE POLICY или CREATE FUNCTION
--- которые обращаются к sl.tier_set_id. PostgreSQL парсит RLS-политики
--- сразу при CREATE POLICY (не лениво как PL/pgSQL), поэтому колонка
--- обязана существовать ДО создания политики tiers: personal read.
-ALTER TABLE tier_share_links
-ADD COLUMN IF NOT EXISTS tier_set_id uuid
-REFERENCES personal_tier_sets(id) ON DELETE CASCADE;
+-- ════ ПОЛИТИКИ ════
 
--- ════ 3. РАСШИРЯЕМ tier_data ════
--- scope: 'team' = командный, 'personal' = личный
--- user_id: NULL для командных, заполнен для личных
--- tier_set_id: к какому набору относится личная запись
-ALTER TABLE tier_data
-ADD COLUMN IF NOT EXISTS scope text NOT NULL DEFAULT 'team'
-CHECK (scope IN ('team','personal')),
-ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-ADD COLUMN IF NOT EXISTS tier_set_id uuid REFERENCES personal_tier_sets(id) ON DELETE CASCADE;
+-- ── teams ──
+CREATE POLICY "teams: members read" ON teams FOR SELECT
+  USING (
+    is_app_admin()
+    OR EXISTS (SELECT 1 FROM user_roles WHERE team_id = teams.id AND user_id = auth.uid())
+  );
+CREATE POLICY "teams: authenticated create" ON teams
+  AS PERMISSIVE FOR INSERT TO authenticated
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "teams: managers update" ON teams FOR UPDATE
+  USING (can_manage_roles(id));
+CREATE POLICY "teams: permitted delete" ON teams FOR DELETE
+  USING (can_delete_team_perm(id));
 
--- Уникальность по scope:
--- командный: одна запись (team_id, entity_type, name)
--- личный:    одна запись на сет (tier_set_id, entity_type, name)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tier_team_unique
-ON tier_data(team_id, entity_type, name)
-WHERE scope='team';
+-- ── roles (per-team) ──
+CREATE POLICY "roles: members read" ON roles FOR SELECT
+  USING (
+    team_id IS NULL  -- глобальные роли видят все авторизованные
+    OR is_app_admin()
+    OR EXISTS (SELECT 1 FROM user_roles WHERE team_id = roles.team_id AND user_id = auth.uid())
+    OR EXISTS (SELECT 1 FROM teams WHERE id = roles.team_id AND created_by = auth.uid())
+  );
+CREATE POLICY "roles: managers write" ON roles FOR INSERT
+  WITH CHECK (can_manage_roles(team_id));
+CREATE POLICY "roles: managers update" ON roles FOR UPDATE
+  USING (can_manage_roles(team_id) AND NOT is_system);
+CREATE POLICY "roles: managers delete" ON roles FOR DELETE
+  USING (can_manage_roles(team_id) AND NOT is_system);
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_tier_personal_unique
-ON tier_data(tier_set_id, entity_type, name)
-WHERE scope='personal';
+-- ── role_permissions ──
+CREATE POLICY "role_perms: members read" ON role_permissions FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM roles r
+      LEFT JOIN user_roles ur ON ur.team_id = r.team_id
+      WHERE r.id = role_permissions.role_id
+        AND (r.team_id IS NULL OR ur.user_id = auth.uid() OR is_app_admin())
+    )
+  );
+CREATE POLICY "role_perms: managers write" ON role_permissions FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM roles r WHERE r.id = role_permissions.role_id
+        AND can_manage_roles(r.team_id)
+    )
+  );
 
-CREATE INDEX IF NOT EXISTS idx_tier_set_id
-ON tier_data(tier_set_id);
+-- ── user_roles ──
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_roles: self and managers read" ON user_roles FOR SELECT
+  USING (
+    user_id = auth.uid()
+    OR is_app_admin()
+    OR can_manage_roles(team_id)
+    OR EXISTS (SELECT 1 FROM user_roles ur2
+               JOIN roles r ON r.id = ur2.role_id
+               WHERE ur2.team_id = user_roles.team_id AND ur2.user_id = auth.uid()
+                 AND r.sort_order <= 2)  -- manager, coach, captain видят всех
+  );
+CREATE POLICY "user_roles: managers insert" ON user_roles FOR INSERT
+  WITH CHECK (
+    -- создатель добавляет себя при create_team (handled by RPC SECURITY DEFINER)
+    is_app_admin()
+    OR can_manage_roles(team_id)
+  );
+CREATE POLICY "user_roles: managers update" ON user_roles FOR UPDATE
+  USING (can_manage_roles(team_id) OR is_app_admin());
+CREATE POLICY "user_roles: self or managers delete" ON user_roles FOR DELETE
+  USING (user_id = auth.uid() OR can_manage_roles(team_id) OR is_app_admin());
 
-CREATE INDEX IF NOT EXISTS idx_tier_set_entity
-ON tier_data(tier_set_id, entity_type);
+-- ── team_invites ──
+-- Правило: можно создать инвайт только с ролью НЕ ВЫШЕ своей (sort_order >=)
+CREATE POLICY "invites: managers read" ON team_invites FOR SELECT
+  USING (can_manage_invites(team_id) OR is_app_admin());
+CREATE POLICY "invites: managers create" ON team_invites FOR INSERT
+  WITH CHECK (
+    can_manage_invites(team_id)
+    AND (
+      SELECT r.sort_order FROM roles r WHERE r.id = role_id
+    ) >= my_role_sort_order(team_id)
+    -- viewer (sort_order=4) не может создавать инвайты вообще:
+    AND my_team_role(team_id) != 'viewer'
+  );
+CREATE POLICY "invites: managers delete" ON team_invites FOR DELETE
+  USING (can_manage_invites(team_id) OR is_app_admin());
 
--- ════ 3. RLS — personal_tier_sets ════
-ALTER TABLE personal_tier_sets ENABLE ROW LEVEL SECURITY;
+-- ── heroes / maps / hero_map_strength / hero_synergy ──
+CREATE POLICY "heroes: read"  ON heroes FOR SELECT USING (can_read_game_data(team_id));
+CREATE POLICY "heroes: write" ON heroes FOR ALL    USING (can_write_team(team_id));
+CREATE POLICY "maps: read"    ON maps   FOR SELECT USING (can_read_game_data(team_id));
+CREATE POLICY "maps: write"   ON maps   FOR ALL    USING (can_write_team(team_id));
+CREATE POLICY "hms: read"     ON hero_map_strength FOR SELECT USING (can_read_game_data(team_id));
+CREATE POLICY "hms: write"    ON hero_map_strength FOR ALL    USING (can_write_team(team_id));
+CREATE POLICY "syn: read"     ON hero_synergy      FOR SELECT USING (can_read_game_data(team_id));
+CREATE POLICY "syn: write"    ON hero_synergy      FOR ALL    USING (can_write_team(team_id));
 
--- Владелец управляет своими сетами
-CREATE POLICY "tier_sets: owner manage"
-ON personal_tier_sets
-FOR ALL
-USING (user_id = auth.uid())
-WITH CHECK (user_id = auth.uid());
+-- ── players ──
+CREATE POLICY "players: read"  ON players FOR SELECT USING (can_read_roster(team_id));
+CREATE POLICY "players: write" ON players FOR ALL    USING (can_write_team(team_id));
 
--- manager команды видит все личные сеты участников
-CREATE POLICY "tier_sets: manager read"
-ON personal_tier_sets
-FOR SELECT
-USING (can_manage_roles(team_id));
+-- ── tier_data ──
+-- ВАЖНО: колонка scope добавляется в 005_personal_tiers.sql через ALTER TABLE.
+-- Здесь НЕ используем scope в USING — иначе "column scope does not exist"
+-- при применении 002 до 005. В 005 эти политики пересоздаются через
+-- DROP POLICY IF EXISTS + CREATE с правильным scope-фильтром.
+CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT USING (can_read_game_data(team_id) OR is_app_admin());
+CREATE POLICY "tiers: team write" ON tier_data FOR ALL    USING (can_write_team(team_id) OR is_app_admin());
+-- Политики для scope='personal' — в 005_personal_tiers.sql
 
--- superadmin/admin видят всё
-CREATE POLICY "tier_sets: app admin read"
-ON personal_tier_sets
-FOR SELECT
-USING (is_app_admin());
+-- ── global_tier_data ──
+-- "global_tiers: read" намеренно НЕ создаётся здесь — она создаётся в 005
+-- через DROP IF EXISTS + CREATE POLICY ... USING (true), чтобы работала
+-- в том числе для anon (публичная страница без регистрации).
+-- Здесь только write — superadmin через admin UI.
+CREATE POLICY "global_tiers: write" ON global_tier_data FOR ALL USING (is_superadmin());
 
--- ════ 4. RLS — tier_data (личные записи) ════
--- Командные политики ('tiers: team read/write') определены в 002 БЕЗ scope-фильтра
--- (потому что колонка scope не существует на момент применения 002).
--- Здесь — после ADD COLUMN scope — пересоздаём их с правильным фильтром.
-DROP POLICY IF EXISTS "tiers: team read"  ON tier_data;
-DROP POLICY IF EXISTS "tiers: team write" ON tier_data;
-CREATE POLICY "tiers: team read"  ON tier_data FOR SELECT
-  USING (scope = 'team' AND (can_read_game_data(team_id) OR is_app_admin()));
-CREATE POLICY "tiers: team write" ON tier_data FOR ALL
-  USING (scope = 'team' AND (can_write_team(team_id) OR is_app_admin()));
+-- ── tier_share_links ──
+CREATE POLICY "share_links: owner"       ON tier_share_links FOR ALL    USING (user_id = auth.uid());
+CREATE POLICY "share_links: public read" ON tier_share_links FOR SELECT USING (is_public = true);
 
--- Личный: владелец + manager команды + по share_link
-CREATE POLICY "tiers: personal read"
-ON tier_data
-FOR SELECT
-USING (
-scope='personal' AND (
-user_id=auth.uid()
-OR is_app_admin()
-OR can_manage_roles(team_id)
-OR EXISTS (
-SELECT 1
-FROM tier_share_links sl
-WHERE sl.tier_set_id=tier_data.tier_set_id
-AND (sl.is_public OR sl.user_id=auth.uid())
-AND (sl.expires_at IS NULL OR sl.expires_at>now())
-)));
+-- ── sheets_tokens ──
+CREATE POLICY "sheets: read"  ON sheets_tokens FOR SELECT USING (can_export_sheets(team_id));
+CREATE POLICY "sheets: write" ON sheets_tokens FOR ALL    USING (can_export_sheets(team_id));
 
-CREATE POLICY "tiers: personal write"
-ON tier_data
-FOR ALL
-USING (scope='personal' AND user_id=auth.uid())
-WITH CHECK (scope='personal' AND user_id=auth.uid());
+-- ════ GRANTS для функций ════
+GRANT EXECUTE ON FUNCTION public.create_team(text, text)    TO authenticated;
+GRANT EXECUTE ON FUNCTION public.accept_invite(text)        TO authenticated;
+-- view_shared_tierGranted в 005 (там же где объявлена)
+GRANT EXECUTE ON FUNCTION public.app_role()                 TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.is_superadmin()            TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_app_admin()             TO authenticated;
 
--- ════ 5. RLS — global_tier_data ════
--- Читают все (включая anon — для публичной страницы без регистрации)
--- Пишет только superadmin
-DROP POLICY IF EXISTS "global_tiers: read"  ON global_tier_data;
-DROP POLICY IF EXISTS "global_tiers: write" ON global_tier_data;
-
-CREATE POLICY "global_tiers: public read"
-ON global_tier_data
-FOR SELECT
-USING (true);  -- доступно всем включая anon
-
-CREATE POLICY "global_tiers: superadmin write"
-ON global_tier_data
-FOR ALL
-USING (is_superadmin());
-
--- ════ 6. RLS — tier_share_links ════
--- Базовые политики ('share_links: owner manage', 'share_links: public read')
--- уже определены в 002_roles_and_rls.sql.
--- tier_set_id добавлен в секции 2 (выше) — здесь только комментарий.
-
--- ════ 7. RPC: create_tier_set ════
--- Создаёт именованный тир-лист; если первый — делает его дефолтным
-CREATE OR REPLACE FUNCTION create_tier_set(
-p_team_id uuid,
-p_name text DEFAULT 'Мой тирлист'
-)
-RETURNS json
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+-- ════ RPC: get_my_team_context ════
+-- Возвращает команду + роль + массив прав за один запрос.
+-- Используется в switchTeam() вместо трёхуровневого PostgREST JOIN
+-- (user_roles → roles → role_permissions → permissions),
+-- который ненадёжно работает в разных версиях PostgREST.
+CREATE OR REPLACE FUNCTION get_my_team_context(p_team_id uuid)
+RETURNS json LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
 DECLARE
-v_set personal_tier_sets%ROWTYPE;
-v_is_default boolean;
+  v_result json;
 BEGIN
-IF auth.uid() IS NULL THEN
-RAISE EXCEPTION 'not_authenticated';
-END IF;
+  SELECT json_build_object(
+    'team',        json_build_object('id', t.id, 'name', t.name, 'slug', t.slug),
+    'role',        json_build_object('id', r.id, 'key', r.key, 'label', r.label, 'sort_order', r.sort_order),
+    'permissions', COALESCE(
+      (SELECT json_agg(p.key)
+       FROM role_permissions rp
+       JOIN permissions p ON p.id = rp.permission_id
+       WHERE rp.role_id = r.id),
+      '[]'::json
+    )
+  )
+  INTO v_result
+  FROM user_roles ur
+  JOIN teams t  ON t.id = ur.team_id
+  JOIN roles r  ON r.id = ur.role_id
+  WHERE ur.team_id = p_team_id
+    AND ur.user_id = auth.uid();
 
-v_is_default := NOT EXISTS (
-SELECT 1 FROM personal_tier_sets
-WHERE user_id=auth.uid()
-AND team_id=p_team_id);
-
-INSERT INTO personal_tier_sets(user_id,team_id,name,is_default)
-VALUES(auth.uid(),p_team_id,p_name,v_is_default)
-RETURNING * INTO v_set;
-
-RETURN to_json(v_set);
+  RETURN v_result;
 END;
 $$;
 
--- ════ 8. RPC: set_default_tier_set ════
--- Переключает активный тир-лист (один клик в меню)
-CREATE OR REPLACE FUNCTION set_default_tier_set(p_set_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-v_set personal_tier_sets%ROWTYPE;
-BEGIN
-SELECT *
-INTO v_set
-FROM personal_tier_sets
-WHERE id=p_set_id
-AND user_id=auth.uid()
-FOR UPDATE;
+GRANT EXECUTE ON FUNCTION public.get_my_team_context(uuid) TO authenticated;
 
-IF NOT FOUND THEN
-RAISE EXCEPTION 'not_found';
-END IF;
-
--- Снимаем дефолт со всех остальных сетов в этой команде
-UPDATE personal_tier_sets
-SET is_default=false
-WHERE user_id=auth.uid()
-AND team_id=v_set.team_id;
-
--- Ставим дефолт на выбранный
-UPDATE personal_tier_sets
-SET is_default=true
-WHERE id=p_set_id;
-END;
-$$;
-
--- ════ 9. RPC: view_shared_tier ════
--- Просмотр тир-листа по токену — работает без авторизации для публичных.
--- Увеличивает счётчик просмотров.
-CREATE OR REPLACE FUNCTION view_shared_tier(p_token text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-v_link tier_share_links%ROWTYPE;
-BEGIN
-SELECT *
-INTO v_link
-FROM tier_share_links
-WHERE token=p_token
-AND (expires_at IS NULL OR expires_at>now())
-FOR UPDATE;
-
-IF NOT FOUND THEN
-RETURN jsonb_build_object('error','not_found');
-END IF;
-
--- Приватная ссылка — нужна авторизация
-IF NOT v_link.is_public THEN
-IF auth.uid() IS NULL THEN
-RETURN jsonb_build_object('error','private_link_requires_auth');
-END IF;
-
--- Видит владелец или manager команды
-IF auth.uid()!=v_link.user_id
-AND NOT can_manage_roles(v_link.team_id) THEN
-RETURN jsonb_build_object('error','no_access');
-END IF;
-END IF;
-
-UPDATE tier_share_links
-SET views=views+1
-WHERE id=v_link.id;
-
-RETURN jsonb_build_object(
-'ok',true,
-'label',v_link.label,
-'user_id',v_link.user_id,
-'team_id',v_link.team_id,
-'entity_type',v_link.entity_type,
-'tiers',
-COALESCE(
-(
-SELECT jsonb_agg(
-jsonb_build_object(
-'entity_type',entity_type,
-'name',name,
-'tier',tier
-)
-ORDER BY entity_type,name
-)
-FROM tier_data
-WHERE tier_set_id=v_link.tier_set_id
-AND (v_link.entity_type='both'
-OR entity_type=v_link.entity_type)
-),
-'[]'::jsonb
-)
-);
-END;
-$$;
-
--- ════ GRANTS ════
-GRANT SELECT,INSERT,UPDATE,DELETE
-ON public.personal_tier_sets
-TO authenticated;
-
--- anon: публичные share-ссылки и глобальный тир-лист
-GRANT SELECT ON public.tier_share_links TO anon;
-GRANT SELECT ON public.tier_data TO anon;
-GRANT SELECT ON public.global_tier_data TO anon;
-
-GRANT EXECUTE ON FUNCTION public.create_tier_set(uuid,text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.set_default_tier_set(uuid) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.view_shared_tier(text) TO anon,authenticated;
-
-NOTIFY pgrst,'reload schema';
+NOTIFY pgrst, 'reload schema';
