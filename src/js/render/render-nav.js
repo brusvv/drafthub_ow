@@ -1,3 +1,4 @@
+// @hash a5aa0b30 2026-06-23T23:19
 // ── Store proxies ──
 Object.defineProperties(window, {
   toastT: { get(){ return store.get('toastT'); }, set(v){ store.set('toastT',v); }, configurable:true },
