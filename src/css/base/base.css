@@ -1,10 +1,19 @@
-/* @hash 8c28c2a2 2026-06-22T08:14 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
    --tier-s/a/b/c/d = tier badge colors
 */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── УТИЛИТА .hidden ──
+   До этой правки .hidden существовал только в составных селекторах
+   (.modal-overlay.hidden, #mapStrScorePopup.hidden, .picker-overlay.hidden) —
+   то есть НЕ скрывал произвольный элемент с class="hidden" (например
+   #teamSwitcherPopup в main-app.html), который рендерился как пустая
+   рамка (min-width:180px + border из инлайн-стиля) прямо под хедером,
+   потому что для него вообще не было подходящего правила display:none. */
+.hidden{display:none!important}
+
 :root{
   --tank:#4A9EE0;--damage:#E05555;--support:#2BBD8E;
   --tier-s:#F0A030;--tier-a:#8BC34A;--tier-b:#5B9BD5;--tier-c:#aaa;--tier-d:#A04030;
@@ -144,6 +153,33 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* Кнопка активного пула карт */
 .pool-active{border-color:rgba(43,189,142,.5)!important;color:var(--support)!important}
+
+/* ── Переключатель режима (Глобальный/Командный/Личный) в хедере ──
+   render/render-nav.js: renderAppModeSwitcher(). Те же 3 режима что и
+   _renderTierModeSwitcher() внутри вкладки Tier List (render-tiers.js) —
+   оба читают/пишут общий tierViewMode (data/db-load.js), просто этот
+   виден из любой вкладки, а не только из Tier List. */
+.mode-pill{
+  width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:#fff;flex-shrink:0;transition:transform .15s;
+}
+.mode-pill:hover{transform:scale(1.08)}
+.mode-switcher{display:flex;align-items:center}
+.mode-popup{
+  position:absolute;top:100%;right:0;margin-top:6px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:9px;
+  padding:6px;min-width:150px;z-index:50;display:flex;flex-direction:column;gap:2px;
+}
+.mode-popup-item{
+  display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;
+  font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap;
+}
+.mode-popup-item:hover{background:var(--bg3)}
+.mode-popup-item.active{color:var(--text);font-weight:600;background:var(--bg3)}
+
+/* Лейбл выбора CSV-файла в админке (Фаза 7, render-admin.js) */
+.admin-file-label{display:inline-flex;align-items:center;cursor:pointer}
 
 /* ── Публичный режим (анонимный посетитель, Фаза 3) ──
    body.public-mode добавляется/убирается в auth/session.js (renderPublicMode)
