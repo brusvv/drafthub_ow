@@ -1,4 +1,4 @@
-// @hash 6151b59a 2026-06-22T06:54
+// @hash 1fc9983a 2026-06-23T11:30
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -140,14 +140,9 @@ async function deleteCustomRole(roleId) {
 
 // ════ MEMBERS ════
 async function loadTeamMembers() {
-  const { data, error } = await _sb.from('user_roles')
-    .select(`
-      id, joined_at, role_id,
-      roles(id, key, label, sort_order, is_system),
-      users:user_id(id, email, raw_user_meta_data)
-    `)
-    .eq('team_id', currentTeam().id)
-    .order('joined_at');
+  // user_roles.user_id → auth.users (не public) — прямой PostgREST join невозможен.
+  // Используем RPC get_team_members (SECURITY DEFINER) которая читает auth.users напрямую.
+  const { data, error } = await _sb.rpc('get_team_members', { p_team_id: currentTeam().id });
   if(error) throw error;
   return data || [];
 }
@@ -215,9 +210,16 @@ async function deleteInvite(inviteId) {
 
 async function updateTeamSettings(name, description) {
   if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  await dbUpdate('teams', currentTeam().id, { name, description });
-  _currentTeam = { ..._currentTeam, name };
-  toast('Настройки сохранены ✓', 'ok');
+  const trimmed = name?.trim();
+  if(!trimmed) { toast('Укажи название команды', 'err'); return; }
+  const { data, error } = await _sb.rpc('rename_team', {
+    p_team_id: currentTeam().id,
+    p_name:    trimmed,
+  });
+  if(error || !data?.ok) { toast('Ошибка: ' + (error?.message || data?.error), 'err'); return; }
+  _currentTeam = { ..._currentTeam, name: trimmed };
+  document.getElementById('headerTeamName').textContent = trimmed;
+  toast('Название команды обновлено ✓', 'ok');
   renderTeamSettingsPanel();
 }
 
