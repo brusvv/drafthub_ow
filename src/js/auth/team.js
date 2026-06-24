@@ -1,4 +1,4 @@
-// @hash 1fc9983a 2026-06-23T11:30
+// @hash 7303c6a6 2026-06-24T20:44
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -31,8 +31,7 @@ async function createTeam(name, description = '') {
     await switchTeam(team.id);
     return team;
   } catch(e) {
-    const msg = e.message?.includes('23505') ? 'Команда с таким именем уже существует' : e.message;
-    toast('Ошибка: ' + msg, 'err');
+    handleError(e, e.message?.includes('23505') ? 'Команда с таким именем уже существует' : '');
     return null;
   }
 }
@@ -102,7 +101,7 @@ async function createCustomRole({ label, permissionKeys = [] }) {
     }
     toast(`Роль "${role.label}" создана ✓`, 'ok');
     return role;
-  } catch(e) { toast('Ошибка: ' + e.message, 'err'); return null; }
+  } catch(e) { handleError(e); return null; }
 }
 
 // Обновить права роли — заменяем весь набор целиком
@@ -123,7 +122,7 @@ async function updateRolePermissions(roleId, permissionKeys = []) {
     }
     toast('Права обновлены ✓', 'ok');
     renderRolesAdminPanel();
-  } catch(e) { toast('Ошибка: ' + e.message, 'err'); }
+  } catch(e) { handleError(e); }
 }
 
 async function deleteCustomRole(roleId) {
@@ -135,7 +134,7 @@ async function deleteCustomRole(roleId) {
 
   if(!confirm('Удалить роль?')) return;
   try { await dbDelete('roles', roleId); toast('Роль удалена', 'ok'); renderRolesAdminPanel(); }
-  catch(e) { toast('Ошибка: ' + e.message, 'err'); }
+  catch(e) { handleError(e); }
 }
 
 // ════ MEMBERS ════
@@ -216,7 +215,7 @@ async function updateTeamSettings(name, description) {
     p_team_id: currentTeam().id,
     p_name:    trimmed,
   });
-  if(error || !data?.ok) { toast('Ошибка: ' + (error?.message || data?.error), 'err'); return; }
+  if(error || !data?.ok) { handleError(error || new Error(data?.error)); return; }
   _currentTeam = { ..._currentTeam, name: trimmed };
   document.getElementById('headerTeamName').textContent = trimmed;
   toast('Название команды обновлено ✓', 'ok');
