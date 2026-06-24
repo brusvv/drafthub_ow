@@ -1,4 +1,4 @@
-// @hash 6fb34e39 2026-06-20T09:14
+// @hash b5fd2a8e 2026-06-24T09:08
 // ════ MODAL — HERO (core) ════
 // Содержит: открытие модалки героя, синергия-пикер.
 // Зависимости:
@@ -38,6 +38,29 @@ function openHeroModal(hero){
   renderHeroCounterBlock();    // modal-hero-chips.js
   renderStrengthPreview();     // modal-hero-strength.js
   renderHeroSynergyBlock();
+
+  // ── Режим Глобальный/Личный (см. db-load.js tierViewMode) — в этих
+  // режимах редактируются ТОЛЬКО контрпики (hero_counters), остальные
+  // поля героя (роль/приоритет/синергии/сила на картах) всегда командные
+  // и поэтому блокируются, чтобы не создавать иллюзию что они сохранятся.
+  const isTeamMode = tierViewMode === 'team';
+  ['hName','hRole','hSub','hPrio','hBanned','hNotes'].forEach(id => {
+    document.getElementById(id).disabled = !isTeamMode;
+  });
+  document.getElementById('heroDeleteBtn').style.display = (hero && isTeamMode) ? 'inline-flex' : 'none';
+  document.getElementById('hSynergyAddBtn').disabled  = !isTeamMode;
+  document.getElementById('hStrengthAddBtn').disabled = !isTeamMode;
+
+  const note = document.getElementById('heroModeNote');
+  if(note){
+    if(isTeamMode){ note.style.display = 'none'; }
+    else {
+      note.style.display = '';
+      note.textContent = tierViewMode === 'global'
+        ? '🌐 Режим «Глобальный»: сохранится только блок «Контрпики» — в общий список для всех команд.'
+        : '👤 Режим «Личный»: сохранится только блок «Контрпики» — в твою личную версию для этого героя.';
+    }
+  }
 
   document.getElementById('heroModal').classList.remove('hidden');
 }
