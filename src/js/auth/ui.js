@@ -1,4 +1,4 @@
-// @hash 1a6367e1 2026-06-23T23:19
+// @hash 97b92bc4 2026-06-24T20:44
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -116,8 +116,14 @@ function _renderHeader() {
 async function renderTeamSwitcher() {
   if(!isLoggedIn()) return;   // публичный режим — переключателя команд нет
   const teams = await loadUserTeams();
-  if(teams.length <= 1) return;
   const el = document.getElementById('teamSwitcherPopup'); if(!el) return;
+  if(teams.length <= 1) {
+    // Скрываем явно — иначе пустой div с border/background виден как прямоугольник
+    el.innerHTML = '';
+    el.classList.add('hidden');
+    return;
+  }
+  el.classList.remove('hidden');
   el.innerHTML = teams.map(t => `
     <div class="team-switcher-item${t.id===currentTeam()?.id?' active':''}" onclick="switchTeam('${t.id}')">
       <span>${t.name}</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${t.role?.label||''}</span>
