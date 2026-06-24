@@ -1,6 +1,15 @@
-// @hash a4e5a54f 2026-06-15T04:49
+// @hash c2237c5c 2026-06-24T09:08
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
+  // Создавать героев можно только в командном режиме (роль/приоритет
+  // и т.п. всегда командные — см. modal-hero.js openHeroModal)
+  const addBtn = document.getElementById('addHeroBtn');
+  if(addBtn){
+    const isTeamMode = tierViewMode === 'team';
+    addBtn.disabled = !isTeamMode;
+    addBtn.title = isTeamMode ? '' : 'Создание героев доступно только в командном режиме';
+  }
+
   const pool=document.getElementById('heroPool');
   const roles=heroFilter==='all'?['Tank','Damage','Support']:[heroFilter];
   pool.innerHTML=roles.map(role=>{
