@@ -2,6 +2,9 @@
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
+// Сброс при switchTeam
+function resetMapFilter() { mapPoolFilter = 'active'; }
+
 // Рендерим фильтры с иконками. Активная кнопка — только иконка (текст скрыт)
 function renderMapFilters(){
   const el=document.getElementById('mapFilters');if(!el)return;
