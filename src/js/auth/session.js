@@ -1,4 +1,4 @@
-// @hash 0e374c79 2026-06-23T18:49
+// @hash 18a03b03 2026-06-24T09:08
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -130,6 +130,7 @@ async function renderPublicMode() {
 function _renderPublicHeader() {
   const teamEl  = document.getElementById('headerTeamName_public');
   if(teamEl) teamEl.textContent = 'DraftHub OW';
+  renderAppModeSwitcher();
 }
 
 // ── Переключение активной команды ────────────────────────────
