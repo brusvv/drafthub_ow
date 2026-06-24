@@ -7,6 +7,8 @@
       <button onclick="closeModal('heroModal')" style="background:none;border:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px" title="Закрыть">×</button>
     </div>
     <input type="hidden" id="heroEditRow">
+    <div id="heroModeNote" style="display:none;font-size:11px;color:var(--text3);background:var(--bg3);
+      border:1px solid var(--border);border-radius:7px;padding:7px 10px;margin-bottom:10px"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Имя *</label><input class="form-input" id="hName" placeholder="Tracer"></div>
       <div class="form-group"><label class="form-label">Роль *</label>
@@ -36,7 +38,7 @@
     <div class="form-group" style="margin-bottom:.875rem">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <label class="form-label" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.04em">Синергии</label>
-        <button class="btn" onclick="openSynergyPicker()"
+        <button class="btn" onclick="openSynergyPicker()" id="hSynergyAddBtn"
           style="font-size:14px;font-weight:700;padding:0 8px;border-radius:6px;line-height:1.6;min-width:24px">+</button>
       </div>
       <div id="heroSynergyBlock"></div>
@@ -46,7 +48,7 @@
     <div class="form-group">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <label class="form-label" style="margin:0;font-size:12px;font-weight:700;letter-spacing:.04em">Сила на картах</label>
-        <button class="btn" onclick="openMapStrPicker()"
+        <button class="btn" onclick="openMapStrPicker()" id="hStrengthAddBtn"
           style="font-size:14px;font-weight:700;padding:0 8px;border-radius:6px;line-height:1.6;min-width:24px">↗</button>
         <button class="hs-filter-btn" id="mapStrFilterBtn"
           onclick="toggleStrengthFilter(this)" style="margin-left:auto">С оценкой</button>
