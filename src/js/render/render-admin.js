@@ -1,27 +1,22 @@
-// @hash a4665023 2026-06-23T18:49
+// @hash b40a640d 2026-06-24T09:08
 // ════ ADMIN / SUPERADMIN UI ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isLoggedIn, is_app_admin через app_role в JWT),
 //              db-write.js или прямые RPC-вызовы через _sb
 
 // ── Проверка доступа ──
-const _isAdmin      = () => ['admin','superadmin'].includes(_currentTeam === null ? null : null)
-  || (window._jwtAppRole && ['admin','superadmin'].includes(window._jwtAppRole));
-const _isSuperAdmin = () => window._jwtAppRole === 'superadmin';
-
-// Читаем app_role из JWT при загрузке сессии
-async function _loadAppRole() {
-  const { data: { session } } = await _sb.auth.getSession();
-  window._jwtAppRole = session?.user?.app_metadata?.app_role ?? null;
-}
+// isAdmin()/isSuperAdmin() уже определены в auth/session.js (читают
+// app_metadata.app_role из текущей сессии) — здесь раньше была
+// отдельная (и не до конца рабочая: `_currentTeam === null ? null : null`
+// всегда даёт null) копия через window._jwtAppRole. Убрано как дублирующий
+// и местами мёртвый код — используем единственный источник правды.
 
 // ── Главный рендер ──
 async function renderAdminPanel() {
-  await _loadAppRole();
   const el = document.getElementById('view-admin');
   if(!el) return;
 
-  if(!_isAdmin()) {
+  if(!isAdmin()) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div>
       <div class="empty-title">Нет доступа</div>
       <div class="empty-desc">Раздел доступен только администраторам</div></div>`;
@@ -33,7 +28,7 @@ async function renderAdminPanel() {
       <div class="admin-tabs" style="display:flex;gap:6px;margin-bottom:16px">
         <button class="f-btn active" onclick="_switchAdminTab('import',this)">📥 Импорт CSV</button>
         <button class="f-btn" onclick="_switchAdminTab('teams',this)">👥 Команды</button>
-        ${_isSuperAdmin() ? `<button class="f-btn" onclick="_switchAdminTab('users',this)">🔑 Пользователи</button>` : ''}
+        ${isSuperAdmin() ? `<button class="f-btn" onclick="_switchAdminTab('users',this)">🔑 Пользователи</button>` : ''}
         <button class="f-btn" onclick="_switchAdminTab('global_tiers',this)">🌐 Глобальный тир</button>
       </div>
       <div id="adminTabContent"></div>
@@ -413,7 +408,7 @@ async function _renderTeamsTab(el) {
 
 // ════ ПОЛЬЗОВАТЕЛИ (только superadmin) ════
 async function _renderUsersTab(el) {
-  if(!_isSuperAdmin()) { el.innerHTML = '<div class="empty">Только для superadmin</div>'; return; }
+  if(!isSuperAdmin()) { el.innerHTML = '<div class="empty">Только для superadmin</div>'; return; }
   el.innerHTML = '<div style="color:var(--text3);font-size:12px">Загрузка...</div>';
   const { data: users } = await _sb.rpc('admin_get_all_users');
   if(!users?.length) { el.innerHTML = '<div class="empty">Нет пользователей</div>'; return; }
