@@ -1,4 +1,4 @@
-// @hash a422747d 2026-06-21T21:35
+// @hash 248b95b3 2026-06-24T09:08
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
@@ -18,6 +18,8 @@ async function loadAllData(){
       loadHeroes(), loadMaps(), loadPlayers(),
       loadTiers(), loadHeroMapStrength(), loadHeroSynergy(),
     ]);
+    // После loadHeroes() — нужен снимок teamHeroCounters (см. конец loadHeroes)
+    await loadHeroCounters();
     renderCurrentView();
   }catch(e){ showError('mapGrid','Ошибка: '+e.message); console.error(e); }
 }
@@ -40,9 +42,64 @@ async function loadHeroes(){
     strongMaps: [], weakMaps: [],
   }));
   heroMap = {}; heroes.forEach(h => heroMap[h.name] = h);
+
+  // Снимок командных контрпиков «как есть» из heroes.counters —
+  // используется при возврате в режим 'team' (см. _applyCounterMode ниже),
+  // потому что hero.counters мутируется при переключении режима.
+  teamHeroCounters = {};
+  heroes.forEach(h => { teamHeroCounters[h.name] = h.counters; });
 }
 
-// ════ MAPS ════
+// ════ HERO COUNTERS — global / team / personal (006_hero_counters.sql) ════
+// team-уровень — это просто heroes.counters как раньше (см. снимок
+// teamHeroCounters в loadHeroes() выше). global/personal — отдельная
+// таблица hero_counters. Режим общий с тир-листом (tierViewMode) —
+// один переключатель в хедере управляет и тем, и тем.
+let globalHeroCounters   = {}; // {heroName: [{name,score}]}
+let teamHeroCounters     = {}; // снимок heroes.counters на момент загрузки
+let personalHeroCounters = {}; // {heroName: [{name,score}]}
+
+async function loadHeroCounters(){
+  await Promise.all([loadGlobalHeroCounters(), loadPersonalHeroCounters()]);
+  _applyCounterMode(tierViewMode);
+}
+
+async function loadGlobalHeroCounters(){
+  const { data, error } = await _sb.from('hero_counters')
+    .select('hero_name, counter_hero, score').eq('scope', 'global');
+  if(error){ console.warn('loadGlobalHeroCounters error', error); return; }
+  globalHeroCounters = _groupHeroCounters(data);
+}
+
+async function loadPersonalHeroCounters(){
+  if(!currentUser()) return;
+  const { data, error } = await _sb.from('hero_counters')
+    .select('hero_name, counter_hero, score')
+    .eq('scope', 'personal').eq('team_id', _teamId()).eq('user_id', currentUser().id);
+  if(error){ console.warn('loadPersonalHeroCounters error', error); return; }
+  personalHeroCounters = _groupHeroCounters(data);
+}
+
+function _groupHeroCounters(rows){
+  const out = {};
+  (rows || []).forEach(r => {
+    if(!out[r.hero_name]) out[r.hero_name] = [];
+    out[r.hero_name].push({ name: r.counter_hero, score: r.score });
+  });
+  return out;
+}
+
+// Подменяет .counters у каждого героя в массиве heroes — все существующие
+// читатели (render-heroes.js, scoring-bans.js, scoring-comp.js, draft-вью,
+// modal-hero.js) просто читают hero.counters и не знают о режимах вообще.
+function _applyCounterMode(mode){
+  const source = mode === 'global'   ? globalHeroCounters
+                : mode === 'personal' ? personalHeroCounters
+                : teamHeroCounters;
+  heroes.forEach(h => { h.counters = source[h.name] || []; });
+}
+
+
 async function loadMaps(){
   const { data, error } = await _sb.from('maps')
     .select('*').eq('team_id', _teamId()).order('name');
@@ -210,7 +267,10 @@ function _applyTierMode(mode){
 
 function switchTierMode(mode){
   _applyTierMode(mode);
+  _applyCounterMode(mode);
   renderTiers();
+  renderHeroes();              // контрпики поменялись — перерисовываем Героев
+  renderAppModeSwitcher();     // держим переключатель в хедере в синхроне
 }
 
 function _fillTierOrder(rows, mapsObj, heroesObj){
