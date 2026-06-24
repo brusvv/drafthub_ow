@@ -1,4 +1,4 @@
-// @hash 248b95b3 2026-06-24T09:08
+// @hash 6580f537 2026-06-24T20:44
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
@@ -21,7 +21,7 @@ async function loadAllData(){
     // После loadHeroes() — нужен снимок teamHeroCounters (см. конец loadHeroes)
     await loadHeroCounters();
     renderCurrentView();
-  }catch(e){ showError('mapGrid','Ошибка: '+e.message); console.error(e); }
+  }catch(e){ handleError(e); showError('mapGrid', 'Ошибка загрузки данных'); }
 }
 
 const _teamId = () => currentTeam()?.id;
