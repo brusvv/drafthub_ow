@@ -12,6 +12,14 @@ let draftState={
   side:'avg',            // 'atk'|'def'|'avg'
 };
 
+// Сброс при switchTeam — полный дефолт всех 6 полей
+function resetDraftState() {
+  draftState = {
+    phase:'pick', ourHeroes:[], ourBans:[], enemyBans:[],
+    selectedMap:null, side:'avg',
+  };
+}
+
 function renderDraftComp(){
   const bg=document.getElementById('bansGrid');if(!bg)return;
   if(draftState.phase==='pick') bg.innerHTML=_renderDraftPick();
