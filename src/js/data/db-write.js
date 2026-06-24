@@ -1,4 +1,4 @@
-// @hash 7a786d1b 2026-06-23T11:30
+// @hash 44d95767 2026-06-24T09:08
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -13,12 +13,35 @@ function _requireWrite(){
 
 // ════ HEROES ════
 async function saveHero(){
-  if(!_requireWrite()) return;
   const name = document.getElementById('hName').value.trim();
+  const editId = document.getElementById('heroEditRow').value || null;
+  const newCounters = counterPickerSelected.map(c => ({ name:c.name, score:c.score }));
+
+  // ── Глобальный / Личный режим — трогаем ТОЛЬКО контрпики (hero_counters).
+  // Роль/приоритет/синергии/сила на картах всегда командные (heroes.counters
+  // и связанные таблицы), поэтому остальные поля заблокированы в модалке
+  // (см. modal-hero.js openHeroModal) и здесь не сохраняются вовсе.
+  if(tierViewMode !== 'team'){
+    if(!editId){ toast('Создавать героев можно только в командном режиме', 'err'); return; }
+    if(!name){ toast('Нет имени героя', 'err'); return; }
+    if(tierViewMode === 'global' && !isSuperAdmin()){
+      toast('Редактировать глобальные контрпики может только superadmin', 'err'); return;
+    }
+    try{
+      await _saveScopedHeroCounters(name, newCounters);
+      toast('Контрпики обновлены ✓', 'ok');
+      closeModal('heroModal');
+      await loadHeroCounters();
+      renderCurrentView();
+    }catch(e){ toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+    return;
+  }
+
+  // ── Командный режим — как раньше, весь хero полностью ──
+  if(!_requireWrite()) return;
   const role = document.getElementById('hRole').value;
   if(!name || !role){ toast('Заполни имя и роль', 'err'); return; }
 
-  const editId = document.getElementById('heroEditRow').value || null;
   const row = {
     team_id:  _teamId(),
     name, role,
@@ -26,7 +49,7 @@ async function saveHero(){
     priority: parseInt(document.getElementById('hPrio').value) || 5,
     banned:   document.getElementById('hBanned').checked,
     notes:    document.getElementById('hNotes').value.trim(),
-    counters: counterPickerSelected.map(c => ({ name:c.name, score:c.score })),
+    counters: newCounters,
   };
 
   try{
@@ -39,8 +62,28 @@ async function saveHero(){
     toast(editId ? 'Обновлено ✓' : 'Добавлено ✓', 'ok');
     closeModal('heroModal');
     await Promise.all([loadHeroes(), loadHeroMapStrength(), loadHeroSynergy()]);
+    await loadHeroCounters();   // heroes.counters сменился — пересобрать teamHeroCounters/applyCounterMode
     renderCurrentView();
   }catch(e){ toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+}
+
+// Контрпики вне командного режима — отдельная таблица hero_counters,
+// delete+insert (тот же паттерн что saveTierOrder() для тир-листов).
+async function _saveScopedHeroCounters(heroName, counters){
+  const scope = tierViewMode; // 'global' | 'personal'
+  let delQuery = _sb.from('hero_counters').delete().eq('scope', scope).eq('hero_name', heroName);
+  if(scope === 'personal') delQuery = delQuery.eq('team_id', _teamId()).eq('user_id', currentUser().id);
+  const { error: delErr } = await delQuery;
+  if(delErr) throw delErr;
+
+  if(!counters.length) return;
+  const rows = counters.map(c => ({
+    scope, hero_name: heroName, counter_hero: c.name, score: c.score,
+    team_id: scope === 'personal' ? _teamId() : null,
+    user_id: scope === 'personal' ? currentUser().id : null,
+  }));
+  const { error: insErr } = await _sb.from('hero_counters').insert(rows);
+  if(insErr) throw insErr;
 }
 
 async function saveHeroMapStrength(heroName){
