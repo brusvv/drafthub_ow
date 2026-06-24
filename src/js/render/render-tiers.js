@@ -1,4 +1,4 @@
-// @hash bb323131 2026-06-22T08:15
+// @hash cb617b5e 2026-06-24T09:08
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -43,6 +43,10 @@ function renderTiers(){
 
   renderTierMaps();
   renderTierHeroes();
+
+  // Держим переключатель в хедере в синхроне (вдруг сюда попали
+  // не через него, а через локальный _renderTierModeSwitcher() ниже)
+  if(typeof renderAppModeSwitcher === 'function') renderAppModeSwitcher();
 }
 
 // ── Переключатель уровней тир-листа ──────────────────────────
