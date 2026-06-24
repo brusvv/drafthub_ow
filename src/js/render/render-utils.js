@@ -1,4 +1,4 @@
-// @hash ac41d3bf 2026-06-23T18:49
+// @hash cdca0436 2026-06-24T20:44
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -6,20 +6,31 @@
 // • dots5()               — 5-точечный индикатор рейтинга
 // • pluralRu()            — русское склонение числительных
 // • heroesCountLabel()    — «3 героя», «7 героев»
-// • Escape → closeTopModal() — единый обработчик закрытия попапов
-// • skeletonGrid()        — skeleton-loader для загрузки данных
+// • modalStack            — стек открытых попапов
+// • closeTopModal()       — Escape → закрыть верхний попап
+// • showLoading()         — skeleton-loader для загрузки данных
+// • toast()               — всплывающее уведомление
+// • showError()           — ошибка в контейнере
+// • esc()                 — экранирование строк в HTML-атрибутах
+// • handleError()         — единый обработчик ошибок Supabase
 // ════════════════════════════════════════════════════════════
+
+// ── Store proxy для toast-таймера ───────────────────────────
+// toastT живёт здесь, а не в render-nav, потому что toast() тоже здесь.
+Object.defineProperties(window, {
+  toastT: { get(){ return store.get('toastT'); }, set(v){ store.set('toastT',v); }, configurable:true },
+});
 
 // ── Точка перерисовки активной вкладки ──────────────────────
 function renderCurrentView() {
   const a = document.querySelector('.view.active'); if (!a) return;
   const id = a.id;
-  if (id === 'view-maps')    renderMaps();
-  if (id === 'view-heroes')  renderHeroes();
-  if (id === 'view-tiers')   renderTiers();
-  if (id === 'view-bans')    renderBans();
-  if (id === 'view-players') renderPlayers();
-  if (id === 'view-roster')  renderRoster();
+  if (id === 'view-maps')     renderMaps();
+  if (id === 'view-heroes')   renderHeroes();
+  if (id === 'view-tiers')    renderTiers();
+  if (id === 'view-bans')     renderBans();
+  if (id === 'view-players')  renderPlayers();
+  if (id === 'view-roster')   renderRoster();
   if (id === 'view-settings') renderTeamSettings();
   if (id === 'view-admin')    renderAdminPanel();
 }
@@ -60,13 +71,11 @@ const modalStack = (() => {
 })();
 
 function closeTopModal() {
-  // Fallback: если стек пустой, пробуем известные попапы по id
   if (modalStack.size > 0) {
     const top = modalStack.pop();
     if (top && typeof top.close === 'function') { top.close(); return; }
   }
 
-  // Известные оверлеи по убыванию приоритета
   const knownIds = [
     'compMapPopup',
     'rosterPickerBg',
@@ -81,40 +90,65 @@ function closeTopModal() {
   for (const id of knownIds) {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden') && el.style.display !== 'none') {
-      // Пытаемся закрыть через known close-функции
-      if (id === 'compMapPopup')        { el.remove(); return; }
-      if (id === 'rosterPickerBg')      { el.remove(); return; }
-      if (id === 'mapStrPickerOverlay')  { if (typeof closeMapStrPicker === 'function') { closeMapStrPicker(); return; } }
-      if (id === 'pickerOverlay')       { if (typeof closePicker === 'function') { closePicker(); return; } }
-      if (id === 'tierPreviewOverlay')  { if (typeof closeTierPreview === 'function') { closeTierPreview(); return; } }
-      if (id === 'counterPickerOverlay'){ if (typeof closeCounterPicker === 'function') { closeCounterPicker(); return; } }
-      // Generic modals: скрываем
+      if (id === 'compMapPopup')         { el.remove(); return; }
+      if (id === 'rosterPickerBg')       { el.remove(); return; }
+      if (id === 'mapStrPickerOverlay')   { if (typeof closeMapStrPicker  === 'function') { closeMapStrPicker();  return; } }
+      if (id === 'pickerOverlay')        { if (typeof closePicker         === 'function') { closePicker();        return; } }
+      if (id === 'tierPreviewOverlay')   { if (typeof closeTierPreview    === 'function') { closeTierPreview();   return; } }
+      if (id === 'counterPickerOverlay') { if (typeof closeCounterPicker  === 'function') { closeCounterPicker(); return; } }
       el.classList.add('hidden');
       return;
     }
   }
 }
 
-// Единый слушатель — вешается один раз
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    closeTopModal();
-  }
+  if (e.key === 'Escape') { e.preventDefault(); closeTopModal(); }
 });
 
 // ════════════════════════════════════════════════════════════
-// SKELETON LOADERS
-// Показываются пока данные не загружены.
-// Используй showLoading(containerId, 'player'|'card'|'row', count)
+// УВЕДОМЛЕНИЯ И ОШИБКИ
 // ════════════════════════════════════════════════════════════
 
-/**
- * Вставляет skeleton-заглушки в контейнер.
- * @param {string} containerId  — id DOM-элемента
- * @param {'player'|'card'|'row'|'hero'} type — форм-фактор
- * @param {number} count        — количество заглушек
- */
+// Всплывающее уведомление (type: 'ok' | 'err')
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// Ошибка внутри контейнера (заменяет его содержимое)
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="error-state">⚠ ${msg}</div>`;
+}
+
+// Экранирование одинарных кавычек для inline-обработчиков onclick="..."
+function esc(s) { return (s || '').replace(/'/g, "\\'"); }
+
+// Единый обработчик ошибок Supabase/JS.
+// Supabase иногда кладёт сообщение в разные места — проверяем все.
+// Использование: catch(e){ handleError(e); return; }
+// С кастомным префиксом:  handleError(e, 'Не удалось сохранить карту')
+function handleError(e, context = '') {
+  const msg = e?.message
+    || e?.result?.error?.message
+    || e?.error?.message
+    || e?.details
+    || 'Неизвестная ошибка';
+  const label = context ? `${context}: ${msg}` : `Ошибка: ${msg}`;
+  toast(label, 'err');
+  console.error(context || 'handleError', e);
+  return msg;
+}
+
+// ════════════════════════════════════════════════════════════
+// SKELETON LOADERS
+// ════════════════════════════════════════════════════════════
+
 function showLoading(containerId, type = 'card', count = 6) {
   const el = document.getElementById(containerId);
   if (!el) return;
