@@ -151,6 +151,14 @@ async function switchTeam(teamId) {
   };
   localStorage.setItem('draft_active_team', teamId);
 
+  // Сбрасываем состояние предыдущей команды до загрузки новых данных
+  _resetTeamSpecificState();
+
+  // Loading indicators — пользователь видит что данные грузятся
+  showLoading('mapGrid',    'card',   8);
+  showLoading('heroPool',   'hero',  12);
+  showLoading('playerGrid', 'player', 5);
+
   await loadAllData();
   renderAuthUI('app');
   renderCurrentView();
@@ -160,6 +168,15 @@ async function switchTeam(teamId) {
   window._jwtAppRole = appRole ?? null;
   const adminBtn = document.getElementById('navAdminBtn');
   if(adminBtn) adminBtn.style.display = appRole ? '' : 'none';
+}
+
+// Сброс состояния специфичного для команды при переключении
+// Все функции проверяются через typeof — безопасно если файл не загружен
+function _resetTeamSpecificState() {
+  if(typeof resetTournamentDraft === 'function') resetTournamentDraft();
+  if(typeof resetDraftState      === 'function') resetDraftState();
+  if(typeof resetMapFilter       === 'function') resetMapFilter();
+  if(typeof resetBanMode         === 'function') resetBanMode();
 }
 
 // ── OAuth / email вход ──────────────────────────────────────
