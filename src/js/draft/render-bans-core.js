@@ -29,6 +29,9 @@ Object.defineProperties(window, {
 // 'competitive' | 'tournament'
 let banMode = 'competitive';
 
+// Сброс при switchTeam
+function resetBanMode() { banMode = 'competitive'; }
+
 // ── Перехват confirmPicker для bans-специфичных режимов ──────
 const _confirmPickerPreBans = window.confirmPicker || (()=>{});
 window.confirmPicker = function() {
