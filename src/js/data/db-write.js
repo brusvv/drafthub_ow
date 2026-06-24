@@ -1,4 +1,4 @@
-// @hash 44d95767 2026-06-24T09:08
+// @hash 383d0aef 2026-06-24T20:44
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -33,7 +33,7 @@ async function saveHero(){
       closeModal('heroModal');
       await loadHeroCounters();
       renderCurrentView();
-    }catch(e){ toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+    }catch(e){ handleError(e); }
     return;
   }
 
@@ -64,7 +64,7 @@ async function saveHero(){
     await Promise.all([loadHeroes(), loadHeroMapStrength(), loadHeroSynergy()]);
     await loadHeroCounters();   // heroes.counters сменился — пересобрать teamHeroCounters/applyCounterMode
     renderCurrentView();
-  }catch(e){ toast('Ошибка: ' + e.message, 'err'); console.error(e); }
+  }catch(e){ handleError(e); }
 }
 
 // Контрпики вне командного режима — отдельная таблица hero_counters,
@@ -128,7 +128,7 @@ async function deleteHero(){
     await dbDelete('heroes', id);
     toast('Удалено', 'ok'); closeModal('heroModal');
     await loadHeroes(); renderCurrentView();
-  }catch(e){ toast('Ошибка: ' + e.message, 'err'); }
+  }catch(e){ handleError(e); }
 }
 
 // ════ MAPS ════
@@ -169,8 +169,7 @@ async function saveMap(){
     closeModal('mapModal');
     await loadMaps(); renderCurrentView();
   }catch(e){
-    const msg = e.code === '23505' ? 'Карта с таким именем уже есть' : e.message;
-    toast('Ошибка: ' + msg, 'err'); console.error(e);
+    handleError(e, e.code === '23505' ? 'Карта с таким именем уже есть' : '');
   }
 }
 
@@ -184,7 +183,7 @@ async function deleteMap(){
     await dbDelete('maps', id);
     toast('Удалено', 'ok'); closeModal('mapModal');
     await loadMaps(); renderCurrentView();
-  }catch(e){ toast('Ошибка: ' + e.message, 'err'); }
+  }catch(e){ handleError(e); }
 }
 
 // ════ PLAYERS ════
@@ -235,8 +234,7 @@ async function savePlayer(){
     closeModal('playerModal');
     await loadPlayers(); renderCurrentView();
   }catch(e){
-    const msg = e.code === '23505' ? 'Игрок с таким именем уже есть' : e.message;
-    toast('Ошибка: ' + msg, 'err'); console.error(e);
+    handleError(e, e.code === '23505' ? 'Игрок с таким именем уже есть' : '');
   }
 }
 
@@ -249,7 +247,7 @@ async function deletePlayer(){
     await dbDelete('players', id);
     toast('Удалено', 'ok'); closeModal('playerModal');
     await loadPlayers(); renderCurrentView();
-  }catch(e){ toast('Ошибка: ' + e.message, 'err'); }
+  }catch(e){ handleError(e); }
 }
 
 // ════ TIERS — три уровня ════
@@ -261,7 +259,7 @@ async function saveTierOrder(entityType, tierObj){
     const rows = _tierObjToRows(entityType, tierObj);
     const { error } = await _sb.from('global_tier_data')
       .upsert(rows, { onConflict:'entity_type,name' });
-    if(error){ toast('Ошибка: ' + error.message, 'err'); return; }
+    if(error){ handleError(error); return; }
     await loadGlobalTiers();
     toast('Глобальный тир-лист сохранён ✓', 'ok');
     return;
@@ -276,7 +274,7 @@ async function saveTierOrder(entityType, tierObj){
     .eq('scope', isPersonal ? 'personal' : 'team');
   if(isPersonal) delQuery = delQuery.eq('user_id', currentUser().id);
   const { error: delErr } = await delQuery;
-  if(delErr){ toast('Ошибка: ' + delErr.message, 'err'); return; }
+  if(delErr){ handleError(delErr); return; }
 
   const rows = _tierObjToRows(entityType, tierObj).map(r => ({
     ...r, team_id: _teamId(),
@@ -288,7 +286,7 @@ async function saveTierOrder(entityType, tierObj){
 
   if(rows.length){
     const { error: insErr } = await _sb.from('tier_data').insert(rows);
-    if(insErr){ toast('Ошибка: ' + insErr.message, 'err'); return; }
+    if(insErr){ handleError(insErr); return; }
   }
 
   if(isPersonal){ personalTierMaps = tierOrderMaps; personalTierHeroes = tierOrderHeroes; }
@@ -322,10 +320,7 @@ async function createTierSet(name){
     renderTiers();
     return data;
   } catch(e){
-    const msg = e.message?.includes('max_personal_tier_sets')
-      ? 'Максимум 10 личных тир-листов'
-      : e.message;
-    toast('Ошибка: ' + msg, 'err');
+    handleError(e, e.message?.includes('max_personal_tier_sets') ? 'Максимум 10 личных тир-листов' : '');
     return null;
   }
 }
@@ -333,7 +328,7 @@ async function createTierSet(name){
 async function deleteTierSet(setId){
   if(!confirm('Удалить этот тир-лист и все его записи?')) return;
   const { error } = await _sb.from('personal_tier_sets').delete().eq('id', setId);
-  if(error){ toast('Ошибка: ' + error.message, 'err'); return; }
+  if(error){ handleError(error); return; }
   toast('Тир-лист удалён', 'ok');
   if(activeTierSetId === setId) activeTierSetId = null;
   await loadTierSets();
@@ -344,7 +339,7 @@ async function deleteTierSet(setId){
 async function renameTierSet(setId, newName){
   const { error } = await _sb.from('personal_tier_sets')
     .update({ name: newName }).eq('id', setId);
-  if(error){ toast('Ошибка: ' + error.message, 'err'); return; }
+  if(error){ handleError(error); return; }
   toast('Переименовано ✓', 'ok');
   await loadTierSets();
   renderTiers();
@@ -356,7 +351,7 @@ async function setDefaultTierSet(setId){
     if(error) throw error;
     await loadTierSets();
     renderTiers();
-  } catch(e){ toast('Ошибка: ' + e.message, 'err'); }
+  } catch(e){ handleError(e); }
 }
 
 // ════ SHARE LINKS — для личного тир-листа ════
