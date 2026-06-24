@@ -63,6 +63,15 @@ function resetTournDraft() {
   renderBans();
 }
 
+// Сброс при switchTeam — вызывается из session.js._resetTeamSpecificState()
+function resetTournamentDraft() {
+  tournMapPool    = [];
+  tournCurrentMap = null;
+  tournHeroBans   = { A: [], B: [] };
+  tournSide       = 'A';
+  store.resetSection('tDraft');
+}
+
 // ════════════════════════════════════════════════════════════
 // ФАЗА 1 — НАСТРОЙКА ПУЛА КАРТ
 // ════════════════════════════════════════════════════════════
