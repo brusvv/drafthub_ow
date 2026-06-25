@@ -1,4 +1,4 @@
-// @hash d08393ef 2026-06-24T21:15
+// @hash 59eff4a2 2026-06-25T22:21
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-draft.js — турнирный драфт: пул карт + драфт карт
 //
@@ -69,7 +69,6 @@ function resetTournamentDraft() {
   tournCurrentMap = null;
   tournHeroBans   = { A: [], B: [] };
   tournSide       = 'A';
-  store.resetSection('tDraft');
 }
 
 // ════════════════════════════════════════════════════════════
