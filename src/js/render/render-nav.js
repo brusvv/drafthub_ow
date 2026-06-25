@@ -1,4 +1,4 @@
-// @hash 102d5d30 2026-06-25T10:08
+// @hash 72d55afb 2026-06-25T22:21
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
@@ -61,16 +61,29 @@ function _pickAppMode(mode) {
   }
 }
 
-// Закрытие дропдаунов кликом снаружи
+// Закрытие попапа кликом снаружи
 document.addEventListener('click', (e) => {
-  // appModePopup — закрыть если клик вне .mode-switcher
-  const modePopup = document.getElementById('appModePopup');
-  if (modePopup && !modePopup.classList.contains('hidden') && !e.target.closest('.mode-switcher')) {
-    modePopup.classList.add('hidden');
-  }
-  // teamSwitcherPopup — закрыть если клик вне .team-chip
-  const teamPopup = document.getElementById('teamSwitcherPopup');
-  if (teamPopup && !teamPopup.classList.contains('hidden') && !e.target.closest('.team-chip')) {
-    teamPopup.classList.add('hidden');
+  const popup = document.getElementById('appModePopup');
+  if (popup && !popup.classList.contains('hidden') && !e.target.closest('.mode-switcher')) {
+    popup.classList.add('hidden');
   }
 });
+
+// ── Счётчики в навигации ─────────────────────────────────────
+// Вызывается из loadAllData() после загрузки данных.
+// Обновляет span.nav-count рядом с кнопками навигации.
+function updateNavCounts() {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = val > 0 ? val : '';
+  };
+
+  // heroes/maps/players — из глобальных массивов
+  set('navCountHeroes',  (typeof heroes  !== 'undefined') ? heroes.length  : 0);
+  set('navCountMaps',    (typeof maps    !== 'undefined') ? maps.filter(m => m.inPool !== false).length : 0);
+  set('navCountPlayers', (typeof players !== 'undefined') ? players.length : 0);
+
+  // Roster — количество игроков в текущем составе
+  const roster = (typeof rosterPlayers !== 'undefined') ? rosterPlayers : [];
+  set('navCountRoster', roster.length);
+}
