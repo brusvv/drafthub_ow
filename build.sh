@@ -132,7 +132,8 @@ JS_MODULES=(
   js/render/render-tier-share.js
   js/render/render-players.js
   js/render/render-roster.js
-  js/render/render-admin.js
+  js/render/render-admin-import.js
+  js/render/render-admin-ui.js
   js/render/render-nav.js
 
   # Draft: core первый (общие хелперы для competitive и tournament)
