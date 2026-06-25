@@ -1,4 +1,4 @@
-// @hash cdca0436 2026-06-24T20:44
+// @hash 89e2de64 2026-06-25T10:08
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -74,6 +74,16 @@ function closeTopModal() {
   if (modalStack.size > 0) {
     const top = modalStack.pop();
     if (top && typeof top.close === 'function') { top.close(); return; }
+  }
+
+  // Лёгкие дропдауны — проверяем первыми (открываются поверх всего)
+  const dropdowns = ['appModePopup', 'teamSwitcherPopup'];
+  for (const id of dropdowns) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) {
+      el.classList.add('hidden');
+      return;
+    }
   }
 
   const knownIds = [
