@@ -1,4 +1,4 @@
-// @hash 6ec5b9bd 2026-06-24T20:44
+// @hash 102d5d30 2026-06-25T10:08
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
@@ -61,10 +61,16 @@ function _pickAppMode(mode) {
   }
 }
 
-// Закрытие попапа кликом снаружи
+// Закрытие дропдаунов кликом снаружи
 document.addEventListener('click', (e) => {
-  const popup = document.getElementById('appModePopup');
-  if (popup && !popup.classList.contains('hidden') && !e.target.closest('.mode-switcher')) {
-    popup.classList.add('hidden');
+  // appModePopup — закрыть если клик вне .mode-switcher
+  const modePopup = document.getElementById('appModePopup');
+  if (modePopup && !modePopup.classList.contains('hidden') && !e.target.closest('.mode-switcher')) {
+    modePopup.classList.add('hidden');
+  }
+  // teamSwitcherPopup — закрыть если клик вне .team-chip
+  const teamPopup = document.getElementById('teamSwitcherPopup');
+  if (teamPopup && !teamPopup.classList.contains('hidden') && !e.target.closest('.team-chip')) {
+    teamPopup.classList.add('hidden');
   }
 });
