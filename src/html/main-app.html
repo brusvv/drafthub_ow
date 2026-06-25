@@ -28,12 +28,12 @@
   </div>
 
   <nav class="nav">
-    <button class="nav-btn active authed-only" onclick="showView('maps',this)">Карты</button>
-    <button class="nav-btn authed-only" onclick="showView('heroes',this)">Герои</button>
+    <button class="nav-btn active authed-only" onclick="showView('maps',this)">Карты<span class="nav-count" id="navCountMaps"></span></button>
+    <button class="nav-btn authed-only" onclick="showView('heroes',this)">Герои<span class="nav-count" id="navCountHeroes"></span></button>
     <button class="nav-btn" id="navTiersBtn" onclick="showView('tiers',this)">Tier List</button>
     <button class="nav-btn authed-only" onclick="showView('bans',this)">Драфт</button>
-    <button class="nav-btn authed-only" onclick="showView('players',this)">Игроки</button>
-    <button class="nav-btn authed-only" onclick="showView('roster',this)">Состав</button>
+    <button class="nav-btn authed-only" onclick="showView('players',this)">Игроки<span class="nav-count" id="navCountPlayers"></span></button>
+    <button class="nav-btn authed-only" onclick="showView('roster',this)">Состав<span class="nav-count" id="navCountRoster"></span></button>
     <button class="nav-btn authed-only" onclick="showView('settings',this)" id="navSettingsBtn">Настройки</button>
     <button class="nav-btn admin-only" onclick="showView('admin',this)" id="navAdminBtn">Админ</button>
   </nav>
