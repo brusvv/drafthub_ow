@@ -1,4 +1,4 @@
-/* @hash 606c6ea4 2026-06-25T23:37 */
+/* @hash ec3f5408 2026-06-26T08:45 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -64,7 +64,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .nav{display:flex;gap:3px;margin-bottom:1.5rem;flex-wrap:wrap}
 .nav-btn{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s}
 .nav-btn:hover{color:var(--text2);border-color:var(--border2)}
-.nav-btn.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.nav-btn.active{background:rgba(240,160,48,.12);color:var(--accent);border-color:rgba(240,160,48,.35)}
 /* Счётчик в навигации — показывается только если есть данные */
 .nav-count{display:inline-block;font-family:var(--mono);font-size:8px;font-weight:700;
   min-width:14px;padding:0 3px;border-radius:7px;line-height:14px;text-align:center;
