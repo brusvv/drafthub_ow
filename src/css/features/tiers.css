@@ -1,6 +1,10 @@
-/* @hash d30c4e14 2026-06-14T08:30 */
-/* ── TIER LIST ── */
-.tier-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+/* @hash 8e00c198 2026-06-26T08:45 */
+/* ── TIER LIST ──
+   .tier-row/.tier-lbl/.tier-maps/.tier-pill дублировались здесь и в блоке
+   "TIER DRAG & DROP" ниже — эта копия .tier-row была мёртвой (вторая
+   побеждает в каскаде), убрал. .tier-lbl/.tier-maps/.tier-pill ниже не
+   трогаю — не до конца уверен что они тоже безусловно мёртвые (там есть
+   нюанс с height vs min-height), оставляю отдельной задачей. */
 .tier-lbl{font-family:var(--mono);font-size:15px;font-weight:700;width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
 .tier-maps{display:flex;flex-wrap:wrap;gap:6px;padding-top:5px}
 .tier-pill{font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .1s}
@@ -21,7 +25,14 @@
 .tier-tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
  
 /* ── TIER DRAG & DROP ── */
-.tier-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;user-select:none}
+.tier-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px;user-select:none;
+  border-left:3px solid transparent;padding-left:8px;border-radius:0 8px 8px 0;transition:background .1s}
+.tier-row:hover{background:rgba(255,255,255,.02)}
+.tier-row[data-tier="S"]{border-left-color:var(--tier-s)}
+.tier-row[data-tier="A"]{border-left-color:var(--tier-a)}
+.tier-row[data-tier="B"]{border-left-color:var(--tier-b)}
+.tier-row[data-tier="C"]{border-left-color:var(--tier-c)}
+.tier-row[data-tier="D"]{border-left-color:var(--tier-d)}
 .tier-lbl{font-family:var(--mono);font-size:17px;font-weight:700;width:44px;min-height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px;cursor:default}
 .tier-maps{display:flex;flex-wrap:wrap;gap:6px;min-height:56px;flex:1;border-radius:8px;padding:7px;transition:background .1s;align-items:flex-start}
 .tier-maps.drag-over{background:rgba(255,255,255,.05);outline:1px dashed var(--border2)}
@@ -33,8 +44,8 @@
 .tier-hero-pill{position:relative;cursor:grab;transition:transform .1s,opacity .1s;flex-shrink:0}
 .tier-hero-pill:hover{transform:translateY(-2px)}
 .tier-hero-pill.dragging{opacity:.35;cursor:grabbing;transform:scale(.96)}
-.tier-hero-pill img{width:60px;height:60px;border-radius:8px;object-fit:cover;display:block;border:2px solid transparent}
-.tier-hero-pill-ph{width:60px;height:60px;border-radius:8px;background:var(--bg3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
+.tier-hero-pill img{width:48px;height:48px;border-radius:7px;object-fit:cover;display:block;border:2px solid transparent}
+.tier-hero-pill-ph{width:48px;height:48px;border-radius:7px;background:var(--bg3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
 .tier-hero-pill[data-role="Tank"] img,.tier-hero-pill[data-role="Tank"] .tier-hero-pill-ph{border-color:var(--tank)}
 .tier-hero-pill[data-role="Damage"] img,.tier-hero-pill[data-role="Damage"] .tier-hero-pill-ph{border-color:var(--damage)}
 .tier-hero-pill[data-role="Support"] img,.tier-hero-pill[data-role="Support"] .tier-hero-pill-ph{border-color:var(--support)}
