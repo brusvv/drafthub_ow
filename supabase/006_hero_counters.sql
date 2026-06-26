@@ -2,8 +2,7 @@
 -- DraftHub OW — 006_hero_counters.sql
 -- Контрпики героев на 3 уровнях — global / team / personal —
 -- по той же модели что и tier_data (005_personal_tiers.sql).
--- Применять после 001_tables.sql → 002_functions_and_rls.sql →
--- 003_superadmin.sql → 005_personal_tiers.sql.
+-- Применять после 001_tables.sql → 002_functions.sql → 003_rls.sql → 004_rpc.sql.
 --
 -- ВАЖНО: team-уровень НЕ переезжает в эту таблицу — он как и раньше
 -- живёт в heroes.counters (jsonb). Эта миграция добавляет только
@@ -12,7 +11,7 @@
 -- меняется режим в хедере (Глобальный/Командный/Личный).
 -- ════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS hero_counters (
+CREATE TABLE hero_counters (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   scope         text NOT NULL CHECK (scope IN ('global','personal')),
   team_id       uuid REFERENCES teams(id) ON DELETE CASCADE,      -- NULL для global
