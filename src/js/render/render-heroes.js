@@ -1,4 +1,4 @@
-// @hash c2237c5c 2026-06-24T09:08
+// @hash cbce7edf 2026-06-25T23:37
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -146,31 +146,31 @@ function _buildHeroInfoPopup(name){
 
   const hasData=allStrong.length||allWeak.length;
   const mapsHtml=!hasData
-    ?'<div class="empty" style="font-size:12px">Нет данных о силе на картах</div>'
+    ?'<div class="empty">Нет данных о силе на картах</div>'
     :`<div style="display:flex;gap:10px;align-items:flex-start">
         ${_col('Силён','var(--support)',strongMaps)}
         ${allStrong.length&&allWeak.length?'<div style="width:1px;background:var(--border);align-self:stretch;flex-shrink:0"></div>':''}
         ${_col('Слаб','var(--damage)',weakMaps)}
       </div>
-      ${hasMore?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Подробнее ↓</button>`:''}
-      ${_heroInfoExpanded?`<button class="btn" onclick="_toggleHeroInfoExpand('${esc(name)}')" style="margin-top:8px;font-size:11px;width:100%">Свернуть ↑</button>`:''}`;
+      ${hasMore?`<button class="btn h-expand-btn" onclick="_toggleHeroInfoExpand('${esc(name)}')">Подробнее ↓</button>`:''}
+      ${_heroInfoExpanded?`<button class="btn h-expand-btn" onclick="_toggleHeroInfoExpand('${esc(name)}')">Свернуть ↑</button>`:''}`;
 
   // Синергии по ролям
   const syns=heroSynergy[hero.name]||[];
   const synByRole={Tank:[],Damage:[],Support:[]};
   syns.forEach(s=>{const h=heroMap[s.name];if(h&&synByRole[h.role])synByRole[h.role].push(s);});
   const synHtml=(_heroInfoExpanded||!syns.length)?(['Tank','Damage','Support'].filter(r=>synByRole[r].length).map(role=>`
-    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+    <div class="h-chip-row">
       ${roleIcon(role,16)}
       ${synByRole[role].sort((a,b)=>b.score-a.score).map(s=>{
         const sp=portrait(s.name);
         const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
         return _heroScoreChip(s.name,s.score,_synColor,40);
       }).join('')}
-    </div>`).join('')||'<div class="empty" style="font-size:12px">Нет данных</div>')
+    </div>`).join('')||'<div class="empty">Нет данных</div>')
     :'';
-  const synSection=syns.length?`<div style="margin-bottom:16px">
-    <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Синергии</div>
+  const synSection=syns.length?`<div class="h-detail-block">
+    <div class="tier-preview-section-title h-detail-title">Синергии</div>
     ${_heroInfoExpanded?synHtml:`<div style="display:flex;flex-wrap:wrap;gap:5px">${syns.slice(0,6).map(s=>_heroScoreChip(s.name,s.score,_synColor,30)).join('')}</div>`}
   </div>`:'';
 
@@ -180,13 +180,13 @@ function _buildHeroInfoPopup(name){
   const ctrByRole={Tank:[],Damage:[],Support:[]};
   allCounters.forEach(c=>{const h=heroMap[c.name];if(h&&ctrByRole[h.role])ctrByRole[h.role].push(c);});
   const countersExpandedHtml=['Tank','Damage','Support'].filter(r=>ctrByRole[r].length).map(role=>`
-    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+    <div class="h-chip-row">
       ${roleIcon(role,16)}
       ${ctrByRole[role].map(c=>_heroScoreChip(c.name,c.score,_ctrColor,40)).join('')}
-    </div>`).join('')||'<div class="empty" style="font-size:12px">Нет данных</div>';
+    </div>`).join('')||'<div class="empty">Нет данных</div>';
   const countersCollapsedHtml=`<div style="display:flex;flex-wrap:wrap;gap:7px">${allCounters.slice(0,6).map(c=>_heroScoreChip(c.name,c.score,_ctrColor,36)).join('')}</div>`;
-  const countersSection=allCounters.length?`<div style="margin-bottom:16px">
-    <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Контрпики</div>
+  const countersSection=allCounters.length?`<div class="h-detail-block">
+    <div class="tier-preview-section-title h-detail-title">Контрпики</div>
     ${_heroInfoExpanded?countersExpandedHtml:countersCollapsedHtml}
   </div>`:'';
 
@@ -210,8 +210,8 @@ function _buildHeroInfoPopup(name){
         ${hero.banned?'<div style="font-family:var(--mono);font-size:10px;background:rgba(224,85,85,.15);color:var(--damage);border-radius:5px;padding:3px 9px;display:inline-block">В текущем бане</div>':''}
       </div>
     </div>
-    <div style="margin-bottom:16px">
-      <div class="tier-preview-section-title" style="font-size:12px;margin-bottom:8px">Сила на картах</div>
+    <div class="h-detail-block">
+      <div class="tier-preview-section-title h-detail-title">Сила на картах</div>
       ${mapsHtml}
     </div>
     ${synSection}
