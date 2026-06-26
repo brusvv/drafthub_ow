@@ -2,22 +2,21 @@
 
 Этот документ описывает **как проводить** аудит — какие команды запускать,
 на что смотреть, что считать нормой, а что проблемой.  
-Не разовый отчёт, а повторяемый процесс.
+Не разовый отчёт, а повторяемый процесс. Обновляется по мере закрытия долгов.
 
 ---
 
 ## Подготовка
 
 ```bash
-# Распаковать и перейти в корень репозитория
 cd drafthub_ow-main
 
-# Убедиться что сборка проходит — это базовая проверка работоспособности
+# Базовая проверка — сборка проходит
 bash build.sh
 # Ожидаемый вывод: ✓ Собрано: dist/index.html (XXXX строк)
-# Если строк резко меньше/больше предыдущего — что-то изменилось
+# Резкое изменение строк (±200+) = что-то изменилось, проверить
 
-# Общая статистика файлов
+# Статистика
 find src/js -name '*.js' | xargs wc -l | sort -rn | head -20
 find src/css -name '*.css' | xargs wc -l | sort -rn
 ```
@@ -26,71 +25,48 @@ find src/css -name '*.css' | xargs wc -l | sort -rn
 
 ## 1. Мёртвый код
 
-**Что искать:** файлы которые есть в `src/` но не попадают в сборку.
-
 ```bash
-# Все JS-файлы в src/
 find src/js -name '*.js' | sed 's|src/||' | sort > /tmp/all_js.txt
-
-# Все JS-файлы в build.sh
 grep -o 'js/[^ ]*\.js' build.sh | sort > /tmp/build_js.txt
-
-# Разница — файлы которые НЕ в сборке
 diff /tmp/all_js.txt /tmp/build_js.txt | grep '^<' | sed 's/< //'
 ```
 
-**Норма:** пусто. Любой файл в `src/js/` должен быть в `build.sh`.
-
-**Что делать с находками:**
-- Если файл — старая версия нового файла (например `sheets-load.js` vs `db-load.js`) → удалить
-- Если файл содержит функции которые нигде не вызываются → проверить grep и удалить
-- Если файл нужен но не в сборке → добавить в `build.sh` в правильное место
-
-**Текущий статус (24.06.2025):**
-```
-js/data/sheets-load.js   — дублирует db-load.js, удалить
-js/data/sheets-sync.js   — дублирует db-sync.js, удалить
-js/write/write-hero.js   — дублирует db-write.js, удалить
-js/write/write-map.js    — дублирует db-write.js, удалить
-js/write/write-player.js — дублирует db-write.js, удалить
-js/picker/picker-maps.js — функционал в modal-hero-strength.js, удалить
-```
+**Норма:** пусто.  
+**Текущий статус (26.06.2025):** ✅ Нет мёртвых файлов.
 
 ---
 
-## 2. Дублирующиеся функции
-
-**Что искать:** одно имя функции объявлено в двух разных файлах.
+## 2. Дублирующиеся JS-функции
 
 ```bash
-# Все объявления функций — имена с дублями
 grep -rh 'function [a-zA-Z_][a-zA-Z0-9_]*(' src/js/ | \
-  grep -v '^\s*//' | \
-  sed 's/.*function //' | sed 's/(.*//' | \
-  sort | uniq -d
+  grep -v '^\s*//' | sed 's/.*function //;s/(.*//' | sort | uniq -d
 
-# Для каждого дубля — найти в каких файлах
-FUNCNAME="saveHero"  # подставить имя
+# Для каждого дубля — найти файлы
+FUNCNAME="saveHero"
 grep -rln "function ${FUNCNAME}\b" src/js/
 ```
 
-**Норма:** каждая функция в одном файле. Исключение — намеренные
-`window.confirmPicker` цепочки (см. раздел 4).
-
-**Текущий статус:** дубли `saveHero/Map/Player`, `deleteHero/Map/Player`,
-`loadHeroes/Maps/Players/Tiers/AllData` — все из-за мёртвых файлов в `write/` и `sheets-*`.
-Исчезнут после удаления мёртвого кода.
+**Норма:** каждая функция в одном файле.  
+**Текущий статус:** ✅ Дублей нет (мёртвые файлы удалены).  
+**Исключение:** `window.confirmPicker` — намеренная цепочка, см. раздел 6.
 
 ---
 
-## 3. SQL — порядок миграций и дубли функций
-
-**Важно:** SQL-файлы применяются последовательно. Если функция
-переопределяется в нескольких файлах — это нормально (патчи),
-но нужно понимать какая версия финальная.
+## 3. SQL — инвентарь функций по файлам
 
 ```bash
-# Функции объявленные в нескольких SQL-файлах
+R="."
+for f in $R/supabase/*.sql; do
+  echo "── $(basename $f) ──"
+  grep -n "^CREATE OR REPLACE FUNCTION\|SECURITY DEFINER\|SET search_path" "$f" | \
+    grep -v "^[0-9]*:--"
+  echo ""
+done
+```
+
+**Дополнительно — дубли функций между файлами:**
+```bash
 python3 - << 'EOF'
 import re, os, collections
 
@@ -103,33 +79,18 @@ for fname in sorted(os.listdir('supabase')):
 
 for fn, files in sorted(all_fns.items()):
     if len(files) > 1:
-        print(f"  {fn}: {' → '.join(files)}")
+        print(f"  ДУБЛЬ {fn}: {' → '.join(files)}")
 EOF
 ```
 
-**Норма:** функция в нескольких файлах — окей если это патч (более поздний файл
-исправляет более ранний). Не окей если одна и та же версия без изменений.
-
-**Текущий статус:**
-```
-create_tier_set       : 002 → 004 → 005   (004 и 005 — патчи, финальная в 005)
-get_team_members      : 002 → 004          (004 — патч с SET search_path)
-rename_team           : 002 → 004          (004 — патч)
-role_sort_order       : 002 → 004          (004 — патч)
-set_default_tier_set  : 002 → 004 → 005   (финальная в 005)
-view_shared_tier      : 004 → 005          (финальная в 005)
-```
+**Норма:** функция в нескольких файлах допустима ТОЛЬКО если второй файл — патч.  
+⚠️ **Текущий статус (26.06.2025):** `003_rls.sql` и `004_rpc.sql` — **идентичные файлы** (md5 совпадает). Это баг bor при реструктуризации. 11 функций задублированы. Требует исправления — один из файлов должен содержать только политики (RLS), второй только RPC.
 
 ---
 
 ## 4. SQL — SECURITY DEFINER без SET search_path
 
-**Это уязвимость.** `SECURITY DEFINER` функция выполняется с правами владельца,
-и если `search_path` не зафиксирован — атакующий может создать свою схему
-с тем же именем таблицы и подменить данные.
-
 ```bash
-# Найти все SECURITY DEFINER функции без SET search_path
 python3 - << 'EOF'
 import re, os
 
@@ -146,17 +107,11 @@ for fname in sorted(os.listdir('supabase')):
 EOF
 ```
 
-**Норма:** каждая `SECURITY DEFINER` функция должна иметь `SET search_path = public`.
+**Норма:** каждая `SECURITY DEFINER` функция → `SET search_path = public`.  
+**Текущий статус:** ✅ Все 31 функция имеют `SET search_path` (bor-1 завершён).
 
-**Шаблон исправления:**
+**Шаблон:**
 ```sql
--- было
-CREATE OR REPLACE FUNCTION my_fn(p_id uuid)
-RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE AS $$
-  ...
-$$;
-
--- стало
 CREATE OR REPLACE FUNCTION my_fn(p_id uuid)
 RETURNS bool LANGUAGE sql SECURITY DEFINER STABLE
 SET search_path = public AS $$
@@ -164,204 +119,195 @@ SET search_path = public AS $$
 $$;
 ```
 
-**Текущий статус (24.06.2025):** ~15 функций в `002_functions_and_rls.sql`
-без `SET search_path`. Supabase Dashboard предупреждает об этом в разделе
-Database → Functions (жёлтый треугольник).
-
 ---
 
-## 5. RLS — проверка политик
+## 5. RLS — проверка политик (в Supabase SQL Editor)
 
-```bash
-# Все таблицы с включённым RLS — в SQL Editor:
-SELECT tablename, rowsecurity
-FROM pg_tables
-WHERE schemaname = 'public'
-ORDER BY tablename;
-
-# Политики для конкретной таблицы
-SELECT policyname, cmd, roles, qual, with_check
-FROM pg_policies
-WHERE tablename = 'user_roles'  -- подставить имя
-ORDER BY cmd;
-
-# Таблицы С RLS но БЕЗ политик (полная блокировка — никто не читает)
+```sql
+-- Таблицы С RLS но БЕЗ политик (полная блокировка)
 SELECT t.tablename
 FROM pg_tables t
 LEFT JOIN pg_policies p ON p.tablename = t.tablename
 WHERE t.schemaname = 'public'
   AND t.rowsecurity = true
   AND p.policyname IS NULL;
-```
 
-**На что смотреть:**
-- Таблица с RLS но без политик — это баг, никто не может читать данные
-- Политики на `user_roles` которые читают `user_roles` внутри `USING` → рекурсия (42P17)
-- `WITH CHECK (true)` — слишком широкая политика, проверить намеренно ли
-- Политика `USING (auth.uid() IS NOT NULL)` без `TO authenticated` — применяется к anon тоже
+-- Политики конкретной таблицы
+SELECT policyname, cmd, roles, qual, with_check
+FROM pg_policies WHERE tablename = 'user_roles' ORDER BY cmd;
 
-**Проверка рекурсии:**
-```sql
--- Если была ошибка 42P17 — проверить что функции используют SECURITY DEFINER
-SELECT proname, prosecdef
-FROM pg_proc
+-- Проверка рекурсии (ошибка 42P17)
+SELECT proname, prosecdef FROM pg_proc
 WHERE proname IN ('can_see_team_members', 'has_permission', 'my_team_role');
 -- prosecdef должно быть true у всех
 ```
 
+**На что смотреть:**
+- Таблица с RLS без политик → баг, никто не читает
+- `EXISTS(SELECT ... FROM user_roles)` внутри политики на `user_roles` → рекурсия 42P17
+- `WITH CHECK (true)` без `TO authenticated` → anon тоже проходит
+
 ---
 
-## 6. Паттерн confirmPicker — цепочка переопределений
-
-**Текущая архитектура:** `window.confirmPicker` перезаписывается в 4 файлах,
-каждый сохраняет предыдущую версию и вызывает её в `else`.
+## 6. confirmPicker — цепочка переопределений
 
 ```bash
-# Найти все переопределения
 grep -rn 'window.confirmPicker\s*=' src/js/
 ```
 
-**Порядок в build.sh имеет значение** — файлы должны идти именно так:
+**Текущий статус (26.06.2025):** 4 переопределения — LEQ-2 ещё не завершён.  
+**После LEQ-2:** должно быть 0 переопределений, вместо них — `registerPickerHandler(mode, fn)`.
+
+**Порядок в build.sh критичен** (пока не рефакторинг):
 ```
-picker-core.js          → базовая реализация
-modal-hero.js           → добавляет 'synergy'
-picker-comp.js          → добавляет 'comp_slot'
-render-bans-core.js     → добавляет 'banHeroes', 'tournMapPool'
-render-draft-comp.js    → добавляет 'draftOur', 'draft_*'
+picker-core.js       → базовая реализация
+modal-hero.js        → 'synergy'
+picker-comp.js       → 'comp_slot'
+render-bans-core.js  → 'banHeroes', 'tournMapPool'
+render-draft-comp.js → 'draftOur', 'draft_*'
 ```
 
-**Проверка:** если добавляется новый режим пикера (`pickerMode = 'newMode'`),
-убедиться что файл с его обработчиком загружается **после** всех предыдущих.
-
-**Долгосрочное решение** (рефакторинг, не срочно):
-```js
-// picker-core.js
-const _pickerHandlers = {};
-function registerPickerHandler(mode, fn) {
-  _pickerHandlers[mode] = fn;
-}
-function confirmPicker() {
-  const handler = _pickerHandlers[pickerMode];
-  if (handler) handler();
-  else _defaultConfirm();
-}
+**Проверка 12 режимов пикера:**
+```bash
+grep -rn "pickerMode\s*=\s*'" src/js/ | grep -v '//' | sed "s/.*pickerMode = '//;s/'.*//" | sort -u
+# Должны быть: preferred bans comp mapCounters playerMain playerPool
+#              synergy comp_slot banHeroes tournMapPool draftOur draft_*
 ```
 
 ---
 
 ## 7. Inline styles в JS
 
-**Что искать:** `style="..."` внутри template literals в JS-файлах.
-Это не баг, но затрудняет переопределение стилей и тему.
-
 ```bash
-# Количество строк с inline style по файлам
+# По файлам
 for f in src/js/render/*.js src/js/draft/*.js; do
   count=$(grep -c 'style="' "$f" 2>/dev/null || echo 0)
-  [ "$count" -gt 5 ] && echo "$count  $f"
+  [ "$count" -gt 5 ] && printf "%3d  %s\n" "$count" "$f"
 done
 
-# Самые частые паттерны — кандидаты на вынос в CSS
-grep -roh 'style="[^"]*"' src/js/ | \
-  sed 's/style="//;s/"//' | \
-  grep -oP '[\w-]+:[\s\w#%().,var-]+' | \
-  sort | uniq -c | sort -rn | head -20
+# Топ статичных паттернов — кандидаты на CSS-класс
+grep -roh 'style="[^"]*"' src/js/render/ src/js/draft/ | \
+  sed 's/style="//;s/"//' | sort | uniq -c | sort -rn | \
+  awk '$1 > 1' | head -20
 ```
 
-**Норма:** inline style допустим для **динамических значений** (цвет из переменной,
-ширина из данных). Не допустим для статичных паттернов вроде
-`display:flex;align-items:center;gap:8px` — это должен быть CSS-класс.
-
-**Топ кандидатов на вынос:**
-```js
-// Эти паттерны встречаются 10+ раз — сделать CSS-классы
-"display:flex;align-items:center;gap:8px"    → .flex-row
-"font-family:var(--mono);font-size:9px;..."  → .mono-label
-"display:flex;flex-direction:column;gap:6px" → .flex-col
+**Норма:** inline допустим только для динамических значений (`color:${rc[role]}`).  
+**Текущий статус:** NAT-1/2 снизили с 435 до ~310. Топ оставшихся файлов:
+```
+37  render-tier-share.js   ← не тронут NAT
+37  render-tiers.js        ← NAT-2 частично
+37  render-bans-tournament-herobans.js
+32  render-draft-comp.js
+29  render-bans-competitive.js
 ```
 
 ---
 
 ## 8. CSS — медиазапросы
 
-**Принцип:** все `@media` должны быть в `responsive.css`. Исключение —
-если брейкпоинт специфичен для одного компонента и нигде больше не нужен.
-
 ```bash
-# Медиазапросы вне responsive.css
 grep -rn '@media' src/css/ | grep -v 'responsive.css'
-```
-
-**Текущий статус:** 4 файла содержат `@media` вне `responsive.css`:
-`modals.css`, `strength.css`, `tiers.css`, `bans.css`. Это приемлемо —
-каждый для своего компонента. При рефакторинге CSS можно централизовать.
-
-**Проверить также:** `responsive.css` должен быть **последним** в `build.sh`
-(чтобы его правила перебивали компонентные стили).
-```bash
+# Приемлемо если @media специфичен для одного компонента
+# responsive.css должен быть последним в build.sh:
 grep -n 'css/' build.sh | tail -3
-# responsive.css должен быть в конце списка CSS
 ```
 
 ---
 
-## 9. JS — обращения к устаревшим таблицам
-
-После миграции схемы (`team_members` → `user_roles`, `team_roles` → `roles`)
-старые имена не должны встречаться в JS.
+## 9. JS — устаревшие таблицы (после миграции схемы)
 
 ```bash
-# Проверить обращения к старым таблицам
-grep -rn "from('team_members')\|from('team_roles')\|\.from\(\"team_members\"\)" src/js/
+grep -rn "from('team_members')\|from('team_roles')" src/js/
+# Норма: пусто
 ```
 
-**Норма:** пусто. Любое вхождение — баг который нужно исправить на `user_roles`/`roles`.
-
-**Текущий статус:** одно упоминание `team_members` в `team.js` строка 145
-через `rpc('get_team_members')` — это RPC вызов, не прямое обращение к таблице, ок.
+**Текущий статус:** ✅ Нет обращений к старым таблицам.
 
 ---
 
-## 10. Глобальные переменные vs store
+## 10. Глобальные переменные вне store
 
 ```bash
-# Переменные которые используются глобально но не через store
-grep -rn '^let \|^var \|^const ' src/js/render/ src/js/draft/ | \
-  grep -v 'function\|=>' | head -20
-
-# Сравнить с тем что в store.js
-grep 'INITIAL_STATE' src/js/core/store.js -A 80 | head -60
+grep -rn '^let \|^var ' src/js/render/ src/js/draft/ | \
+  grep -v 'function\|=>' | grep -v '^\s*//'
 ```
 
-**Что искать:** `let heroSynergy = {}`, `let tierViewMode = 'team'` и подобные
-в render-файлах — это состояние которое должно быть в store, иначе теряется
-при hot-reload и сложно дебажить.
-
-**Норма:** состояние приложения — в store. Локальные переменные функций — ок.
+**Текущий статус — остались вне store:**
+```
+render-bans-core.js:         let banMode          (сброс через resetBanMode())
+render-draft-comp.js:        let draftState        (сброс через resetDraftState())
+render-bans-tournament-draft: let tournMapPool/etc (сброс через resetTournamentDraft())
+```
+Эти переменные сбрасываются при `switchTeam` — приемлемо до полного переезда в store.
 
 ---
 
-## 11. Быстрая проверка перед деплоем (чеклист)
+## 11. Протокол агентов — проверка версий файлов
 
 ```bash
-# 1. Сборка проходит
+# Перед началом задачи
+python3 scripts/agent_log.py check
+
+# После завершения
+python3 scripts/agent_log.py update <агент> <задача> <файл1> [файл2 ...]
+```
+
+**Методология умного обновления MD-файлов (экономия токенов):**
+
+Агенты НЕ пишут MD с нуля. Алгоритм:
+
+1. **Прочитать только нужные секции** — не весь файл целиком
+2. **Патчить точечно** через `str_replace` или `sed -i`:
+   ```bash
+   # Обновить только строку с конкретным файлом в AGENT_FILE_LOG.md
+   python3 scripts/agent_log.py update <агент> <задача> <файл>
+   # Скрипт сам обновит только нужную строку таблицы
+   ```
+3. **Для AGENT_TASKS_N.md** — никогда не переписывать весь файл. Только:
+   - Изменить статус `⏳ не начато` → `✅ ЗАВЕРШЕНО` в нужной строке
+   - Добавить хэши в таблицу выходных файлов
+   - Дописать в конец раздела «Новая задача» если нужно
+4. **Запрещено:** читать все 300+ строк AGENT_TASKS файла чтобы добавить 3 строки в конец
+
+**Шаблон минимального обновления статуса агента:**
+```bash
+# Найти строку и заменить статус
+sed -i 's/⏳ не начато/✅ ЗАВЕРШЕНО/' AGENT_TASKS_N.md
+
+# Добавить хэши в таблицу (дописать после нужного агента)
+# Читать только свою секцию:
+sed -n '/^## 🔧 Агент LEQ/,/^## /p' AGENT_TASKS_N.md | head -20
+```
+
+---
+
+## 12. Чеклист перед деплоем
+
+```bash
+# 1. Сборка
 bash build.sh
 
 # 2. Нет мёртвых файлов
 diff <(find src/js -name '*.js' | sed 's|src/||' | sort) \
      <(grep -o 'js/[^ ]*\.js' build.sh | sort)
 
-# 3. Нет дублей функций (кроме известных confirmPicker)
+# 3. Нет дублей функций
 grep -rh 'function [a-zA-Z_][a-zA-Z0-9_]*(' src/js/ | \
-  grep -v '^\s*//' | sed 's/.*function //;s/(.*//' | \
-  sort | uniq -d | grep -v '^_'  # _ префикс — приватные, норма
+  grep -v '^\s*//' | sed 's/.*function //;s/(.*//' | sort | uniq -d
 
-# 4. Нет обращений к старым таблицам
+# 4. Нет устаревших таблиц
 grep -rn "from('team_members')\|from('team_roles')" src/js/
 
-# 5. dist не содержит буквальных ${переменных} (баг template literal)
+# 5. dist без буквальных ${переменных}
 grep -c '\${[a-z]' dist/index.html
-# Ожидаемый результат: 0
+# Норма: 0
+
+# 6. Версии файлов актуальны
+python3 scripts/agent_log.py check
+
+# 7. SQL — нет идентичных файлов
+md5sum supabase/*.sql | awk '{print $1}' | sort | uniq -d
+# Норма: пусто
 ```
 
 ---
@@ -371,51 +317,55 @@ grep -c '\${[a-z]' dist/index.html
 ```
 src/
   css/
-    base/         — переменные, типографика, auth-экраны, responsive
-    features/     — стили по фичам (maps, heroes, players, tiers, subroles)
-    modals/       — стили модалок и пикеров
-    draft/        — стили драфта и банов
-    admin.css     — стили admin-панели
+    base/         — переменные, типографика, auth-экраны, responsive, nav-count
+    features/     — maps, heroes, players, tiers, subroles
+    modals/       — модалки, пикеры, toast (top-right после stg-blue)
+    draft/        — драфт, баны
+    admin.css
   html/
-    main-app.html — основной layout приложения
-    auth.html     — экраны логина
-    modal-*.html  — HTML модалок
-    picker.html   — HTML пикера
-    map-str-picker.html
+    main-app.html — layout, nav с span.nav-count
+    auth.html
+    modal-*.html
+    picker.html, map-str-picker.html
   js/
-    auth/         — авторизация: Supabase client, сессия, команды, UI
-    core/         — store (состояние), config (прокси + константы)
-    data/         — загрузка (db-load), запись (db-write), синхронизация
-    scoring/      — алгоритмы скоринга (без DOM, можно тестировать)
-    picker/       — логика пикера героев
-    modals/       — логика модалок (герой, карта)
-    render/       — рендер вьюх
-    draft/        — рендер драфта и банов
-  
+    auth/         — session (switchTeam + _resetTeamSpecificState), team, ui
+    core/         — store, config
+    data/         — db-load (updateNavCounts), db-write, db-sync
+    scoring/      — скоринг (без DOM, тестируемо)
+    picker/       — picker-core (registerPickerHandler после LEQ), picker-comp
+    modals/       — modal-hero, modal-hero-chips, modal-hero-strength, modal-map
+    render/       — render-utils, render-nav, render-maps, render-heroes,
+                    render-tiers, render-tier-share, render-players, render-roster,
+                    render-admin-ui, render-admin-import
+    draft/        — render-bans-core, render-bans-competitive,
+                    render-bans-tournament-draft, render-bans-tournament-herobans,
+                    render-draft-comp
+
 supabase/
-  001_tables.sql             — все таблицы, первичная схема
-  002_functions_and_rls.sql  — функции, триггеры, RLS политики
-  003_superadmin.sql         — admin RPC (list_app_users, set_app_role)
-  004_fixes.sql              — патч существующих БД (идемпотентный)
-  005_personal_tiers.sql     — личные тир-листы, share-ссылки
-  006_hero_counters.sql      — (посмотреть что внутри)
+  001_tables.sql       — DDL только
+  002_functions.sql    — 31 функция, все SECURITY DEFINER + SET search_path
+  003_rls.sql          — ⚠️ ИДЕНТИЧЕН 004, баг bor — нужно разделить
+  004_rpc.sql          — ⚠️ ИДЕНТИЧЕН 003, баг bor — нужно разделить
+  006_hero_counters.sql — hero_counters (global/personal), применять после 004
 
 scripts/
-  import-from-sheets.js      — разовый импорт данных из Google Sheets
-  package.json
-  .env.example
+  agent_log.py         — протокол версий агентов (положить в scripts/)
+  import-from-sheets.js
+  package.json, .env.example
 ```
 
 ---
 
-## Известные технические долги
+## Технические долги — актуальный статус
 
-| # | Описание | Приоритет | Риск правки |
-|---|----------|-----------|-------------|
-| 1 | 6 мёртвых файлов в src/js | Высокий | Нулевой |
-| 2 | `confirmPicker` переопределяется 4 раза | Средний | Средний |
-| 3 | ~15 SECURITY DEFINER без SET search_path | Высокий | Низкий |
-| 4 | 435 строк inline style в JS | Низкий | Итеративный |
-| 5 | `toast()` и `esc()` в render-nav.js вместо render-utils.js | Низкий | Низкий |
-| 6 | Глобальные переменные вне store (tierViewMode, heroSynergy) | Средний | Средний |
-| 7 | 004_fixes.sql дублирует 6 функций из 002 (нужна консолидация) | Средний | Низкий |
+| # | Описание | Приоритет | Статус |
+|---|----------|-----------|--------|
+| 1 | Мёртвые файлы | Высокий | ✅ Закрыт |
+| 2 | `confirmPicker` цепочка → dispatch | Средний | ⏳ LEQ-2 |
+| 3 | SECURITY DEFINER без search_path | Высокий | ✅ Закрыт (bor-1) |
+| 4 | Inline styles в JS (~310 осталось) | Низкий | ⏳ NAT-3/4 + render-tier-share.js |
+| 5 | `toast()`/`esc()` в render-nav | Низкий | ✅ Закрыт (stg-blue A1) |
+| 6 | Глобальные переменные вне store | Средний | ⏳ Частично (reset есть, store нет) |
+| 7 | SQL 003==004 идентичны | **Критично** | ❌ Новый баг (bor) |
+| 8 | render-tier-share.js — 37 inline styles | Низкий | ❌ Не тронут |
+| 9 | agent_log.py не в scripts/ репо | Средний | ❌ Добавить в репо |
