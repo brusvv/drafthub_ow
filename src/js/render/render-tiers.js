@@ -1,4 +1,4 @@
-// @hash cb617b5e 2026-06-24T09:08
+// @hash e27cbd4c 2026-06-25T23:37
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -58,7 +58,7 @@ function _renderTierModeSwitcher(){
         <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
           letter-spacing:.1em;color:var(--text3)">🌐 Глобальный тир-лист</span>
         <span style="margin-left:auto">
-          <button class="btn" onclick="renderAuthUI('login')" style="font-size:10px">Войти</button>
+          <button class="btn btn-sm" onclick="renderAuthUI('login')">Войти</button>
         </span>
       </div>`;
   }
@@ -91,7 +91,7 @@ function _renderTierSetSelector(){
     return `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
         <span style="font-size:11px;color:var(--text3)">Нет личных тир-листов</span>
-        <button class="btn btn-primary" onclick="_showCreateTierSetForm()" style="font-size:10px">+ Создать</button>
+        <button class="btn btn-primary btn-sm" onclick="_showCreateTierSetForm()">+ Создать</button>
       </div>
       <div id="createTierSetForm" style="display:none"></div>`;
   }
@@ -151,8 +151,8 @@ function _showCreateTierSetForm(){
       <input class="form-input" id="newTierSetName" placeholder="Название (напр. S14 Meta)"
         style="font-size:11px;padding:5px 8px" maxlength="40"
         onkeydown="if(event.key==='Enter')_submitCreateTierSet()">
-      <button class="btn btn-primary" onclick="_submitCreateTierSet()" style="font-size:10px">Создать</button>
-      <button class="btn" onclick="this.closest('#createTierSetForm').style.display='none'" style="font-size:10px">✕</button>
+      <button class="btn btn-primary btn-sm" onclick="_submitCreateTierSet()">Создать</button>
+      <button class="btn btn-sm" onclick="this.closest('#createTierSetForm').style.display='none'">✕</button>
     </div>`;
   document.getElementById('newTierSetName')?.focus();
 }
@@ -169,9 +169,9 @@ function _openTierSetMenu(setId, setName){
   const active = tierSets.find(s => s.id === setId);
   openTierPreview(`📋 ${setName}`, `
     <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">
-      <button class="btn" onclick="_renameTierSetPrompt('${setId}','${esc(setName)}');closeTierPreview()" style="width:100%;text-align:left">✎ Переименовать</button>
-      ${!active?.is_default ? `<button class="btn" onclick="setDefaultTierSet('${setId}');closeTierPreview()" style="width:100%;text-align:left">★ Сделать по умолчанию</button>` : ''}
-      <button class="btn btn-danger" onclick="deleteTierSet('${setId}');closeTierPreview()" style="width:100%;text-align:left">✕ Удалить</button>
+      <button class="btn btn-full" onclick="_renameTierSetPrompt('${setId}','${esc(setName)}');closeTierPreview()">✎ Переименовать</button>
+      ${!active?.is_default ? `<button class="btn btn-full" onclick="setDefaultTierSet('${setId}');closeTierPreview()">★ Сделать по умолчанию</button>` : ''}
+      <button class="btn btn-danger btn-full" onclick="deleteTierSet('${setId}');closeTierPreview()">✕ Удалить</button>
     </div>`);
 }
 
