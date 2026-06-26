@@ -1,4 +1,4 @@
-/* @hash 589cf6d5 2026-06-25T22:21 */
+/* @hash 606c6ea4 2026-06-25T23:37 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -161,6 +161,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* Кнопка активного пула карт */
 .pool-active{border-color:rgba(43,189,142,.5)!important;color:var(--support)!important}
+
+/* ── NAT-1: классы вместо повторяющихся inline styles в render/ ──
+   Только точные повторы (идентичная строка style="..." 2+ раз) — без
+   нормализации "похожих, но разных чисел" паттернов (gap:6px vs 7px и т.п.),
+   чтобы не менять вёрстку незаметно. См. AGENT_TASKS_5.md, задача NAT-2. */
+.btn-full{width:100%;text-align:left}                 /* render-tiers.js — пункты меню (переименовать/удалить/сделать дефолтным) */
+.btn-sm{font-size:10px}                                /* render-tiers.js — мелкие кнопки в форме создания сета */
+
+/* render-heroes.js — детальный вид героя (синергии/контрпики/сила на картах) */
+.h-detail-block{margin-bottom:16px}                    /* обёртка секции */
+.h-detail-title{font-size:12px;margin-bottom:8px}      /* поверх .tier-preview-section-title — другой размер в этом контексте */
+.h-chip-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+.h-expand-btn{margin-top:8px;font-size:11px;width:100%}  /* «Подробнее ↓» / «Свернуть ↑» */
 
 /* ── Переключатель режима (Глобальный/Командный/Личный) в хедере ──
    render/render-nav.js: renderAppModeSwitcher(). Те же 3 режима что и
