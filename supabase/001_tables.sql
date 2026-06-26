@@ -1,5 +1,8 @@
 -- ════════════════════════════════════════════════════════════
 -- DraftHub OW — 001_tables.sql
+-- Применять первым.
+-- Содержит ТОЛЬКО DDL (CREATE TABLE, CREATE INDEX, GRANT).
+-- Функции и триггеры — в 002_functions.sql.
 -- Таблицы, индексы, триггеры, grants.
 -- ════════════════════════════════════════════════════════════
 
@@ -234,55 +237,7 @@ CREATE UNIQUE INDEX idx_tier_personal_unique
 CREATE UNIQUE INDEX idx_tier_set_default
   ON personal_tier_sets(user_id, team_id) WHERE is_default = true;
 
--- ════ TRIGGERS ════
-CREATE OR REPLACE FUNCTION set_updated_at()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN NEW.updated_at = now(); RETURN NEW; END;
-$$;
-
-CREATE TRIGGER trg_teams_updated    BEFORE UPDATE ON teams             FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER trg_heroes_updated   BEFORE UPDATE ON heroes            FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER trg_maps_updated     BEFORE UPDATE ON maps              FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER trg_players_updated  BEFORE UPDATE ON players           FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER trg_tier_updated     BEFORE UPDATE ON tier_data         FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-CREATE TRIGGER trg_tier_set_updated BEFORE UPDATE ON personal_tier_sets FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- Лимит 10 сетов на пользователя в команде
-CREATE OR REPLACE FUNCTION _check_tier_set_limit()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-  IF (SELECT COUNT(*) FROM personal_tier_sets
-      WHERE user_id = NEW.user_id AND team_id = NEW.team_id) >= 10 THEN
-    RAISE EXCEPTION 'max_personal_tier_sets';
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_tier_set_limit
-  BEFORE INSERT ON personal_tier_sets
-  FOR EACH ROW EXECUTE FUNCTION _check_tier_set_limit();
-
--- При удалении дефолтного сета — назначаем следующий
-CREATE OR REPLACE FUNCTION _reassign_default_tier_set()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-  IF OLD.is_default THEN
-    UPDATE personal_tier_sets SET is_default = true
-    WHERE id = (
-      SELECT id FROM personal_tier_sets
-      WHERE user_id = OLD.user_id AND team_id = OLD.team_id AND id <> OLD.id
-      ORDER BY created_at LIMIT 1
-    );
-  END IF;
-  RETURN OLD;
-END;
-$$;
-
-CREATE TRIGGER trg_tier_set_reassign_default
-  AFTER DELETE ON personal_tier_sets
-  FOR EACH ROW EXECUTE FUNCTION _reassign_default_tier_set();
-
+-- (Триггерные функции и CREATE TRIGGER перенесены в 002_functions.sql)
 -- ════ GRANTS ════
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.teams               TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.permissions         TO authenticated;
