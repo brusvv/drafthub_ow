@@ -78,13 +78,18 @@ def parse_log(log_path: str):
             'when': m.group('when'), 'task': m.group('task'),
         }
     idx = text.find('\n|------')
-    header = text[:text.find('\n', idx + 1) + 1] if idx != -1 else LOG_HEADER
+    if idx != -1:
+        # +1 чтобы пропустить \n перед |------ и найти \n ПОСЛЕ строки разделителя
+        end = text.find('\n', idx + 1)
+        header = text[:end + 1] if end != -1 else text[:idx + 1]
+    else:
+        header = LOG_HEADER
     return rows, header
 
 
 def write_log(log_path: str, rows: dict, header: str):
     lines = [header.rstrip('\n')]
-    for path in sorted(rows):
+    for path in sorted(rows, key=lambda p: (rows[p]['when'], p), reverse=True):
         r = rows[path]
         lines.append(f"| {path} | {r['hash']} | {r['agent']} | {r['when']} | {r['task']} |")
     with open(log_path, 'w', encoding='utf-8') as f:
@@ -105,7 +110,7 @@ def cmd_check(log_path):
         print(f'Лог пуст или не найден: {log_path}')
         return
     ok = mismatches = missing = 0
-    for path, r in sorted(rows.items()):
+    for path, r in sorted(rows.items(), key=lambda x: (x[1]['when'], x[0]), reverse=True):
         if not os.path.exists(path):
             print(f'  ОТСУТСТВУЕТ    {path}  (в логе: {r["hash"]}, {r["agent"]})')
             missing += 1
