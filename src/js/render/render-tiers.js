@@ -1,4 +1,4 @@
-// @hash e27cbd4c 2026-06-25T23:37
+// @hash 055549fe 2026-06-27T13:22
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -338,8 +338,11 @@ function onDrop(e,type,toTier){
 
   const{name,tier:fromTier}=dragItem;
 
+  // Читаем из let-переменной (db-load.js), а не из store —
+  // let tierOrderMaps/tierOrderHeroes и window-proxy на store это РАЗНЫЕ binding'и
+  // в одном скрипте. store.get() не видит изменений сделанных через let.
   const snap=JSON.parse(JSON.stringify(
-    type==='maps'?store.get('tierOrderMaps'):store.get('tierOrderHeroes')
+    type==='maps' ? tierOrderMaps : tierOrderHeroes
   ));
 
   snap[fromTier]=(snap[fromTier]||[]).filter(n=>n!==name);
@@ -359,9 +362,12 @@ function onDrop(e,type,toTier){
     let targetPill=null;
     for(const pill of visPills){
       const r=pill.getBoundingClientRect();
-      const aboveRow=e.clientY<r.top;
-      const sameRowLeft=e.clientY<=r.bottom&&e.clientX<r.left+r.width/2;
-      if(aboveRow||sameRowLeft){targetPill=pill;break;}
+      // Курсор выше этой строки → вставить перед
+      if(e.clientY < r.top){targetPill=pill;break;}
+      // Курсор на той же строке — сравниваем по X центра пилюли
+      // Используем строгое сравнение: курсор должен быть ЛЕВЕЕ центра
+      // (без -2px буфера чтобы избежать «прилипания» к первой позиции)
+      if(e.clientY <= r.bottom && e.clientX < r.left+r.width/2-2){targetPill=pill;break;}
     }
 
     const domToOrderIdx=(domIdx,insertBefore)=>{
