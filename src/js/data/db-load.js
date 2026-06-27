@@ -1,4 +1,3 @@
-// @hash 77192e2e 2026-06-25T22:21
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
@@ -179,8 +178,12 @@ async function loadHeroSynergy(){
 }
 
 // ════ TIERS — три уровня: global / team / personal ════
-let tierOrderMaps   = {S:[],A:[],B:[],C:[],D:[]};
-let tierOrderHeroes = {S:[],A:[],B:[],C:[],D:[]};
+//let tierOrderMaps   = {S:[],A:[],B:[],C:[],D:[]};
+//let tierOrderHeroes = {S:[],A:[],B:[],C:[],D:[]};
+
+// let в <script> не идёт на window, поэтому window.tierOrderMaps (proxy) и let tierOrderMaps — разные вещи.
+// Присвоение tierOrderMaps = snap попадает в let, store не видит. Мой фикс (store.get() → tierOrderMaps) — лечит симптом, не причину.
+// Правильный фикс: удалить строки
 
 let globalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
 let globalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
