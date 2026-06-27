@@ -1,4 +1,4 @@
-/* @hash a7c31f88 2026-06-27T05:52 */
+/* @hash a535fe91 2026-06-27T06:28 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -76,7 +76,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 /* ── FILTERS ── */
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
 .filters{display:flex;gap:4px;flex-wrap:wrap}
-.f-btn{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-weight:600;transition:all .1s}
+.f-btn{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-weight:600;transition:all .1s}
 .f-btn:hover{color:var(--text2)}
 .f-btn.active{border-color:var(--border3);color:var(--text);background:var(--bg3)}
 .section-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
@@ -157,7 +157,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 /* Текст в кнопке фильтра скрывается когда кнопка активна */
 .f-btn.active .f-btn-text{display:none}
-.f-btn{display:inline-flex;align-items:center;gap:4px}
 
 /* Кнопка активного пула карт */
 .pool-active{border-color:rgba(43,189,142,.5)!important;color:var(--support)!important}
