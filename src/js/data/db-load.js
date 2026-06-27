@@ -1,4 +1,3 @@
-// @hash 6970ba46 2026-06-27T21:26
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
@@ -201,7 +200,8 @@ async function loadTiers(){
 }
 
 async function loadGlobalTiers(){
-  const { data, error } = await _sb.from('global_tier_data').select('entity_type, name, tier');
+  const { data, error } = await _sb.from('global_tier_data')
+  .select('entity_type, name, tier').order('position');
   if(error){ console.warn('loadGlobalTiers error', error); return; }
   globalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
   globalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
@@ -211,7 +211,7 @@ async function loadGlobalTiers(){
 async function loadTeamTiers(){
   const { data, error } = await _sb.from('tier_data')
     .select('entity_type, name, tier')
-    .eq('team_id', _teamId()).eq('scope', 'team');
+    .eq('team_id', _teamId()).eq('scope', 'team').order('position');
   if(error){ console.warn('loadTeamTiers error', error); return; }
   teamTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
   teamTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
@@ -229,8 +229,7 @@ async function loadPersonalTiers(){
     .select('entity_type, name, tier')
     .eq('team_id', _teamId()).eq('scope', 'personal').eq('user_id', currentUser().id);
   if(activeTierSetId) query = query.eq('tier_set_id', activeTierSetId);
-
-  const { data, error } = await query;
+  const { data, error } = await query.order('position');
   if(error){ console.warn('loadPersonalTiers error', error); return; }
   personalTierMaps   = {S:[],A:[],B:[],C:[],D:[]};
   personalTierHeroes = {S:[],A:[],B:[],C:[],D:[]};
