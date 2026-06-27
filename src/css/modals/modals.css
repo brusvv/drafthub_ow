@@ -1,14 +1,15 @@
-/* @hash ab7ad42f 2026-06-14T08:30 */
+/* @hash a9667b8e 2026-06-25T23:08 */
 /* ── MAP MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
 .modal-overlay.hidden{display:none}
 .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal.modal-wide{max-width:720px}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:1.25rem}
 .modal-footer{display:flex;gap:7px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
 .form-group{margin-bottom:.875rem}
 .form-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);display:block;margin-bottom:5px}
 .form-input,.form-select,.form-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--font);font-size:13px;outline:none}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--border3)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,160,48,.12);outline:none}
 .form-select{appearance:none;cursor:pointer}
 .form-textarea{resize:vertical;min-height:72px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -29,7 +30,7 @@
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-state{background:rgba(224,85,85,.07);border:1px solid rgba(224,85,85,.2);border-radius:8px;padding:.875rem 1.125rem;font-size:12px;color:var(--damage)}
 .empty{color:var(--text3);font-size:12px;font-style:italic}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:3000;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;font-size:12px;font-family:var(--mono);transform:translateY(16px);opacity:0;transition:all .25s;pointer-events:none}
+.toast{position:fixed;top:1.25rem;right:1.25rem;z-index:3000;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;font-size:12px;font-family:var(--mono);transform:translateY(16px);opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.ok{border-color:rgba(43,189,142,.4);color:var(--support)}
 .toast.err{border-color:rgba(224,85,85,.4);color:var(--damage)}
