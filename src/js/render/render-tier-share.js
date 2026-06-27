@@ -1,4 +1,4 @@
-// @hash 0a04d038 2026-06-22T07:45
+// @hash 1498a6a4 2026-06-27T05:52
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -72,9 +72,9 @@ async function renderTierSharePanel(){
                 onchange="toggleShareLinkPublic('${l.id}',this.checked)"> Публичная
             </label>
             <button onclick="copyShareLink('${l.token}')"
-              class="btn" style="font-size:9px;padding:3px 8px">Скопировать</button>
+              class="btn btn-xs">Скопировать</button>
             <button onclick="deleteShareLink('${l.id}')"
-              class="btn btn-danger" style="font-size:9px;padding:3px 8px">✕</button>
+              class="btn btn-danger btn-xs">✕</button>
           </div>`;
         }).join('')}
       </div>` : '<div class="empty" style="font-size:11px">Нет активных ссылок</div>'}`;
