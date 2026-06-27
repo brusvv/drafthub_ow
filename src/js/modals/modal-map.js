@@ -3,7 +3,7 @@
 
 function openMapModal(map){
   document.getElementById('mapModalTitle').textContent=map?'Редактировать карту':'Добавить карту';
-  document.getElementById('mapEditRow').value=map?map.rowIndex:'';
+  document.getElementById('mapEditRow').value=map?.id??'';
   document.getElementById('mName').value=map?map.name:'';
   document.getElementById('mType').value=map?map.type:'';
   document.getElementById('mTier').value=map?map.tier:'B';
