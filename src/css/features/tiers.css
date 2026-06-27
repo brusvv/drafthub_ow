@@ -1,14 +1,11 @@
-/* @hash 8e00c198 2026-06-26T08:45 */
+/* @hash 8469eabf 2026-06-27T00:22 */
 /* ── TIER LIST ──
    .tier-row/.tier-lbl/.tier-maps/.tier-pill дублировались здесь и в блоке
-   "TIER DRAG & DROP" ниже — эта копия .tier-row была мёртвой (вторая
-   побеждает в каскаде), убрал. .tier-lbl/.tier-maps/.tier-pill ниже не
-   трогаю — не до конца уверен что они тоже безусловно мёртвые (там есть
-   нюанс с height vs min-height), оставляю отдельной задачей. */
-.tier-lbl{font-family:var(--mono);font-size:15px;font-weight:700;width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
-.tier-maps{display:flex;flex-wrap:wrap;gap:6px;padding-top:5px}
-.tier-pill{font-size:12px;font-weight:600;padding:6px 12px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .1s}
-.tier-pill:hover{border-color:var(--border2)}
+   "TIER DRAG & DROP" ниже. Проверено построчно (cascade + box model, см.
+   scripts/css_dupe_check.py) — все 4 правила полностью перетёрты второй
+   копией, включая height:38px vs min-height:44px (used height = max(min-height,
+   height) = 44px в обоих случаях, так что height:38px ни на что не влиял
+   даже не будучи перетёртым по имени свойства). Удалены целиком. */
  
 /* ── BANS VIEW ── */
 .bans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -123,8 +120,7 @@
 .tier-hero-preview-img,.tier-hero-preview-ph{width:180px;aspect-ratio:1;border-radius:14px;background:var(--bg3)}
 .tier-hero-preview-img{object-fit:cover;display:block}
 .tier-hero-preview-ph{display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;color:var(--text3)}
-.tier-preview-section{margin-top:14px}
-.tier-preview-section-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px}
+/* .tier-hero-preview-card — секция, тир-лейбл идут ниже, у других */
 .tier-preview-counters .h-counter-icon,.tier-preview-counters .h-counter-icon img,.tier-preview-counters .h-counter-icon-ph{width:34px;height:34px}
 .tier-preview-ban{color:var(--damage)!important;border-color:rgba(224,85,85,.3)!important;background:rgba(224,85,85,.08)!important}
 @media (max-width:560px){.tier-hero-preview-card{grid-template-columns:1fr}.tier-hero-preview-img,.tier-hero-preview-ph{width:100%;max-width:240px;margin:0 auto}}
