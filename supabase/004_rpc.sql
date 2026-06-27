@@ -224,7 +224,7 @@ BEGIN
     'tiers', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
         'entity_type', entity_type, 'name', name, 'tier', tier
-      ) ORDER BY entity_type, name)
+      ) ORDER BY tier_data.position)
       FROM tier_data
       WHERE tier_set_id = v_link.tier_set_id
         AND (v_link.entity_type = 'both' OR entity_type = v_link.entity_type)
