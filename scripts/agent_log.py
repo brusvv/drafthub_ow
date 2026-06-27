@@ -78,7 +78,7 @@ def parse_log(log_path: str):
             'when': m.group('when'), 'task': m.group('task'),
         }
     idx = text.find('\n|------')
-    header = text[:text.find('\n', idx) + 1] if idx != -1 else LOG_HEADER
+    header = text[:text.find('\n', idx + 1) + 1] if idx != -1 else LOG_HEADER
     return rows, header
 
 
