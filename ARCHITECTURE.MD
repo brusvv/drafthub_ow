@@ -246,6 +246,54 @@ scoreComposition(comp, map, side, bans, enemyHeroes):
 
 ---
 
+---
+
+## Параметры сущностей: Google Sheets vs Supabase
+
+При миграции с Google Sheets на Supabase ряд полей был переименован.
+Это критично при работе с модалками и write-функциями — использование
+старого имени даёт `invalid input syntax for type uuid: "undefined"`.
+
+### Идентификатор записи
+
+| Контекст | Поле | Тип | Примечание |
+|----------|------|-----|------------|
+| **Google Sheets** (старый) | `rowIndex` | `number` | Номер строки в таблице |
+| **Supabase** (текущий) | `id` | `uuid` | Генерируется БД через `gen_random_uuid()` |
+
+**В модалках** (`openHeroModal`, `openMapModal`, `openPlayerModal`) скрытый input
+хранит id текущей записи для различия «создать» vs «обновить»:
+```js
+// ✓ Правильно (Supabase)
+document.getElementById('heroEditRow').value = hero?.id ?? '';
+
+// ✗ Неправильно (осталось от Sheets)
+document.getElementById('heroEditRow').value = hero ? hero.rowIndex : '';
+```
+
+**В write-функциях** (`db-write.js`) защита от строки `"undefined"`:
+```js
+// ✓ Правильно — явная проверка
+const raw = document.getElementById('heroEditRow').value;
+const editId = (raw && raw !== 'undefined') ? raw : null;
+
+// ✗ Неправильно — "undefined" строка truthy, || null не срабатывает
+const editId = document.getElementById('heroEditRow').value || null;
+```
+
+### Названия полей в объектах
+
+| Поле | Google Sheets | Supabase |
+|------|--------------|---------|
+| Основная роль игрока | `mainRole` | `main_role` (snake_case в БД, `mainRole` в JS-объекте после маппинга в `db-load.js`) |
+| Офф-роль | `offRole` | `off_role` |
+| Флаг активного пула | `inPool` | `in_pool` |
+| Предпочтительные герои | `preferredHeroes` | `preferred_heroes` |
+| Героев в бане | `bans` | `ban_heroes` |
+
+> Маппинг Supabase snake_case → JS camelCase делается в `db-load.js` при загрузке.
+> Все render-файлы работают только с camelCase JS-объектами, напрямую к БД не обращаются.
+
 ## Build & Deploy
 
 ```bash
