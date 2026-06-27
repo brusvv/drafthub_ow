@@ -300,7 +300,7 @@ async function saveTierOrder(entityType, tierObj){
 function _tierObjToRows(entityType, tierObj){
   const rows = [];
   Object.entries(tierObj).forEach(([tier, names]) =>
-    names.forEach(name => rows.push({ entity_type: entityType, name, tier }))
+    names.forEach((name, idx) => rows.push({ entity_type: entityType, name, tier, position: idx }))
   );
   return rows;
 }
