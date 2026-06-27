@@ -1,8 +1,8 @@
-/* @hash f3b0e7d0 2026-06-14T08:30 */
+/* @hash 6163f69f 2026-06-25T23:08 */
 /* ── MAP GRID ── */
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .map-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s;background:var(--bg2)}
-.map-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.map-card:hover{border-color:var(--border2);box-shadow:inset 0 0 0 1px var(--border2)}
 .map-card-img{width:100%;height:90px;object-fit:cover;display:block;background:var(--bg3)}
 .map-card-img-ph{width:100%;height:90px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
 .map-card-body{padding:9px 11px}
