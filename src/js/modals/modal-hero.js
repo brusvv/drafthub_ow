@@ -1,4 +1,3 @@
-// @hash b5fd2a8e 2026-06-24T09:08
 // ════ MODAL — HERO (core) ════
 // Содержит: открытие модалки героя, синергия-пикер.
 // Зависимости:
@@ -14,7 +13,7 @@ let heroSynergyEdits=[];    // [{name, score}] — синергии текуще
 // ════════════════════════════════════════════════════════════
 function openHeroModal(hero){
   document.getElementById('heroModalTitle').textContent=hero?'Редактировать героя':'Добавить героя';
-  document.getElementById('heroEditRow').value=hero?hero.rowIndex:'';
+  document.getElementById('heroEditRow').value=hero?.id??'';
   document.getElementById('hName').value=hero?hero.name:'';
   document.getElementById('hRole').value=hero?hero.role:'';
   document.getElementById('hSub').value=hero?hero.subrole:'';
