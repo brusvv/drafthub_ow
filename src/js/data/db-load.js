@@ -1,3 +1,4 @@
+// @hash 6970ba46 2026-06-27T21:26
 // ════ DATA — LOAD (Supabase) ════
 // Замена sheets-load.js. Сохраняет те же глобальные переменные
 // (heroes, maps, players, heroMap, heroMapStrength, heroSynergy) —
