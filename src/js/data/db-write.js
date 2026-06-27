@@ -14,7 +14,8 @@ function _requireWrite(){
 // ════ HEROES ════
 async function saveHero(){
   const name = document.getElementById('hName').value.trim();
-  const editId = document.getElementById('heroEditRow').value || null;
+  const _rawHeroId = document.getElementById('heroEditRow').value;
+  const editId = (_rawHeroId && _rawHeroId !== 'undefined') ? _rawHeroId : null;
   const newCounters = counterPickerSelected.map(c => ({ name:c.name, score:c.score }));
 
   // ── Глобальный / Личный режим — трогаем ТОЛЬКО контрпики (hero_counters).
@@ -138,7 +139,8 @@ async function saveMap(){
   const type = document.getElementById('mType').value;
   if(!name || !type){ toast('Заполни название и тип', 'err'); return; }
 
-  const editId = document.getElementById('mapEditRow').value || null;
+  const _rawMapId = document.getElementById('mapEditRow').value;
+  const editId = (_rawMapId && _rawMapId !== 'undefined') ? _rawMapId : null;
   const noAD = NO_ATKDEF.includes(type);
 
   const comp = compSlots.filter(s => s.hero).map(s => ({
