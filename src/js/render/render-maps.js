@@ -1,4 +1,4 @@
-// @hash 154f295d 2026-06-25T22:21
+// @hash f24deabc 2026-06-27T05:52
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -140,11 +140,11 @@ function showMapDetail(name){
           <button class="btn" style="margin-top:2.5rem" onclick="openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
         </div>
         <div class="detail-meta">
-          <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier}" style="margin-left:4px">${m.tier}</span></div>
+          <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier} icon-label">${m.tier}</span></div>
           <div class="m-item"><span>Тип:</span>${mapTypeIcon(m.type,14)}<span class="m-val">${m.type}</span></div>
           <div class="m-item"><span>Приоритет:</span><span class="m-val">#${m.priority}</span></div>
           ${noAD
-            ?`<div class="m-item">${ICON_DIF}<span style="margin-left:4px">Сложность</span>${dots5(m.dif,'dif')}</div>`
+            ?`<div class="m-item">${ICON_DIF}<span class="icon-label">Сложность</span>${dots5(m.dif,'dif')}</div>`
             :`<div class="m-item">${ICON_ATK}${dots5(m.atk,'atk')}</div>
               <div class="m-item">${ICON_DEF}${dots5(m.def,'def')}</div>`
           }
