@@ -32,6 +32,44 @@ BEGIN
 END;
 $$;
 
+-- ── create_invite_link ──
+-- Создаёт invite через SECURITY DEFINER RPC вместо прямого REST INSERT.
+-- Так RLS не блокирует PostgREST-запрос, но проверки прав остаются здесь.
+CREATE OR REPLACE FUNCTION create_invite_link(
+  p_team_id uuid,
+  p_role_id uuid,
+  p_max_uses int DEFAULT NULL,
+  p_expires_in_days int DEFAULT 7
+)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_token text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF NOT can_manage_invites(p_team_id) THEN RAISE EXCEPTION 'no_invite_permission'; END IF;
+  IF my_team_role(p_team_id) = 'viewer' THEN RAISE EXCEPTION 'viewer_cannot_invite'; END IF;
+  IF role_sort_order(p_role_id) < my_role_sort_order(p_team_id) THEN
+    RAISE EXCEPTION 'cannot_invite_higher_role';
+  END IF;
+
+  INSERT INTO team_invites (team_id, role_id, max_uses, expires_at, created_by)
+  VALUES (
+    p_team_id,
+    p_role_id,
+    p_max_uses,
+    CASE
+      WHEN p_expires_in_days IS NULL THEN NULL
+      ELSE now() + make_interval(days => p_expires_in_days)
+    END,
+    auth.uid()
+  )
+  RETURNING token INTO v_token;
+
+  RETURN v_token;
+END;
+$$;
+
 -- ── accept_invite ──
 -- Принимает инвайт по токену. Нельзя самоповышение (проверка sort_order).
 CREATE OR REPLACE FUNCTION accept_invite(p_token text)
@@ -189,6 +227,65 @@ BEGIN
 END;
 $$;
 
+-- ── create_tier_share_link ──
+-- Создаёт share-ссылку через SECURITY DEFINER RPC вместо прямого REST INSERT.
+-- Если активный личный tier-set не передан, берёт/создаёт дефолтный.
+CREATE OR REPLACE FUNCTION create_tier_share_link(
+  p_team_id uuid,
+  p_tier_set_id uuid DEFAULT NULL,
+  p_entity_type text DEFAULT 'both',
+  p_label text DEFAULT NULL,
+  p_is_public bool DEFAULT true,
+  p_expires_in_days int DEFAULT NULL
+)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_tier_set_id uuid := p_tier_set_id;
+  v_token       text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_entity_type NOT IN ('map','hero','both') THEN RAISE EXCEPTION 'invalid_entity_type'; END IF;
+
+  IF v_tier_set_id IS NULL THEN
+    SELECT id INTO v_tier_set_id
+    FROM personal_tier_sets
+    WHERE user_id = auth.uid() AND team_id = p_team_id AND is_default = true
+    LIMIT 1;
+
+    IF v_tier_set_id IS NULL THEN
+      INSERT INTO personal_tier_sets (user_id, team_id, name, is_default)
+      VALUES (auth.uid(), p_team_id, 'Мой тирлист', true)
+      RETURNING id INTO v_tier_set_id;
+    END IF;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1 FROM personal_tier_sets
+      WHERE id = v_tier_set_id AND user_id = auth.uid() AND team_id = p_team_id
+    ) THEN
+      RAISE EXCEPTION 'tier_set_not_found';
+    END IF;
+  END IF;
+
+  INSERT INTO tier_share_links (user_id, team_id, entity_type, label, is_public, tier_set_id, expires_at)
+  VALUES (
+    auth.uid(),
+    p_team_id,
+    p_entity_type,
+    NULLIF(trim(p_label), ''),
+    p_is_public,
+    v_tier_set_id,
+    CASE
+      WHEN p_expires_in_days IS NULL THEN NULL
+      ELSE now() + make_interval(days => p_expires_in_days)
+    END
+  )
+  RETURNING token INTO v_token;
+
+  RETURN v_token;
+END;
+$$;
+
 -- ── view_shared_tier ──
 -- Просмотр тир-листа по токену — работает без авторизации (anon) для публичных.
 -- Возвращает tier_set_name для отображения в заголовке share-страницы.
@@ -306,12 +403,14 @@ GRANT EXECUTE ON FUNCTION public.app_role()                      TO authenticate
 GRANT EXECUTE ON FUNCTION public.is_superadmin()                 TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_app_admin()                  TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_team(text, text)         TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_invite_link(uuid, uuid, int, int) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.accept_invite(text)             TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_team_context(uuid)       TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_team_members(uuid)          TO authenticated;
 GRANT EXECUTE ON FUNCTION public.rename_team(uuid, text)         TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_tier_set(uuid, text)     TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_default_tier_set(uuid)      TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_tier_share_link(uuid, uuid, text, text, bool, int) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.view_shared_tier(text)          TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.set_user_app_role(text, text)   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_all_teams()           TO authenticated;
