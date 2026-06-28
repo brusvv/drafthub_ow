@@ -1,4 +1,4 @@
-// @hash 975e388c 2026-06-28T12:33
+// @hash 7445d973 2026-06-28T22:23
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -178,15 +178,17 @@ async function removeMember(userRoleId, userId) {
 // ════ INVITES ════
 async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
   if(!canManageInvites()) { toast('Нет прав на создание инвайта', 'err'); return null; }
-  const { data, error } = await sbRpc('create_invite_link', {
+  const { data, error } = await _sb.rpc('create_invite_link', {
     p_team_id: currentTeam().id,
     p_role_id: roleId,
     p_max_uses: maxUses,
     p_expires_in_days: expiresInDays,
   });
-  if(error) { toast('Ошибка создания инвайта', 'err'); return null; }
+  if(error) { handleError(error, 'Ошибка создания инвайта'); return null; }
 
-  const link = `${window.location.origin}/join/${data}`;
+  // RPC возвращает токен напрямую как text
+  const token = typeof data === 'string' ? data : data?.token;
+  const link = `${window.location.origin}/join/${token}`;
   try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch { toast(link, 'ok'); }
   return link;
