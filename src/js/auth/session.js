@@ -1,4 +1,4 @@
-// @hash f6fd9a4f 2026-06-25T22:21
+// @hash 8dcdf718 2026-06-28T22:45
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -42,9 +42,19 @@ const isAdmin      = () => isSuperAdmin() || _appRole() === 'admin';
 
 // ── Инициализация ─────────────────────────────────────────────
 async function initSession() {
+  // GitHub Pages 404.html (src/html/404.html) сохраняет оригинальный путь
+  // в sessionStorage перед редиректом на index.html — восстанавливаем его
+  // здесь, ДО любых проверок pathname, иначе /tier/ и /join/ ниже всегда
+  // увидят '/drafthub_ow/' и ничего не сработает.
+  const stashedPath = sessionStorage.getItem('gh_pages_redirect_path');
+  if(stashedPath){
+    sessionStorage.removeItem('gh_pages_redirect_path');
+    history.replaceState({}, '', stashedPath);
+  }
+
   // Сначала проверяем публичную share-ссылку — она может быть открыта
   // человеком без аккаунта вообще (если is_public=true)
-  const isSharedTierUrl = window.location.pathname.startsWith('/tier/');
+  const isSharedTierUrl = window.location.pathname.startsWith('/drafthub_ow/tier/');
   if(isSharedTierUrl){
     const handled = await handleSharedTierUrl();
     if(handled) return;   // страница уже отрендерена как read-only
@@ -202,7 +212,7 @@ async function signUpWithEmail(email, password) {
 async function signOut() { await _sb.auth.signOut(); }
 
 function _extractJoinToken() {
-  const match = window.location.pathname.match(/^\/join\/([A-Za-z0-9_=-]{10,})$/);
+  const match = window.location.pathname.match(/^\/drafthub_ow\/join\/([A-Za-z0-9_=-]{10,})$/);
   return match ? match[1] : null;
 }
 
