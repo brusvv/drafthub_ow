@@ -231,6 +231,7 @@ CREATE INDEX idx_invites_token     ON team_invites(token);
 CREATE INDEX idx_share_links_token ON tier_share_links(token);
 CREATE INDEX idx_share_links_user  ON tier_share_links(user_id, team_id);
 CREATE INDEX idx_tier_set_id       ON tier_data(tier_set_id);
+CREATE INDEX idx_global_tiers_order ON global_tier_data(entity_type, position);
 
 CREATE UNIQUE INDEX idx_tier_team_unique
   ON tier_data(team_id, entity_type, name) WHERE scope = 'team';
