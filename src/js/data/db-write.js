@@ -1,4 +1,4 @@
-// @hash f5306b25 2026-06-28T09:44
+// @hash 36e217e0 2026-06-28T12:33
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -372,7 +372,7 @@ async function loadShareLinks(){
 }
 
 async function createShareLink({ entityType = 'both', label = '', isPublic = true, expiresInDays = null }){
-  const { data, error } = await _sb.rpc('create_tier_share_link', {
+  const { data, error } = await sbRpc('create_tier_share_link', {
     p_team_id: _teamId(),
     p_tier_set_id: activeTierSetId ?? null,
     p_entity_type: entityType,
