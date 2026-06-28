@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>DraftHub OW</title>
+</head>
+<body>
+<script>
+  // GitHub Pages — статический хостинг, серверного rewrite нет.
+  // Любой путь вида /drafthub_ow/tier/TOKEN или /drafthub_ow/join/TOKEN,
+  // открытый напрямую (не кликом внутри уже загруженного приложения),
+  // долетает сюда как 404 — GitHub Pages ищет физический файл по этому
+  // пути и не находит. Сохраняем оригинальный путь и редиректим на
+  // index.html той же папки; session.js при старте (initSession) читает
+  // sessionStorage и восстанавливает путь через history.replaceState —
+  // дальше всё работает как обычная клиентская навигация.
+  sessionStorage.setItem('gh_pages_redirect_path', location.pathname + location.search + location.hash);
+  location.replace('/drafthub_ow/');
+</script>
+</body>
+</html>
