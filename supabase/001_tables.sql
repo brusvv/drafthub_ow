@@ -175,6 +175,7 @@ CREATE TABLE global_tier_data (
   entity_type text NOT NULL CHECK (entity_type IN ('map','hero')),
   name        text NOT NULL,
   tier        text NOT NULL CHECK (tier IN ('S','A','B','C','D')),
+  position    SMALLINT NOT NULL DEFAULT 0,
   updated_by  uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   updated_at  timestamptz DEFAULT now(),
   PRIMARY KEY (entity_type, name)
