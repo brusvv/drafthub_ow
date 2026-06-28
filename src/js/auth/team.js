@@ -1,4 +1,4 @@
-// @hash 7303c6a6 2026-06-24T20:44
+// @hash 329f95fa 2026-06-28T09:44
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -178,13 +178,15 @@ async function removeMember(userRoleId, userId) {
 // ════ INVITES ════
 async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
   if(!canManageInvites()) { toast('Нет прав на создание инвайта', 'err'); return null; }
-  const expiresAt = new Date(Date.now() + expiresInDays * 86400_000).toISOString();
-  const { data, error } = await _sb.from('team_invites')
-    .insert({ team_id: currentTeam().id, role_id: roleId, max_uses: maxUses, expires_at: expiresAt, created_by: currentUser().id })
-    .select('token').single();
+  const { data, error } = await _sb.rpc('create_invite_link', {
+    p_team_id: currentTeam().id,
+    p_role_id: roleId,
+    p_max_uses: maxUses,
+    p_expires_in_days: expiresInDays,
+  });
   if(error) { toast('Ошибка создания инвайта', 'err'); return null; }
 
-  const link = `${window.location.origin}/join/${data.token}`;
+  const link = `${window.location.origin}/join/${data}`;
   try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch { toast(link, 'ok'); }
   return link;
