@@ -165,4 +165,10 @@ FOOTER
 
 sed -i "s|__GOOGLE_CLIENT_ID__|${GOOGLE_CLIENT_ID}|g" "$OUT"
 
+# GitHub Pages SPA-роутинг: 404.html ловит прямые заходы на /tier/TOKEN
+# и /join/TOKEN (см. src/html/404.html), редиректит на index.html того же
+# каталога. Должен лежать в корне dist/ — GitHub Pages ищет 404.html
+# только на корневом уровне опубликованного каталога.
+cp "$SRC/html/404.html" "$(dirname "$OUT")/404.html"
+
 echo "✓ Собрано: $OUT ($(wc -l < "$OUT") строк)"
