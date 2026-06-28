@@ -1,4 +1,4 @@
-// @hash 1498a6a4 2026-06-27T05:52
+// @hash 4eb3d45a 2026-06-28T22:45
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -63,7 +63,7 @@ async function renderTierSharePanel(){
               </div>
               <code style="font-family:var(--mono);font-size:9px;color:var(--text3);
                 display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                /tier/${l.token}
+                /drafthub_ow/tier/${l.token}
               </code>
             </div>
             <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${l.views} просм.</span>
@@ -86,7 +86,7 @@ async function renderTierSharePanel(){
 function _shareEntityLabel(t){ return t==='map'?'Карты':t==='hero'?'Герои':'Карты и герои'; }
 
 async function copyShareLink(token){
-  const link = `${window.location.origin}/tier/${token}`;
+  const link = `${window.location.origin}/drafthub_ow/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Скопировано ✓','ok'); }
   catch{ toast(link,'ok'); }
 }
@@ -102,7 +102,7 @@ async function _submitCreateShareLink(){
 
 // ════ ОБРАБОТКА /tier/TOKEN — публичный просмотр без авторизации ════
 async function handleSharedTierUrl(tokenOverride){
-  const match = window.location.pathname.match(/^\/tier\/([A-Za-z0-9_=-]{10,})$/);
+  const match = window.location.pathname.match(/^\/drafthub_ow\/tier\/([A-Za-z0-9_=-]{10,})$/);
   const token = tokenOverride || (match ? match[1] : null);
   if(!token) return false;
 
