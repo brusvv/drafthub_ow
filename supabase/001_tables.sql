@@ -78,7 +78,7 @@ CREATE TABLE team_invites (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   team_id     uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   role_id     uuid NOT NULL REFERENCES roles(id),
-  token       text UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(24), 'base64url'),
+  token       text UNIQUE NOT NULL DEFAULT replace(replace(rtrim(encode(gen_random_bytes(24), 'base64'), '='), '+', '-'), '/', '_'),
   created_by  uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   max_uses    int DEFAULT NULL,
   uses        int DEFAULT 0,
@@ -183,7 +183,7 @@ CREATE TABLE global_tier_data (
 
 CREATE TABLE tier_share_links (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  token       text UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(20), 'base64url'),
+  token       text UNIQUE NOT NULL DEFAULT replace(replace(rtrim(encode(gen_random_bytes(20), 'base64'), '='), '+', '-'), '/', '_'),
   user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   team_id     uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
   entity_type text NOT NULL CHECK (entity_type IN ('map','hero','both')),
