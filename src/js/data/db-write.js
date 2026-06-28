@@ -1,4 +1,4 @@
-// @hash ea52c0df 2026-06-27T21:56
+// @hash f5306b25 2026-06-28T09:44
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -372,19 +372,17 @@ async function loadShareLinks(){
 }
 
 async function createShareLink({ entityType = 'both', label = '', isPublic = true, expiresInDays = null }){
-  const row = {
-    user_id:     currentUser().id,
-    team_id:     _teamId(),
-    entity_type: entityType,
-    label:       label || null,
-    is_public:   isPublic,
-    tier_set_id: activeTierSetId ?? null,   // привязываем к конкретному сету
-    expires_at:  expiresInDays ? new Date(Date.now() + expiresInDays*86400_000).toISOString() : null,
-  };
-  const { data, error } = await _sb.from('tier_share_links').insert(row).select('token').single();
+  const { data, error } = await _sb.rpc('create_tier_share_link', {
+    p_team_id: _teamId(),
+    p_tier_set_id: activeTierSetId ?? null,
+    p_entity_type: entityType,
+    p_label: label || null,
+    p_is_public: isPublic,
+    p_expires_in_days: expiresInDays,
+  });
   if(error){ toast('Ошибка создания ссылки', 'err'); return null; }
 
-  const link = `${window.location.origin}/tier/${data.token}`;
+  const link = `${window.location.origin}/tier/${data}`;
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch{ toast(link, 'ok'); }
   return link;
