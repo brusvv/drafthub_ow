@@ -125,7 +125,8 @@ CREATE POLICY "global_tiers: public read"      ON global_tier_data FOR SELECT US
 CREATE POLICY "global_tiers: superadmin write" ON global_tier_data FOR ALL    USING (is_superadmin());
 
 -- ── tier_share_links ──
-CREATE POLICY "share_links: owner"       ON tier_share_links FOR ALL    USING (user_id = auth.uid());
+CREATE POLICY "share_links: owner"       ON tier_share_links FOR ALL
+  USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "share_links: public read" ON tier_share_links FOR SELECT USING (is_public = true);
 
 -- ── personal_tier_sets ──
