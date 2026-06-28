@@ -1,4 +1,4 @@
-// @hash 9f6b7440 2026-06-25T22:21
+// @hash f0c031e3 2026-06-27T13:13
 // ════════════════════════════════════════════════════════════
 // render-bans-core.js — ядро вкладки «Текущие баны»
 //
@@ -32,24 +32,21 @@ let banMode = 'competitive';
 // Сброс при switchTeam
 function resetBanMode() { banMode = 'competitive'; }
 
-// ── Перехват confirmPicker для bans-специфичных режимов ──────
-const _confirmPickerPreBans = window.confirmPicker || (()=>{});
-window.confirmPicker = function() {
-  if (pickerMode === 'banHeroes') {
-    banDraftHeroes = [...(pickerSelected.banHeroes || [])];
-    closePicker();
-    renderBans();
-  } else if (pickerMode === 'tournMapPool') {
-    tournMapPool = (pickerSelected.tournMapPool || []).map(n => {
-      const m = maps.find(x => x.name === n);
-      return m ? { name: m.name, type: m.type } : { name: n, type: '' };
-    });
-    closePicker();
-    renderBans();
-  } else {
-    _confirmPickerPreBans();
-  }
-};
+// LEQ-2: registerPickerHandler вместо window.confirmPicker override
+registerPickerHandler('banHeroes', function() {
+  banDraftHeroes = [...(pickerSelected.banHeroes || [])];
+  closePicker();
+  renderBans();
+});
+
+registerPickerHandler('tournMapPool', function() {
+  tournMapPool = (pickerSelected.tournMapPool || []).map(n => {
+    const m = maps.find(x => x.name === n);
+    return m ? { name: m.name, type: m.type } : { name: n, type: '' };
+  });
+  closePicker();
+  renderBans();
+});
 
 // ════════════════════════════════════════════════════════════
 // ТОЧКА ВХОДА
