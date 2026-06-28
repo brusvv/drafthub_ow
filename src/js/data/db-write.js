@@ -1,4 +1,4 @@
-// @hash 36e217e0 2026-06-28T12:33
+// @hash fb658575 2026-06-28T22:23
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -372,7 +372,7 @@ async function loadShareLinks(){
 }
 
 async function createShareLink({ entityType = 'both', label = '', isPublic = true, expiresInDays = null }){
-  const { data, error } = await sbRpc('create_tier_share_link', {
+  const { data, error } = await _sb.rpc('create_tier_share_link', {
     p_team_id: _teamId(),
     p_tier_set_id: activeTierSetId ?? null,
     p_entity_type: entityType,
@@ -380,9 +380,11 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
     p_is_public: isPublic,
     p_expires_in_days: expiresInDays,
   });
-  if(error){ toast('Ошибка создания ссылки', 'err'); return null; }
+  if(error){ handleError(error, 'Ошибка создания ссылки'); return null; }
 
-  const link = `${window.location.origin}/tier/${data}`;
+  // RPC возвращает токен напрямую как text
+  const token = typeof data === 'string' ? data : data?.token;
+  const link = `${window.location.origin}/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch{ toast(link, 'ok'); }
   return link;
