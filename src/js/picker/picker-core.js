@@ -1,5 +1,30 @@
-// @hash 0c26d44a 2026-06-20T10:07
+// @hash 1486e66c 2026-06-27T13:13
 // ════ PICKER — CORE ════
+
+// ════════════════════════════════════════════════════════════
+// DISPATCH-ТАБЛИЦА confirmPicker (LEQ-1)
+//
+// Заменяет цепочку из 4 window.confirmPicker = function(){...} overrides
+// (picker-comp.js, modal-hero.js, render-bans-core.js, render-draft-comp.js).
+//
+// registerPickerHandler(mode, fn) регистрирует обработчик для конкретного
+// pickerMode. confirmPicker() вызывает нужный хендлер по ключу.
+//
+// Специальные ключи:
+//   '__draft_prefix__' — срабатывает если pickerMode.startsWith('draft_')
+//   '__playerRole_prefix__' — срабатывает если pickerMode.startsWith('playerRole_')
+//
+// Порядок проверки в confirmPicker():
+//   1. Точное совпадение mode → handler
+//   2. startsWith('draft_') → '__draft_prefix__'
+//   3. startsWith('playerRole_') → '__playerRole_prefix__'
+//   4. Дефолт — closePicker() + renderSelPreview()
+// ════════════════════════════════════════════════════════════
+const _pickerHandlers = {};
+
+function registerPickerHandler(mode, fn) {
+  _pickerHandlers[mode] = fn;
+}
 
 function openPicker(mode,max=999){
   pickerMode=mode;pickerMax=max;pickerRoleFilter='all';
@@ -79,8 +104,26 @@ function renderPickerGrid(){
   }).join('');
 }
 
-// Подтверждение — расширяется в picker-comp.js (слоты состава)
+// ── Центральный confirmPicker — dispatch по режиму ──────────
 function confirmPicker(){
+  const m = pickerMode;
+
+  // 1. Точное совпадение
+  if(_pickerHandlers[m]){ _pickerHandlers[m](); return; }
+
+  // 2. Префикс draft_ (render-draft-comp.js регистрирует '__draft_prefix__')
+  if(m && m.startsWith('draft_') && _pickerHandlers['__draft_prefix__']){
+    _pickerHandlers['__draft_prefix__'](); return;
+  }
+
+  // 3. Префикс playerRole_ — дефолтное поведение (close + preview)
+  if(m && m.startsWith('playerRole_')){
+    closePicker();
+    renderSelPreview();
+    return;
+  }
+
+  // 4. Дефолт: preferred, bans, mapCounters, playerMain, playerPool и т.д.
   closePicker();
   renderSelPreview();
 }
@@ -92,10 +135,6 @@ function renderSelPreview(){
     const el=document.getElementById(elId);if(!el)return;
     const sel=pickerSelected[mode]||[];
     if(!sel.length){el.innerHTML='<span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>';return}
-    // title=имя героя — подсказка при наведении (как в тирлистах/контрпиках).
-    // Клик по портрету открывает карточку героя (stopPropagation, чтобы не
-    // открылся пикер контейнера .sel-heroes); клик по остальной части чипа
-    // открывает пикер как раньше.
     el.innerHTML=sel.map(name=>{
       const h=heroMap[name]||{};const src=portrait(name);
       return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
