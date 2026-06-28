@@ -1,4 +1,4 @@
-// @hash 329f95fa 2026-06-28T09:44
+// @hash 975e388c 2026-06-28T12:33
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -178,7 +178,7 @@ async function removeMember(userRoleId, userId) {
 // ════ INVITES ════
 async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
   if(!canManageInvites()) { toast('Нет прав на создание инвайта', 'err'); return null; }
-  const { data, error } = await _sb.rpc('create_invite_link', {
+  const { data, error } = await sbRpc('create_invite_link', {
     p_team_id: currentTeam().id,
     p_role_id: roleId,
     p_max_uses: maxUses,
