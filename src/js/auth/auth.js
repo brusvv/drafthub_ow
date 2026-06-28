@@ -1,4 +1,4 @@
-// @hash a7867e16 2026-06-20T13:52
+// @hash 1d32d8b0 2026-06-28T12:33
 // ════ AUTH — Supabase client ════
 // Единственный файл который знает о Supabase URL и anon key.
 // Все остальные auth/* импортируют _sb из этого файла.
@@ -20,6 +20,27 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true,   // нужно для OAuth callback и invite links
   },
 });
+
+// Явный RPC fetch для GitHub Pages/Supabase CDN edge-case:
+// у некоторых _sb.rpc() запросов apikey header не доходил до PostgREST.
+// Этот helper всегда отправляет и apikey, и Authorization.
+async function sbRpc(fn, args = {}) {
+  const { data: { session } = {} } = await _sb.auth.getSession();
+  const bearer = session?.access_token || SUPABASE_ANON_KEY;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${bearer}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if(!res.ok) return { data: null, error: data || { message: res.statusText, status: res.status } };
+  return { data, error: null };
+}
 
 // ── Провайдеры OAuth ─────────────────────────────────────────
 const AUTH_PROVIDERS = {
