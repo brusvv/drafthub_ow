@@ -1,5 +1,6 @@
-// @hash 71f80e39 2026-06-14T08:30
-// ════ PICKER — COMP SLOTS & CONFIRM OVERRIDE ════
+// @hash 122227dc 2026-06-27T13:13
+// ════ PICKER — COMP SLOTS ════
+// LEQ-2: window.confirmPicker override заменён на registerPickerHandler('comp_slot', ...)
 
 let compSlots=[
   {hero:null,role:'Tank'},
@@ -81,12 +82,8 @@ function selectCompSlotHero(name){
 
 function clearCompSlot(idx){compSlots[idx].hero=null;renderCompSlots();}
 
-// Override confirmPicker
-const _basePicker=window.confirmPicker||(()=>{});
-window.confirmPicker=function(){
-  if(pickerMode==='comp_slot'){
-    document.getElementById('pickerOverlay').classList.add('hidden');
-    renderCompSlots();return;
-  }
-  _basePicker();
-};
+// LEQ-2: регистрируем обработчик вместо window.confirmPicker override
+registerPickerHandler('comp_slot', function(){
+  document.getElementById('pickerOverlay').classList.add('hidden');
+  renderCompSlots();
+});
