@@ -1,4 +1,4 @@
-// @hash 27df9fcd 2026-06-25T22:21
+// @hash 9e23d5e4 2026-06-27T13:13
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -223,33 +223,37 @@ function _renderCompCard(c,rank,mapObj,side){
   </div>`;
 }
 
-// Override confirmPicker для драфта
-const _draftBaseConfirm=window.confirmPicker||(()=>{});
-window.confirmPicker=function(){
+// LEQ-2: registerPickerHandler вместо window.confirmPicker override
+
+// Обработчик выбора наших героев для драфта
+registerPickerHandler('draftOur', function(){
+  draftState.ourHeroes=[...(pickerSelected['draftOur']||[])];
+  closePicker();renderDraftComp();
+});
+
+// Обработчик банов: draft_ourBans_N и draft_enemyBans_N
+// Регистрируется как префиксный — confirmPicker направляет сюда
+// всё что начинается на 'draft_' (кроме 'draftOur' выше)
+registerPickerHandler('__draft_prefix__', function(){
   const m=pickerMode;
-  if(m==='draftOur'){
-    draftState.ourHeroes=[...(pickerSelected['draftOur']||[])];
-    closePicker();renderDraftComp();return;
-  }
-  if(m&&m.startsWith('draft_')){
-    const parts=m.split('_'); // draft_{key}_{idx}
-    const key=parts[1]+'_'+parts[2]; // ourBans или enemyBans
-    const idx=parseInt(parts[3]);
-    const sel=pickerSelected[m]||[];
-    // Проверка лимита ролей
-    const all=[...draftState.ourBans,...draftState.enemyBans].filter((_,i)=>{
-      if(key==='ourBans')return i!==draftState.ourBans.indexOf(draftState[key][idx]);
-      return true;
-    });
-    if(sel[0]){
-      const h=heroMap[sel[0]];
-      if(h){const roleCount=all.filter(n=>(heroMap[n]||{}).role===h.role).length;
-        if(roleCount>=2){toast(`Максимум 2 бана роли ${h.role}`,'err');return;}
-      }
-      if(!draftState[key])draftState[key]=[];
-      draftState[key][idx]=sel[0];
+  // Разбираем 'draft_ourBans_0' → key='ourBans', idx=0
+  const parts=m.slice('draft_'.length).split('_');
+  const idx=parseInt(parts[parts.length-1]);
+  const key=parts.slice(0,-1).join('_'); // ourBans или enemyBans
+  const sel=pickerSelected[m]||[];
+  // Проверка лимита ролей: не более 2 банов одной роли суммарно
+  const all=[...draftState.ourBans,...draftState.enemyBans].filter((_,i)=>{
+    if(key==='ourBans')return i!==draftState.ourBans.indexOf(draftState[key]?.[idx]);
+    return true;
+  });
+  if(sel[0]){
+    const h=heroMap[sel[0]];
+    if(h){
+      const roleCount=all.filter(n=>(heroMap[n]||{}).role===h.role).length;
+      if(roleCount>=2){toast(`Максимум 2 бана роли ${h.role}`,'err');return;}
     }
-    closePicker();renderDraftComp();return;
+    if(!draftState[key])draftState[key]=[];
+    draftState[key][idx]=sel[0];
   }
-  _draftBaseConfirm();
-};
+  closePicker();renderDraftComp();
+});
