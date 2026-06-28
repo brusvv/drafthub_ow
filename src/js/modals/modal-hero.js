@@ -1,4 +1,4 @@
-// @hash 619006f4 2026-06-27T08:05
+// @hash c762c4cf 2026-06-27T13:13
 // ════ MODAL — HERO (core) ════
 // Содержит: открытие модалки героя, синергия-пикер.
 // Зависимости:
@@ -96,16 +96,12 @@ function openSynergyPicker(){
 }
 
 // Override confirmPicker для синергий
-const _heroModalConfirm=window.confirmPicker||(()=>{});
-window.confirmPicker=function(){
-  if(pickerMode==='synergy'){
-    const sel=pickerSelected['synergy']||[];
-    sel.forEach(name=>{if(!heroSynergyEdits.find(s=>s.name===name))heroSynergyEdits.push({name,score:7});});
-    heroSynergyEdits=heroSynergyEdits.filter(s=>sel.includes(s.name));
-    store.set('synergyExclude','');
-    closePicker();
-    renderHeroSynergyBlock();
-    return;
-  }
-  _heroModalConfirm();
-};
+// LEQ-2: registerPickerHandler вместо window.confirmPicker override
+registerPickerHandler('synergy', function(){
+  const sel=pickerSelected['synergy']||[];
+  sel.forEach(name=>{if(!heroSynergyEdits.find(s=>s.name===name))heroSynergyEdits.push({name,score:7});});
+  heroSynergyEdits=heroSynergyEdits.filter(s=>sel.includes(s.name));
+  store.set('synergyExclude','');
+  closePicker();
+  renderHeroSynergyBlock();
+});
