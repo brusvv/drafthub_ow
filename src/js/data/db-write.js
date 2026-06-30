@@ -1,4 +1,4 @@
-// @hash fb658575 2026-06-28T22:23
+// @hash 3e8f6bdc 2026-06-30T04:17
 // ════ DATA — WRITE (Supabase) ════
 // Замена write-hero.js / write-map.js / write-player.js.
 // Использует UUID (h.id / m.id / p.id) вместо rowIndex.
@@ -318,9 +318,13 @@ async function createTierSet(name){
     if(error) throw error;
     toast(`Тир-лист "${name}" создан ✓`, 'ok');
     await loadTierSets();
-    activeTierSetId = data;
+    // create_tier_set RPC возвращает весь объект строки (to_json(v_set)),
+    // не голый uuid — берём .id явно, иначе activeTierSetId = объект
+    // и любой следующий запрос с tier_set_id падает с invalid uuid syntax.
+    const newSet = typeof data === 'string' ? JSON.parse(data) : data;
+    activeTierSetId = newSet?.id ?? null;
     renderTiers();
-    return data;
+    return newSet;
   } catch(e){
     handleError(e, e.message?.includes('max_personal_tier_sets') ? 'Максимум 10 личных тир-листов' : '');
     return null;
