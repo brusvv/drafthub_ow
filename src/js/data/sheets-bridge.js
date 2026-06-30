@@ -85,6 +85,46 @@ async function _sheetsWrite(sheetId, range, values){
   return _sheetsApiCall('PUT', sheetId, range, { values });
 }
 
+// ── batchGet — читает НЕСКОЛЬКО листов одним HTTP-запросом ──
+// IMPORT-1a: используется импортом — вместо до 12 последовательных GET на
+// каждую вкладку делаем один запрос с массивом ranges. Google Sheets API
+// поддерживает это нативно через /values:batchGet.
+// Возвращает Map<sheetName, string[][]> — только листы которые реально
+// существуют и содержат данные (больше одной строки — заголовок не считается).
+// Отсутствующий/пустой лист просто не попадёт в Map; вызывающий код не
+// должен на это падать — пользователь мог не заполнять какие-то вкладки.
+async function _sheetsBatchGet(sheetId, sheetNames){
+  if(!_sheetsAccessToken) throw new Error('Сначала авторизуйся в Google');
+  if(!sheetNames.length) return new Map();
+
+  // range вида "Heroes!A:Z" на каждый лист — с запасом по колонкам
+  const rangesQuery = sheetNames
+    .map(name => `ranges=${encodeURIComponent(name + '!A:Z')}`)
+    .join('&');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchGet?${rangesQuery}`;
+
+  const res = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${_sheetsAccessToken}` },
+  });
+  if(!res.ok){
+    const err = await res.json().catch(() => ({}));
+    // Несуществующий лист в одном из ranges валит ВЕСЬ batchGet целиком
+    // (в отличие от одиночного _sheetsApiCall, где 400 ловится на конкретный
+    // лист) — сообщаем явно, чтобы UI подсказал снять галку с этого пункта.
+    throw new Error(err?.error?.message || `HTTP ${res.status} (проверь что все выбранные листы существуют в таблице)`);
+  }
+  const data = await res.json();
+
+  const result = new Map();
+  (data.valueRanges || []).forEach((vr, i) => {
+    const name = sheetNames[i];
+    const rows = vr.values || [];
+    // rows[0] — заголовок; rows.length>1 значит есть хотя бы одна строка данных
+    if(rows.length > 1) result.set(name, rows);
+  });
+  return result;
+}
+
 // Создаёт лист если его нет (через batchUpdate)
 async function _ensureSheetTab(sheetId, title){
   const meta = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`, {
@@ -100,7 +140,153 @@ async function _ensureSheetTab(sheetId, title){
   });
 }
 
-// ════ ЭКСПОРТ — пишем текущие данные команды в Sheets ════
+// ════ ИМПОРТ — парсеры строк листов в Supabase-объекты (IMPORT-1b) ════
+// Чистые функции, без сети — принимают rows (string[][], rows[0]=заголовок)
+// и собирают объекты в формате готовом для UPSERT. Логика записи/scope —
+// в IMPORT-1c (importXFromSheets), здесь только трансформация данных.
+
+// "Ana:8,Baptiste:7" → [{name:'Ana',score:8},{name:'Baptiste',score:7}]
+// Пустая строка/мусор в одном элементе не валит весь парсинг — просто
+// пропускается (toString().trim() защищает от undefined ячеек).
+function _parseCounters(str){
+  if(!str) return [];
+  return String(str).split(',')
+    .map(s => s.trim()).filter(Boolean)
+    .map(pair => {
+      const [name, scoreRaw] = pair.split(':').map(x => x?.trim());
+      const score = parseInt(scoreRaw, 10);
+      // Без числового score после ':' запись считаем мусором/опечаткой,
+      // не угадываем дефолт — реальные данные всегда "Name:score"
+      return (name && Number.isFinite(score)) ? { name, score } : null;
+    })
+    .filter(Boolean);
+}
+
+// 'TRUE'/'true'/'1' → true, всё остальное (включая пусто) → false
+function _parseBoolTrue(str){
+  const s = String(str || '').trim().toLowerCase();
+  return s === 'true' || s === '1';
+}
+
+// "Tracer;Genji;Ana" → ['Tracer','Genji','Ana']  (для PlayerHeroes, если
+// где-то понадобится строка вместо отдельных строк-листа — сейчас не
+// используется т.к. PlayerHeroes хранит по одной паре player/hero на строку,
+// но оставляю как общий хелпер для согласованности с экспортным форматом)
+function _parseSemicolonList(str){
+  if(!str) return [];
+  return String(str).split(';').map(s => s.trim()).filter(Boolean);
+}
+
+// rows (string[][], rows[0]=header) → [{col1:val1,col2:val2,...}, ...]
+// Header матчится по позиции по ожидаемому списку колонок (case-insensitive,
+// trim) — НЕ полагаемся на точный порядок колонок в реальном листе, мапим
+// по имени, если порядок в боевой таблице вдруг отличается от REQUIRED_SHEETS.
+function _rowsToObjects(rows, expectedCols){
+  if(!rows || rows.length < 2) return [];
+  const header = rows[0].map(h => String(h || '').trim().toLowerCase());
+  const colIdx = {};
+  expectedCols.forEach(col => {
+    const idx = header.indexOf(col.toLowerCase());
+    colIdx[col] = idx;   // -1 если колонки нет в листе — поле останется undefined
+  });
+  return rows.slice(1)
+    .filter(r => r.some(cell => String(cell || '').trim()))   // пропускаем полностью пустые строки
+    .map(r => {
+      const obj = {};
+      expectedCols.forEach(col => { obj[col] = colIdx[col] >= 0 ? r[colIdx[col]] : undefined; });
+      return obj;
+    });
+}
+
+// ── Сборка Maps из 5 листов: Maps + MapPreferred + MapBans + Compositions + MapCounters ──
+// Принимает Map<sheetName,rows> от _sheetsBatchGet — листы которых нет в Map
+// (пользователь не выбрал/лист пуст) просто дают пустые join-данные, базовая
+// карта всё равно соберётся из Maps.
+function _assembleMapsFromSheets(sheetsMap){
+  const mapsRows = sheetsMap.get('Maps');
+  if(!mapsRows) return [];
+
+  const base = _rowsToObjects(mapsRows,
+    ['name','type','tier','priority','atk','def','dif','notes','inpool']);
+
+  // join-листы группируем по имени карты заранее — O(n) вместо O(n*m) перебора
+  const groupByMap = (sheetName, cols) => {
+    const rows = sheetsMap.get(sheetName);
+    const grouped = {};
+    if(!rows) return grouped;
+    _rowsToObjects(rows, cols).forEach(r => {
+      const key = r.map;
+      if(!key) return;
+      (grouped[key] ??= []).push(r);
+    });
+    return grouped;
+  };
+
+  const preferred = groupByMap('MapPreferred', ['map','hero']);
+  const bans      = groupByMap('MapBans',      ['map','hero']);
+  const comp      = groupByMap('Compositions', ['map','hero','role','playerRole']);
+  const counters  = groupByMap('MapCounters',  ['map','hero']);
+
+  return base.map(m => ({
+    name:     m.name,
+    type:     m.type,
+    tier:     m.tier || 'B',
+    priority: parseInt(m.priority, 10) || 5,
+    atk:      parseInt(m.atk, 10) || 3,
+    def:      parseInt(m.def, 10) || 3,
+    dif:      parseInt(m.dif, 10) || 3,
+    notes:    m.notes || '',
+    in_pool:  m.inpool === undefined ? true : _parseBoolTrue(m.inpool),
+    preferred_heroes: (preferred[m.name] || []).map(r => r.hero).filter(Boolean),
+    ban_heroes:       (bans[m.name]      || []).map(r => r.hero).filter(Boolean),
+    counters:         (counters[m.name]  || []).map(r => r.hero).filter(Boolean),
+    comp: (comp[m.name] || []).map(r => ({
+      hero: r.hero, role: r.role || '', playerRole: r.playerRole || r.role || '',
+    })).filter(c => c.hero),
+  })).filter(m => m.name && m.type);
+}
+
+// ── Сборка Players из 2 листов: Players + PlayerHeroes ──
+// PlayerHeroes.type: 'main' → основная роль (main_heroes), 'pool' → офф-роль
+// (pool_heroes) — подтверждено пользователем явно, не угадано.
+function _assemblePlayersFromSheets(sheetsMap){
+  const playersRows = sheetsMap.get('Players');
+  if(!playersRows) return [];
+
+  const base = _rowsToObjects(playersRows,
+    ['name','btag','mainrole','offrole','ranktank','rankdmg','ranksup','notes']);
+
+  const heroesByPlayer = {};   // { playerName: { main:[...], pool:[...] } }
+  const phRows = sheetsMap.get('PlayerHeroes');
+  if(phRows){
+    _rowsToObjects(phRows, ['player','hero','type']).forEach(r => {
+      if(!r.player || !r.hero) return;
+      const entry = (heroesByPlayer[r.player] ??= { main: [], pool: [] });
+      const type = String(r.type || '').trim().toLowerCase();
+      if(type === 'main') entry.main.push(r.hero);
+      else if(type === 'pool') entry.pool.push(r.hero);
+      // неизвестный type — молча пропускаем (не падаем на грязных данных)
+    });
+  }
+
+  return base.map(p => {
+    const h = heroesByPlayer[p.name] || { main: [], pool: [] };
+    return {
+      name:      p.name,
+      btag:      p.btag || '',
+      main_role: p.mainrole || '',
+      off_role:  p.offrole || '',
+      rank_tank: p.ranktank || '',
+      rank_dmg:  p.rankdmg || '',
+      rank_sup:  p.ranksup || '',
+      notes:     p.notes || '',
+      main_heroes: h.main,
+      pool_heroes: h.pool,
+    };
+  }).filter(p => p.name);
+}
+
+
 // Экспорт односторонний (Supabase → Sheets), не импорт обратно
 async function exportTeamToSheets(){
   if(!canExportSheets()){ toast('Нет прав на экспорт', 'err'); return; }
