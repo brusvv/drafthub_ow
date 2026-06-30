@@ -1,4 +1,4 @@
-// @hash 535e2342 2026-06-30T10:46
+// @hash ec914bbb 2026-06-30T04:17
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -159,23 +159,42 @@ function _renderSharedTierView(data){
   if(!showMaps)   _sharedTierTab = 'heroes';
   if(!showHeroes) _sharedTierTab = 'maps';
 
-  const buildRow = (tier, names, type) => `
-    <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
-      <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0">
-        ${names.map(name => {
-          const hidden = type==='hero' && _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
-          const src = type==='map' ? mapImg(name) : portrait(name);
-          return `<div title="${name}" style="display:${hidden?'none':'flex'};flex-direction:column;align-items:center;gap:2px">
-            ${src?`<img src="${src}" style="width:${type==='map'?60:36}px;height:${type==='map'?38:36}px;
-              object-fit:cover;border-radius:5px">`:`<div style="width:36px;height:36px;border-radius:5px;
-              background:#2a2a30;display:flex;align-items:center;justify-content:center;font-weight:700">${name[0]}</div>`}
-            <span style="font-size:9px;font-weight:600;max-width:60px;text-align:center;
-              overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+  const buildRow = (tier, names, type) => {
+    if(type === 'hero'){
+      // Используем родные классы .tier-hero-pill — автоматически наследуют
+      // мобильный размер (46px) из responsive.css, не нужно дублировать
+      // media-query здесь. cursor:default — read-only, без drag.
+      return `
+      <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
+        <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
+        <div class="tier-maps">
+          ${names.map(name => {
+            const hidden = _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
+            const src = portrait(name);
+            return `<div class="tier-hero-pill" data-role="${roleByName[name]||''}" style="cursor:default;${hidden?'display:none':''}" title="${name}">
+              ${src?`<img src="${src}" alt="${name}">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
+              <div class="tier-hero-pill-tip">${name}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+    // Карты — картиночные превью (не текстовые .tier-pill как в основном
+    // приложении), своя responsive-сетка через .shared-map-pill ниже в <style>
+    return `
+      <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
+        <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0">
+          ${names.map(name => {
+            const src = mapImg(name);
+            return `<div class="shared-map-pill" title="${name}">
+              ${src?`<img src="${src}" alt="${name}">`:`<div class="shared-map-pill-ph">${name[0]}</div>`}
+              <span>${name}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  };
 
   const buildTable = (obj, type) => ['S','A','B','C','D']
     .filter(t => obj[t]?.length)
@@ -199,11 +218,26 @@ function _renderSharedTierView(data){
     </div>` : '';
 
   document.body.innerHTML = `
-    <div style="max-width:800px;margin:0 auto;padding:2rem 1rem;font-family:Inter,sans-serif;color:#e0e0e8;background:#0d0d0f;min-height:100vh">
+    <style>
+      /* Самодостаточный блок — share-страница не подключена к build.sh CSS-конкатенации
+         напрямую через классы карт (тут картиночные превью, не текстовые .tier-pill),
+         поэтому адаптив для них держим тут же, рядом с разметкой. */
+      .shared-map-pill{display:flex;flex-direction:column;align-items:center;gap:2px}
+      .shared-map-pill img{width:60px;height:38px;object-fit:cover;border-radius:5px;display:block}
+      .shared-map-pill-ph{width:60px;height:38px;border-radius:5px;background:var(--bg3);
+        display:flex;align-items:center;justify-content:center;font-weight:700}
+      .shared-map-pill span{font-size:9px;font-weight:600;max-width:60px;text-align:center;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      @media (max-width:480px){
+        .shared-map-pill img,.shared-map-pill-ph{width:46px;height:30px}
+        .shared-map-pill span{max-width:46px}
+      }
+    </style>
+    <div class="app" style="font-family:Inter,sans-serif">
       <div style="margin-bottom:20px">
         <div style="font-size:22px;font-weight:800;margin-bottom:4px">${title}</div>
-        ${data.tier_set_name && data.label ? `<div style="font-size:11px;color:#666;margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
-        <div style="font-size:11px;font-family:monospace;color:#666">Draft Hub · Read only</div>
+        ${data.tier_set_name && data.label ? `<div style="font-size:11px;color:var(--text3);margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">Draft Hub · Read only</div>
       </div>
       ${tabsHtml}
       <div id="sharedTabContent">
