@@ -1,24 +1,20 @@
-// @hash 78c6b7d4 2026-06-30T05:40
+// @hash 4f173b60 2026-06-30T11:00
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
-// Выделено из sheets-export.js (был 279 строк, две разные ответственности:
-// экспорт и импорт-UI). Логика чтения/парсинга/записи — в sheets-import.js
-// (importXFromSheets, _sheetsBatchGet). Здесь только состояние чекбоксов,
-// сборка списка листов под batchGet, последовательный запуск групп и рендер
-// отчёта. Вызывается из renderSheetsExportPanel() (sheets-export.js).
+// Тело под-таба «Импорт» внутри общей панели Google Sheets
+// (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
+// input/под-табы рендерятся там один раз). Логика чтения/парсинга/записи —
+// в sheets-import.js (importXFromSheets, _sheetsBatchGet). Здесь только
+// состояние чекбоксов, сборка списка листов под batchGet, последовательный
+// запуск групп и рендер отчёта.
 //
 // Зависимости: sheets-auth.js (_sheetsAccessToken, loadSheetsConfig,
 //              saveSheetsConfig, _sheetsBatchGet),
 //              sheets-import.js (importHeroesFromSheets, importMapsFromSheets,
 //              importPlayersFromSheets, importHeroMapStrengthFromSheets,
 //              importHeroSynergyFromSheets, importTiersFromSheets),
-//              sheets-export.js (renderSheetsExportPanel — для перерисовки
-//              после toggle/submit), session.js (isAdmin),
+//              sheets-settings-panel.js (renderGoogleSheetsPanel — для
+//              перерисовки после toggle/submit), session.js (isAdmin),
 //              data/db-load.js (loadAllData)
-
-// ════ IMPORT-1d/1e — UI чеклиста + scope-селектора + прогресс/отчёт ════
-// Логика чтения/парсинга/записи — в sheets-import.js (importXFromSheets,
-// _sheetsBatchGet). Здесь только состояние чекбоксов, сборка списка листов
-// под batchGet, последовательный запуск групп и рендер отчёта.
 
 // Группы импорта: какие листы читать и какую функцию вызвать на каждую.
 // entityType — для тир-групп, см. importTiersFromSheets(sheetsMap, entityType, scope).
@@ -84,29 +80,26 @@ function _renderImportSection(){
     </div>` : '';
 
   return `
-    <div class="role-card" style="margin-top:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:6px">Импорт из Google Sheets</div>
-      <p style="font-size:11px;color:var(--text3);margin-bottom:10px">
-        Старая Sheets-схема (12 вкладок). Запись — UPSERT по имени, существующие
-        записи с тем же именем обновятся, не дублируются. Полная перезапись не выполняется.
-      </p>
-      ${checklistHtml}
-      ${scopeHtml}
-      <button class="btn btn-primary" style="margin-top:12px" onclick="_submitImport()" id="importRunBtn">
-        Импортировать выбранное
-      </button>
-      ${reportHtml}
-    </div>`;
+    <p style="font-size:11px;color:var(--text3);margin-bottom:10px">
+      Старая Sheets-схема (12 вкладок). Запись — UPSERT по имени, существующие
+      записи с тем же именем обновятся, не дублируются. Полная перезапись не выполняется.
+    </p>
+    ${checklistHtml}
+    ${scopeHtml}
+    <button class="btn btn-primary" style="margin-top:12px" onclick="_submitImport()" id="importRunBtn">
+      Импортировать выбранное
+    </button>
+    ${reportHtml}`;
 }
 
 function _toggleImportGroup(key, checked){
   _importChecked[key] = checked;
-  renderSheetsExportPanel();
+  renderGoogleSheetsPanel();
 }
 
 function _setImportScope(scope){
   _importScope = scope;
-  renderSheetsExportPanel();
+  renderGoogleSheetsPanel();
 }
 
 async function _submitImport(){
@@ -168,5 +161,5 @@ async function _submitImport(){
 
   // Перечитываем данные команды чтобы UI сразу показал импортированное
   if(typeof loadAllData === 'function') await loadAllData();
-  renderSheetsExportPanel();
+  renderGoogleSheetsPanel();
 }
