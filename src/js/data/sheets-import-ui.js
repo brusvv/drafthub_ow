@@ -1,4 +1,4 @@
-// @hash 4f173b60 2026-06-30T11:00
+// @hash 1a26d248 2026-06-30T11:04
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
 // Тело под-таба «Импорт» внутри общей панели Google Sheets
 // (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
