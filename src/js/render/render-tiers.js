@@ -256,7 +256,10 @@ function renderTierMaps(){
         ondragleave="onDragLeave(event)">
         ${items.map((name,idx)=>{
           const m=maps.find(x=>x.name===name);
-          const hidden=tierMapTypeFilter!=='all'&&(!m||m.type!==tierMapTypeFilter);
+          // Фильтр по типу карты: прячем только если объект карты найден И тип не совпадает.
+          // Если m=undefined (глобальный режим, нет командных данных) — не прячем,
+          // иначе при любом фильтре весь тир-лист пустеет у неавторизованных.
+          const hidden=tierMapTypeFilter!=='all'&&(m&&m.type!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="maps" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
@@ -286,7 +289,8 @@ function renderTierHeroes(){
         ${items.map((name,idx)=>{
           const h=heroMap[name]||{};
           const src=portrait(name);
-          const hidden=tierHeroRoleFilter!=='all'&&(!h||h.role!==tierHeroRoleFilter);
+          // Фильтр по роли: прячем только если герой найден И роль не совпадает.
+          const hidden=tierHeroRoleFilter!=='all'&&(h&&h.role!==tierHeroRoleFilter);
           const tipText=h.subrole?`${name} · ${h.subrole}`:name;
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h.role||''}"
