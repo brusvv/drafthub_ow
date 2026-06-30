@@ -1,4 +1,4 @@
-// @hash 4eb3d45a 2026-06-28T22:45
+// @hash ec914bbb 2026-06-30T04:17
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -119,6 +119,16 @@ async function handleSharedTierUrl(tokenOverride){
       ${messages[result?.error] || 'Ссылка недействительна или истекла'}
     </div>`;
     return true;
+  }
+
+  // Картинки героев/карт грузятся отдельно от тир-данных и в обычном flow
+  // вызываются позже (после _onSignIn/renderPublicMode) — на публичной
+  // /tier/TOKEN странице до этого никогда не доходит, иначе portrait()/
+  // mapImg() возвращают пусто. Грузим явно перед рендером.
+  try {
+    await Promise.all([loadPortraits(), loadMapScreenshots()]);
+  } catch(e) {
+    console.warn('handleSharedTierUrl: failed to load images', e.message);
   }
 
   _renderSharedTierView(result);
