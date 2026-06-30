@@ -388,7 +388,7 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
 
   // RPC возвращает токен напрямую как text
   const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}/tier/${token}`;
+  const link = `${window.location.origin}/drafthub_ow/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch{ toast(link, 'ok'); }
   return link;
