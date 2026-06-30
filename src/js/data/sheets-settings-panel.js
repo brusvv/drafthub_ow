@@ -1,4 +1,4 @@
-// @hash 004b95e2 2026-06-30T11:05
+// @hash d9a9c86c 2026-06-30T11:25
 // ════ GOOGLE SHEETS — SHELL ПАНЕЛИ В НАСТРОЙКАХ (SETTINGS-1) ════
 // Вкладка Настройки → «Google Sheets» (auth/ui.js, _renderSettingsTabContent,
 // ключ 'sheets') показывает один контейнер #sheetsExportPanel, который
@@ -54,7 +54,8 @@ async function renderGoogleSheetsPanel(){
 
       <div class="form-group" style="margin-bottom:12px">
         <label class="form-label">Google Sheet ID</label>
-        <input class="form-input" id="sheetsConfigId" placeholder="1aBcD..." value="${config?.sheet_id||''}">
+        <input class="form-input" id="sheetsConfigId" placeholder="1aBcD..." value="${config?.sheet_id||''}"
+               onchange="_saveSheetsConfigId(this.value)">
       </div>
 
       <div class="filters" style="margin-bottom:14px">
@@ -71,4 +72,18 @@ async function renderGoogleSheetsPanel(){
 function _switchSheetsSubTab(tab){
   _sheetsSubTab = tab;
   renderGoogleSheetsPanel();
+}
+
+// ════ FIX (SETTINGS-1 regression): #sheetsConfigId раньше не имел onchange —
+// набранный Sheet ID никуда не сохранялся. _submitImport()/exportTeamToSheets()
+// читают sheet_id через loadSheetsConfig() из БД, поэтому без сохранения тут
+// импорт/экспорт всегда видели пустой sheet_id и падали на "Укажи Sheet ID"
+// даже когда поле визуально было заполнено.
+// Сохраняем сразу на blur/onchange, без перерисовки всей панели (чтобы не
+// сбрасывать фокус) — следующий клик на "Импортировать"/"Экспортировать"
+// увидит уже сохранённое значение через loadSheetsConfig().
+async function _saveSheetsConfigId(value){
+  const id = (value||'').trim();
+  if(!id) return;
+  await saveSheetsConfig(id);
 }
