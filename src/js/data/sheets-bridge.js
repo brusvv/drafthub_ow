@@ -1,4 +1,4 @@
-// @hash 5b4dfe9d 2026-06-30T04:44
+// @hash 6a357dfc 2026-06-20T08:48
 // ════ SHEETS BRIDGE — Google Sheets экспорт ════
 // Отдельный OAuth-флоу: Google токен здесь используется ТОЛЬКО для записи
 // в Sheets API, не связан с основной авторизацией (Supabase).
@@ -286,6 +286,178 @@ function _assemblePlayersFromSheets(sheetsMap){
   }).filter(p => p.name);
 }
 
+
+// ════ ИМПОРТ — запись в Supabase через UPSERT (IMPORT-1c) ════
+// Каждая функция независима: вызывающий код (IMPORT-1d UI) оборачивает
+// каждую в try/catch и копит {imported,skipped,errors} — одна упавшая
+// группа не должна блокировать остальные пять.
+// onConflict использует существующие UNIQUE/PK из 001_tables.sql —
+// никаких изменений схемы не требуется.
+
+async function importHeroesFromSheets(sheetsMap){
+  const rows = sheetsMap.get('Heroes');
+  if(!rows) return { count: 0 };
+
+  const heroObjs = _rowsToObjects(rows,
+    ['name','role','subrole','priority','banned','notes','counters']);
+
+  const upsertRows = heroObjs.filter(h => h.name && h.role).map(h => ({
+    team_id:  _teamId(),
+    name:     h.name,
+    role:     h.role,
+    subrole:  h.subrole || '',
+    priority: parseInt(h.priority, 10) || 5,
+    banned:   _parseBoolTrue(h.banned),
+    notes:    h.notes || '',
+    counters: _parseCounters(h.counters),
+  }));
+  if(!upsertRows.length) return { count: 0 };
+
+  const { error } = await _sb.from('heroes')
+    .upsert(upsertRows, { onConflict: 'team_id,name' });
+  if(error) throw error;
+  return { count: upsertRows.length };
+}
+
+async function importMapsFromSheets(sheetsMap){
+  const assembled = _assembleMapsFromSheets(sheetsMap);
+  if(!assembled.length) return { count: 0 };
+
+  const upsertRows = assembled.map(m => ({ ...m, team_id: _teamId() }));
+
+  const { error } = await _sb.from('maps')
+    .upsert(upsertRows, { onConflict: 'team_id,name' });
+  if(error) throw error;
+  return { count: upsertRows.length };
+}
+
+async function importPlayersFromSheets(sheetsMap){
+  const assembled = _assemblePlayersFromSheets(sheetsMap);
+  if(!assembled.length) return { count: 0 };
+
+  const upsertRows = assembled.map(p => ({ ...p, team_id: _teamId() }));
+
+  const { error } = await _sb.from('players')
+    .upsert(upsertRows, { onConflict: 'team_id,name' });
+  if(error) throw error;
+  return { count: upsertRows.length };
+}
+
+async function importHeroMapStrengthFromSheets(sheetsMap){
+  const rows = sheetsMap.get('HeroMapStrength');
+  if(!rows) return { count: 0 };
+
+  const objs = _rowsToObjects(rows, ['hero','map','atk','def']);
+  const upsertRows = objs.filter(r => r.hero && r.map).map(r => ({
+    team_id:   _teamId(),
+    hero_name: r.hero,
+    map_name:  r.map,
+    atk:       parseInt(r.atk, 10) || 0,
+    def:       parseInt(r.def, 10) || 0,
+  }));
+  if(!upsertRows.length) return { count: 0 };
+
+  // composite PK (team_id,hero_name,map_name) — см. 001_tables.sql
+  const { error } = await _sb.from('hero_map_strength')
+    .upsert(upsertRows, { onConflict: 'team_id,hero_name,map_name' });
+  if(error) throw error;
+  return { count: upsertRows.length };
+}
+
+async function importHeroSynergyFromSheets(sheetsMap){
+  const rows = sheetsMap.get('HeroSynergy');
+  if(!rows) return { count: 0 };
+
+  const objs = _rowsToObjects(rows, ['hero','synergy_hero','score']);
+  const upsertRows = objs.filter(r => r.hero && r.synergy_hero).map(r => ({
+    team_id:      _teamId(),
+    hero_name:    r.hero,
+    synergy_hero: r.synergy_hero,
+    score:        parseInt(r.score, 10) || 5,
+  }));
+  if(!upsertRows.length) return { count: 0 };
+
+  const { error } = await _sb.from('hero_synergy')
+    .upsert(upsertRows, { onConflict: 'team_id,hero_name,synergy_hero' });
+  if(error) throw error;
+  return { count: upsertRows.length };
+}
+
+// ── Тир-листы — TierMaps/TierHeroes, с выбором scope ──
+// scope: 'team' | 'personal' | 'global' — решение пользователя в UI (IMPORT-1d).
+// 'global' доступен только если isAdmin() — это же проверяется в UI (radio
+// скрыт/disabled), здесь дублируем проверку на случай прямого вызова.
+//
+// position берём из порядка строк в листе (индекс внутри каждого тира) —
+// тот же принцип что в _tierObjToRows для drag&drop сохранения.
+async function importTiersFromSheets(sheetsMap, entityType, scope){
+  const sheetName = entityType === 'map' ? 'TierMaps' : 'TierHeroes';
+  const rows = sheetsMap.get(sheetName);
+  if(!rows) return { count: 0 };
+
+  if(scope === 'global' && !isAdmin()){
+    throw new Error('Глобальный тир-лист может импортировать только администратор');
+  }
+  if(scope !== 'global' && !canWrite()){
+    throw new Error('Нет прав на запись командного/личного тир-листа');
+  }
+
+  const objs = _rowsToObjects(rows, ['name','tier']);
+
+  // position — порядковый номер ВНУТРИ каждого тира, не глобальный индекс
+  // строки в листе (иначе сортировка S/A/B/C/D вперемешку даст неверный
+  // порядок отображения — ровно так же считает _tierObjToRows на фронте).
+  const posCounters = {};
+  const baseRows = objs.filter(r => r.name && r.tier).map(r => {
+    const tier = r.tier.toUpperCase();
+    const position = (posCounters[tier] ??= 0)++;
+    return { entity_type: entityType, name: r.name, tier, position };
+  });
+  if(!baseRows.length) return { count: 0 };
+
+  if(scope === 'global'){
+    const { error } = await _sb.from('global_tier_data')
+      .upsert(baseRows, { onConflict: 'entity_type,name' });
+    if(error) throw error;
+    return { count: baseRows.length };
+  }
+
+  const isPersonal = scope === 'personal';
+  // Личный тир-лист требует активного tier_set_id — создаём «Импортировано»
+  // если у пользователя ещё нет ни одного личного сета в этой команде.
+  let tierSetId = null;
+  if(isPersonal){
+    tierSetId = activeTierSetId;
+    if(!tierSetId){
+      const created = await createTierSet('Импортировано');
+      tierSetId = created?.id ?? null;
+      if(!tierSetId) throw new Error('Не удалось создать личный тир-сет для импорта');
+    }
+  }
+
+  const upsertRows = baseRows.map(r => ({
+    ...r,
+    team_id:     _teamId(),
+    scope:       isPersonal ? 'personal' : 'team',
+    user_id:     isPersonal ? currentUser().id : null,
+    tier_set_id: isPersonal ? tierSetId : null,
+  }));
+
+  // Delete-then-insert как в saveTierOrder — у tier_data нет единого
+  // uniq-индекса покрывающего оба scope сразу (idx_tier_team_unique и
+  // idx_tier_personal_unique частичные), проще и надёжнее снести старые
+  // записи этого entity_type+scope перед вставкой новых, чем городить UPSERT
+  // с разным onConflict в зависимости от scope.
+  let delQuery = _sb.from('tier_data').delete()
+    .eq('team_id', _teamId()).eq('entity_type', entityType).eq('scope', isPersonal ? 'personal' : 'team');
+  if(isPersonal) delQuery = delQuery.eq('user_id', currentUser().id).eq('tier_set_id', tierSetId);
+  const { error: delErr } = await delQuery;
+  if(delErr) throw delErr;
+
+  const { error: insErr } = await _sb.from('tier_data').insert(upsertRows);
+  if(insErr) throw insErr;
+  return { count: upsertRows.length };
+}
 
 // Экспорт односторонний (Supabase → Sheets), не импорт обратно
 async function exportTeamToSheets(){
