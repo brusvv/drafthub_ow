@@ -320,11 +320,19 @@ BEGIN
     'tier_set_name',(SELECT name FROM personal_tier_sets WHERE id = v_link.tier_set_id),
     'tiers', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
-        'entity_type', entity_type, 'name', name, 'tier', tier
-      ) ORDER BY tier_data.position)
-      FROM tier_data
-      WHERE tier_set_id = v_link.tier_set_id
-        AND (v_link.entity_type = 'both' OR entity_type = v_link.entity_type)
+        'entity_type', td.entity_type, 'name', td.name, 'tier', td.tier,
+        'role', h.role
+      ) ORDER BY td.position)
+      FROM tier_data td
+      -- LEFT JOIN heroes — нужен role для фильтра Tank/Damage/Support на
+      -- публичной share-странице (анонимный посетитель не может читать
+      -- heroes напрямую из-за RLS can_read_game_data(); здесь это SECURITY
+      -- DEFINER, обходит RLS). NULL для maps — это ожидаемо, фильтр ролей
+      -- на странице применяется только к героям.
+      LEFT JOIN heroes h ON h.team_id = v_link.team_id
+        AND h.name = td.name AND td.entity_type = 'hero'
+      WHERE td.tier_set_id = v_link.tier_set_id
+        AND (v_link.entity_type = 'both' OR td.entity_type = v_link.entity_type)
     ), '[]'::jsonb)
   );
 END;
