@@ -152,7 +152,7 @@ async function renderTeamSettings() {
         <button class="f-btn${_settingsTab==='members'?' active':''}" onclick="_switchSettingsTab('members')">Участники</button>
         ${canManageRoles()   ? `<button class="f-btn${_settingsTab==='roles'  ?' active':''}" onclick="_switchSettingsTab('roles')">Роли</button>`            : ''}
         ${canManageInvites() ? `<button class="f-btn${_settingsTab==='invites'?' active':''}" onclick="_switchSettingsTab('invites')">Инвайты</button>`        : ''}
-        ${canExportSheets()  ? `<button class="f-btn${_settingsTab==='sheets' ?' active':''}" onclick="_switchSettingsTab('sheets')">Sheets экспорт</button>`  : ''}
+        ${canExportSheets()  ? `<button class="f-btn${_settingsTab==='sheets' ?' active':''}" onclick="_switchSettingsTab('sheets')">Google Sheets</button>`  : ''}
       </div>
       <div id="settingsTabContent"></div>
     </div>`;
@@ -166,7 +166,7 @@ async function _renderSettingsTabContent(){
   if(_settingsTab === 'members') return _renderMembersTab(el);
   if(_settingsTab === 'roles')   return _renderRolesTab(el);
   if(_settingsTab === 'invites') return _renderInvitesTab(el);
-  if(_settingsTab === 'sheets')  { el.innerHTML = '<div id="sheetsExportPanel"></div>'; return renderSheetsExportPanel(); }
+  if(_settingsTab === 'sheets')  { el.innerHTML = '<div id="sheetsExportPanel"></div>'; return renderGoogleSheetsPanel(); }
 }
 
 // ── Участники ──
