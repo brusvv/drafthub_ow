@@ -1,3 +1,4 @@
+// @hash 004b95e2 2026-06-30T11:05
 // ════ GOOGLE SHEETS — SHELL ПАНЕЛИ В НАСТРОЙКАХ (SETTINGS-1) ════
 // Вкладка Настройки → «Google Sheets» (auth/ui.js, _renderSettingsTabContent,
 // ключ 'sheets') показывает один контейнер #sheetsExportPanel, который
