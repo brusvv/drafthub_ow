@@ -109,6 +109,7 @@ JS_MODULES=(
   js/data/sheets-auth.js
   js/data/sheets-import.js
   js/data/sheets-export.js
+  js/data/sheets-import-ui.js
 
   # Scoring: maps → bans → comp (comp зависит от maps)
   js/scoring/scoring-maps.js
