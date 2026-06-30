@@ -135,18 +135,38 @@ async function handleSharedTierUrl(tokenOverride){
   return true;
 }
 
+// Состояние публичной share-страницы — своя пара переменных, не пересекается
+// со store основного приложения (страница рендерится в document.body.innerHTML,
+// не в #app, но JS один и тот же файл — поэтому отдельные имена с префиксом _shared).
+let _sharedTierTab  = 'maps'; // 'maps' | 'heroes'
+let _sharedHeroRole = 'all';  // 'all' | 'Tank' | 'Damage' | 'Support'
+let _sharedTierData = null;   // последний результат RPC — нужен для перерисовки при переключении таба/фильтра
+
 function _renderSharedTierView(data){
+  _sharedTierData = data;
   const tiers = data.tiers || [];
   const byType = { map:{S:[],A:[],B:[],C:[],D:[]}, hero:{S:[],A:[],B:[],C:[],D:[]} };
-  tiers.forEach(r => { if(byType[r.entity_type]?.[r.tier]) byType[r.entity_type][r.tier].push(r.name); });
+  // roleByName — нужен для фильтра Tank/Damage/Support (RPC теперь отдаёт role для героев)
+  const roleByName = {};
+  tiers.forEach(r => {
+    if(byType[r.entity_type]?.[r.tier]) byType[r.entity_type][r.tier].push(r.name);
+    if(r.entity_type === 'hero' && r.role) roleByName[r.name] = r.role;
+  });
 
-  const buildTable = (obj, type) => ['S','A','B','C','D'].filter(t => obj[t]?.length).map(tier => `
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">
-      <div class="tier-badge tier-${tier}" style="width:40px;height:40px;font-size:16px;flex-shrink:0">${tier}</div>
+  const showMaps   = data.entity_type === 'both' || data.entity_type === 'map';
+  const showHeroes = data.entity_type === 'both' || data.entity_type === 'hero';
+  // Если ссылка только на один тип — таб не нужен, сразу показываем его
+  if(!showMaps)   _sharedTierTab = 'heroes';
+  if(!showHeroes) _sharedTierTab = 'maps';
+
+  const buildRow = (tier, names, type) => `
+    <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
+      <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0">
-        ${obj[tier].map(name => {
+        ${names.map(name => {
+          const hidden = type==='hero' && _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
           const src = type==='map' ? mapImg(name) : portrait(name);
-          return `<div title="${name}" style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          return `<div title="${name}" style="display:${hidden?'none':'flex'};flex-direction:column;align-items:center;gap:2px">
             ${src?`<img src="${src}" style="width:${type==='map'?60:36}px;height:${type==='map'?38:36}px;
               object-fit:cover;border-radius:5px">`:`<div style="width:36px;height:36px;border-radius:5px;
               background:#2a2a30;display:flex;align-items:center;justify-content:center;font-weight:700">${name[0]}</div>`}
@@ -155,13 +175,28 @@ function _renderSharedTierView(data){
           </div>`;
         }).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
 
-  const showMaps   = data.entity_type === 'both' || data.entity_type === 'map';
-  const showHeroes = data.entity_type === 'both' || data.entity_type === 'hero';
+  const buildTable = (obj, type) => ['S','A','B','C','D']
+    .filter(t => obj[t]?.length)
+    .map(t => buildRow(t, obj[t], type)).join('');
 
   // Фаза 6: заголовок — label ссылки → имя сета → дефолт
   const title = data.label || data.tier_set_name || 'Тир-лист';
+
+  const tabsHtml = (showMaps && showHeroes) ? `
+    <div class="tier-tabs" style="margin-bottom:1.25rem">
+      <button class="tier-tab${_sharedTierTab==='maps'?' active':''}" onclick="_switchSharedTab('maps')">Карты</button>
+      <button class="tier-tab${_sharedTierTab==='heroes'?' active':''}" onclick="_switchSharedTab('heroes')">Герои</button>
+    </div>` : '';
+
+  const roleFiltersHtml = (showHeroes && _sharedTierTab==='heroes') ? `
+    <div class="filters" style="margin-bottom:12px">
+      <button class="f-btn${_sharedHeroRole==='all'?' active':''}" onclick="_setSharedHeroRole('all')">Все</button>
+      <button class="f-btn${_sharedHeroRole==='Tank'?' active':''}" onclick="_setSharedHeroRole('Tank')">Tank</button>
+      <button class="f-btn${_sharedHeroRole==='Damage'?' active':''}" onclick="_setSharedHeroRole('Damage')">Damage</button>
+      <button class="f-btn${_sharedHeroRole==='Support'?' active':''}" onclick="_setSharedHeroRole('Support')">Support</button>
+    </div>` : '';
 
   document.body.innerHTML = `
     <div style="max-width:800px;margin:0 auto;padding:2rem 1rem;font-family:Inter,sans-serif;color:#e0e0e8;background:#0d0d0f;min-height:100vh">
@@ -170,9 +205,24 @@ function _renderSharedTierView(data){
         ${data.tier_set_name && data.label ? `<div style="font-size:11px;color:#666;margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
         <div style="font-size:11px;font-family:monospace;color:#666">Draft Hub · Read only</div>
       </div>
-      ${showMaps ? `<div style="font-family:monospace;font-size:9px;text-transform:uppercase;
-          letter-spacing:.1em;color:#666;margin-bottom:10px">Карты</div>${buildTable(byType.map,'map')}` : ''}
-      ${showHeroes ? `<div style="font-family:monospace;font-size:9px;text-transform:uppercase;
-          letter-spacing:.1em;color:#666;margin:20px 0 10px">Герои</div>${buildTable(byType.hero,'hero')}` : ''}
+      ${tabsHtml}
+      <div id="sharedTabContent">
+        ${_sharedTierTab==='maps'
+          ? buildTable(byType.map, 'map')
+          : roleFiltersHtml + buildTable(byType.hero, 'hero')}
+      </div>
     </div>`;
+}
+
+// Переключение таба Карты/Герои — перерисовываем весь body тем же данными
+function _switchSharedTab(tab){
+  _sharedTierTab = tab;
+  if(_sharedTierData) _renderSharedTierView(_sharedTierData);
+}
+
+// Фильтр ролей внутри таба Героев — тоже полная перерисовка (страница лёгкая,
+// нет смысла городить частичный re-render ради 30-40 пилюль)
+function _setSharedHeroRole(role){
+  _sharedHeroRole = role;
+  if(_sharedTierData) _renderSharedTierView(_sharedTierData);
 }
