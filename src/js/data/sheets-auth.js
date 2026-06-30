@@ -1,4 +1,4 @@
-// @hash 4bf5cb06 2026-06-30T04:58
+// @hash 5cade838 2026-06-30T11:25
 // ════ SHEETS AUTH — Google OAuth + низкоуровневые вызовы Sheets API ════
 // Отдельный OAuth-флоу: Google токен здесь используется ТОЛЬКО для доступа
 // к Sheets API (импорт И экспорт), не связан с основной авторизацией
@@ -28,7 +28,7 @@ function initSheetsBridge(clientId){
       if(resp.error){ toast('Ошибка авторизации Google: ' + resp.error, 'err'); return; }
       _sheetsAccessToken = resp.access_token;
       toast('Google авторизован ✓', 'ok');
-      renderSheetsExportPanel();
+      renderGoogleSheetsPanel();
     },
   });
 }
@@ -40,7 +40,7 @@ function connectGoogleForSheets(){
 
 function disconnectGoogleSheets(){
   _sheetsAccessToken = null;
-  renderSheetsExportPanel();
+  renderGoogleSheetsPanel();
 }
 
 // ── Привязка Sheet ID к команде (хранится в sheets_tokens) ──
