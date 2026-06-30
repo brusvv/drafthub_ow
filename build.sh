@@ -106,7 +106,9 @@ JS_MODULES=(
   js/data/db-load.js
   js/data/db-write.js
   js/data/db-sync.js
-  js/data/sheets-bridge.js
+  js/data/sheets-auth.js
+  js/data/sheets-import.js
+  js/data/sheets-export.js
 
   # Scoring: maps → bans → comp (comp зависит от maps)
   js/scoring/scoring-maps.js
