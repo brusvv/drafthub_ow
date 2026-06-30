@@ -1,18 +1,15 @@
-// @hash 64319c7c 2026-06-30T05:39
+// @hash 191b2ef3 2026-06-30T11:25
 // ════ SHEETS EXPORT — Supabase → Google Sheets (один в одну сторону) ════
 // Экспорт односторонний, не импорт обратно — снимок текущих данных команды
-// для отчётности. UI вызывается из вкладки Настройки → Sheets экспорт
-// (auth/ui.js, _renderSettingsTabContent).
-//
-// Импорт из Sheets (чеклист/scope/отчёт) — отдельный файл sheets-import-ui.js,
-// renderSheetsExportPanel() вызывает _renderImportSection() оттуда.
+// для отчётности. Тело под-таба «Экспорт» (_renderExportSubTab) встраивается
+// в общий shell sheets-settings-panel.js (SETTINGS-1) — Sheet ID и шапка
+// рендерятся там один раз, общие для обоих под-табов.
 //
 // Зависимости: sheets-auth.js (_sheetsAccessToken, _ensureSheetTab,
-//              _sheetsClear, _sheetsWrite, loadSheetsConfig, saveSheetsConfig,
-//              connectGoogleForSheets, disconnectGoogleSheets),
-//              sheets-import-ui.js (_renderImportSection),
-//              session.js (canExportSheets), data/db-load.js (heroes,
-//              maps, players, heroMapStrength, heroSynergy)
+//              _sheetsClear, _sheetsWrite, loadSheetsConfig, saveSheetsConfig),
+//              sheets-settings-panel.js (renderGoogleSheetsPanel — для
+//              перерисовки после exportTeamToSheets), session.js (canExportSheets),
+//              data/db-load.js (heroes, maps, players, heroMapStrength, heroSynergy)
 
 async function exportTeamToSheets(){
   if(!canExportSheets()){ toast('Нет прав на экспорт', 'err'); return; }
@@ -76,45 +73,22 @@ async function exportTeamToSheets(){
 
     await saveSheetsConfig(sheetId);
     toast('Экспорт завершён ✓', 'ok');
-    renderSheetsExportPanel();
+    renderGoogleSheetsPanel();
   }catch(e){
     toast('Ошибка экспорта: ' + e.message, 'err'); console.error(e);
   }
 }
 
-// ── UI панель экспорта (вызывается из вкладки настроек, auth/ui.js) ──
-async function renderSheetsExportPanel(){
-  const el = document.getElementById('sheetsExportPanel'); if(!el) return;
-  if(!canExportSheets()){
-    el.innerHTML = '<div class="empty">Нет прав на экспорт</div>'; return;
-  }
-  const config = await loadSheetsConfig();
-  el.innerHTML = `
-    <div class="role-card">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">Экспорт в Google Sheets</div>
-      <p style="font-size:11px;color:var(--text3);margin-bottom:12px">
-        Текущие данные команды (герои, карты, игроки, силы, синергии) будут записаны
-        в указанную Google-таблицу. Импорт обратно не выполняется — это снимок для отчётности.
-      </p>
-      <div class="form-group">
-        <label class="form-label">Google Sheet ID</label>
-        <input class="form-input" id="exportSheetId" placeholder="1aBcD..." value="${config?.sheet_id||''}">
-      </div>
-      ${!_sheetsAccessToken
-        ? `<button class="btn btn-primary" onclick="connectGoogleForSheets()">Подключить Google</button>`
-        : `<div style="display:flex;gap:8px">
-             <button class="btn btn-primary" onclick="_submitExport()">Экспортировать сейчас</button>
-             <button class="btn" onclick="disconnectGoogleSheets()">Отключить Google</button>
-           </div>`}
-      ${config?.last_sync_at ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:8px">
-        Последний экспорт: ${new Date(config.last_sync_at).toLocaleString('ru-RU')}</div>` : ''}
-    </div>
-    ${_sheetsAccessToken ? _renderImportSection() : ''}`;
-}
-
-async function _submitExport(){
-  const sheetId = document.getElementById('exportSheetId')?.value.trim();
-  if(!sheetId){ toast('Укажи Sheet ID', 'err'); return; }
-  await saveSheetsConfig(sheetId);
-  await exportTeamToSheets();
+// ── Под-таб «Экспорт» внутри общей панели (shell — sheets-settings-panel.js) ──
+// Sheet ID больше не свой собственный input — общий #sheetsConfigId в shell,
+// сохраняется там через _saveSheetsConfigId(). Здесь только тело под-таба.
+function _renderExportSubTab(config){
+  return `
+    <p style="font-size:11px;color:var(--text3);margin-bottom:12px">
+      Текущие данные команды (герои, карты, игроки, силы, синергии) будут записаны
+      в указанную выше Google-таблицу. Импорт обратно не выполняется — это снимок для отчётности.
+    </p>
+    <button class="btn btn-primary" onclick="exportTeamToSheets()">Экспортировать сейчас</button>
+    ${config?.last_sync_at ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:8px">
+      Последний экспорт: ${new Date(config.last_sync_at).toLocaleString('ru-RU')}</div>` : ''}`;
 }
