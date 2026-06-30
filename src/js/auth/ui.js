@@ -1,230 +1,324 @@
-// @hash 5c1ebbda 2026-06-28T22:45
-// ════ AUTH — TEAM & ROLES ════
-// Управление командами, участниками, ролями, инвайтами.
-// Новая схема: user_roles, roles, role_permissions, permissions
+// @hash 0351c090 2026-06-28T22:45
+// ════ AUTH — UI ════
+// Рендер форм входа, выбора команды, настроек + админка ролей.
+// Новая схема: roles, role_permissions, permissions, user_roles
 //
-// Зависимости: auth.js (_sb, dbInsert/dbUpdate/dbDelete),
-//              session.js (currentUser, currentTeam, canManageRoles, canManageInvites)
+// Зависимости: session.js, team.js
 
-// ── Загрузка команд пользователя ─────────────────────────────
-async function loadUserTeams() {
-  const { data, error } = await _sb.from('user_roles')
-    .select('teams(id, name, slug, description), roles(key, label)')
-    .eq('user_id', currentUser().id)
-    .not('team_id', 'is', null);  // исключаем глобальные роли (superadmin/admin)
-  if(error) throw error;
-  return (data || []).map(r => ({ ...r.teams, role: r.roles }));
-}
+function renderAuthUI(state) {
+  const authScreen = document.getElementById('authScreen');
+  const appEl      = document.getElementById('app');
+  if(!authScreen || !appEl) return;
 
-// ── Создание команды ──────────────────────────────────────────
-// SECURITY DEFINER RPC — атомарно создаёт команду, роли и добавляет создателя как manager
-async function createTeam(name, description = '') {
-  if(!name?.trim()) { toast('Укажи название команды', 'err'); return null; }
-  try {
-    const { data, error } = await _sb.rpc('create_team', {
-      p_name: name.trim(),
-      p_description: description,
-    });
-    if(error) throw error;
-    const team = typeof data === 'string' ? JSON.parse(data) : data;
-    toast(`Команда "${team.name}" создана ✓`, 'ok');
-    await switchTeam(team.id);
-    return team;
-  } catch(e) {
-    handleError(e, e.message?.includes('23505') ? 'Команда с таким именем уже существует' : '');
-    return null;
+  if(state === 'app') {
+    // Возврат из публичного режима (Фаза 3) — снимаем класс,
+    // который прячет Настройки/Sync/Выйти и т.д. (см. base.css)
+    document.body.classList.remove('public-mode');
+    authScreen.style.display = 'none';
+    appEl.style.display = '';
+    _renderHeader();
+    return;
   }
+  authScreen.style.display = '';
+  appEl.style.display = 'none';
+  if(state === 'login')    authScreen.innerHTML = _renderLoginForm();
+  if(state === 'register') authScreen.innerHTML = _renderRegisterForm();
+  if(state === 'no-teams') authScreen.innerHTML = _renderNoTeams();
 }
 
-// ════ ROLES — управление ════
-
-// Все роли команды, включая их права
-// Два запроса вместо трёхуровневого JOIN (role_permissions→permissions)
-// который ненадёжно работает в PostgREST
-async function loadTeamRoles() {
-  const { data: roles, error } = await _sb.from('roles')
-    .select('id, key, label, is_system, max_per_team, sort_order')
-    .eq('team_id', currentTeam().id)
-    .order('sort_order');
-  if(error) throw error;
-  if(!roles?.length) return [];
-
-  // Загружаем права для всех ролей одним запросом
-  const roleIds = roles.map(r => r.id);
-  const { data: rpRows, error: rpErr } = await _sb.from('role_permissions')
-    .select('role_id, permissions(key, label)')
-    .in('role_id', roleIds);
-  if(rpErr) throw rpErr;
-
-  // Группируем права по role_id
-  const permsByRole = {};
-  (rpRows || []).forEach(rp => {
-    if(!permsByRole[rp.role_id]) permsByRole[rp.role_id] = [];
-    if(rp.permissions) permsByRole[rp.role_id].push(rp.permissions);
-  });
-
-  return roles.map(r => ({
-    ...r,
-    permKeys: new Set((permsByRole[r.id] || []).map(p => p.key)),
-    permList: permsByRole[r.id] || [],
-  }));
+// ── Формы входа/регистрации/no-teams — без изменений от прошлой версии ──
+function _renderLoginForm() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">Draft Hub<div class="auth-sub">Team Analyst</div></div>
+    <div class="auth-card">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        <button class="oauth-btn discord" onclick="signInWithProvider('discord')">Войти через Discord</button>
+        <button class="oauth-btn google" onclick="signInWithProvider('google')">Войти через Google</button>
+      </div>
+      <div class="auth-divider">или</div>
+      <form onsubmit="event.preventDefault();_submitLogin()">
+        <div class="form-group"><input class="form-input" id="loginEmail" type="email" placeholder="Email" required></div>
+        <div class="form-group"><input class="form-input" id="loginPassword" type="password" placeholder="Пароль" required></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Войти</button>
+      </form>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">
+        Нет аккаунта? <span class="link-btn" onclick="renderAuthUI('register')">Зарегистрироваться</span>
+      </div>
+    </div>
+  </div>`;
 }
 
-// Все доступные права (справочник)
-async function loadPermissions() {
-  const { data, error } = await _sb.from('permissions').select('*').order('category');
-  if(error) throw error;
-  return data || [];
+function _renderRegisterForm() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">Draft Hub</div>
+    <div class="auth-card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">Создать аккаунт</div>
+      <form onsubmit="event.preventDefault();_submitRegister()">
+        <div class="form-group"><input class="form-input" id="regEmail" type="email" placeholder="Email" required></div>
+        <div class="form-group"><input class="form-input" id="regPassword" type="password" placeholder="Пароль (мин. 8 символов)" minlength="8" required></div>
+        <div class="form-group"><input class="form-input" id="regPassword2" type="password" placeholder="Повтори пароль" required></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Создать аккаунт</button>
+      </form>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">
+        Уже есть аккаунт? <span class="link-btn" onclick="renderAuthUI('login')">Войти</span>
+      </div>
+    </div>
+  </div>`;
 }
 
-// Создать кастомную роль
-async function createCustomRole({ label, permissionKeys = [] }) {
-  if(!canManageRoles()) { toast('Нет прав на управление ролями', 'err'); return null; }
-  const key = 'custom_' + label.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,20) + '_' + Date.now().toString(36).slice(-4);
-  try {
-    // Создаём роль
-    const role = await dbInsert('roles', {
-      team_id: currentTeam().id,
-      key, label: label.trim(),
-      is_system: false,
-      sort_order: 99,
-    });
-    // Назначаем права
-    if(permissionKeys.length) {
-      const { data: perms } = await _sb.from('permissions')
-        .select('id').in('key', permissionKeys);
-      if(perms?.length) {
-        await _sb.from('role_permissions').insert(
-          perms.map(p => ({ role_id: role.id, permission_id: p.id }))
-        );
-      }
-    }
-    toast(`Роль "${role.label}" создана ✓`, 'ok');
-    return role;
-  } catch(e) { handleError(e); return null; }
+function _renderNoTeams() {
+  return `
+  <div class="auth-screen">
+    <div class="auth-logo">Draft Hub</div>
+    <div class="auth-card">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Выбери команду</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">У тебя пока нет команд. Создай новую или попроси инвайт у тренера.</p>
+      <button class="btn btn-primary" style="width:100%;padding:9px;margin-bottom:8px" onclick="_showCreateTeamForm()">+ Создать команду</button>
+      <div id="createTeamForm" style="display:none;margin-top:12px">
+        <form onsubmit="event.preventDefault();_submitCreateTeam()">
+          <div class="form-group"><input class="form-input" id="newTeamName" placeholder="Название команды" required></div>
+          <div class="form-group"><input class="form-input" id="newTeamDesc" placeholder="Описание (опционально)"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;padding:9px">Создать</button>
+        </form>
+      </div>
+      <button class="btn" style="width:100%;padding:9px;margin-top:6px" onclick="signOut()">Выйти</button>
+    </div>
+  </div>`;
 }
 
-// Обновить права роли — заменяем весь набор целиком
-async function updateRolePermissions(roleId, permissionKeys = []) {
-  if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  try {
-    // Удаляем старые права
-    await _sb.from('role_permissions').delete().eq('role_id', roleId);
-    // Вставляем новые
-    if(permissionKeys.length) {
-      const { data: perms } = await _sb.from('permissions')
-        .select('id').in('key', permissionKeys);
-      if(perms?.length) {
-        await _sb.from('role_permissions').insert(
-          perms.map(p => ({ role_id: roleId, permission_id: p.id }))
-        );
-      }
-    }
-    toast('Права обновлены ✓', 'ok');
-    renderRolesAdminPanel();
-  } catch(e) { handleError(e); }
-}
-
-async function deleteCustomRole(roleId) {
-  if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  // Проверяем что роль не назначена никому
-  const { count } = await _sb.from('user_roles')
-    .select('id', { count:'exact', head:true }).eq('role_id', roleId);
-  if(count > 0) { toast(`Роль назначена ${count} участникам — сначала смени им роль`, 'err'); return; }
-
-  if(!confirm('Удалить роль?')) return;
-  try { await dbDelete('roles', roleId); toast('Роль удалена', 'ok'); renderRolesAdminPanel(); }
-  catch(e) { handleError(e); }
-}
-
-// ════ MEMBERS ════
-async function loadTeamMembers() {
-  // user_roles.user_id → auth.users (не public) — прямой PostgREST join невозможен.
-  // Используем RPC get_team_members (SECURITY DEFINER) которая читает auth.users напрямую.
-  const { data, error } = await _sb.rpc('get_team_members', { p_team_id: currentTeam().id });
-  if(error) throw error;
-  return data || [];
-}
-
-async function setMemberRole(userRoleId, newRoleId) {
-  if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  // Не даём оставить команду без менеджера
-  const members  = await loadTeamMembers();
-  const managers = members.filter(m => m.roles?.key === 'manager');
-  const target   = members.find(m => m.id === userRoleId);
-  const newRole  = (await loadTeamRoles()).find(r => r.id === newRoleId);
-  if(target?.roles?.key === 'manager' && newRole?.key !== 'manager' && managers.length === 1) {
-    toast('Нельзя оставить команду без менеджера', 'err'); return;
+function _renderHeader() {
+  const team = currentTeam(); const role = currentRole(); const user = currentUser();
+  const teamSel = document.getElementById('headerTeamName');
+  const roleBdg = document.getElementById('headerRoleBadge');
+  const userEl  = document.getElementById('userName');
+  if(teamSel) teamSel.textContent = team?.name ?? '';
+  if(roleBdg) {
+    roleBdg.textContent = role?.label?.toUpperCase() ?? '';
+    roleBdg.style.color = role?.key==='manager' ? 'var(--damage)'
+      : role?.key==='coach'   ? 'var(--accent)'
+      : role?.key==='captain' ? 'var(--support)'
+      : role?.key==='player'  ? 'var(--text2)'
+      : 'var(--text3)';
   }
+  if(userEl) userEl.textContent = user?.email?.split('@')[0] ?? 'Пользователь';
 
-  await dbUpdate('user_roles', userRoleId, { role_id: newRoleId });
-  toast('Роль обновлена ✓', 'ok');
-  renderTeamSettingsPanel();
-}
-
-async function removeMember(userRoleId, userId) {
-  if(!canManageRoles() && userId !== currentUser().id) { toast('Нет прав', 'err'); return; }
-  if(!confirm('Удалить участника из команды?')) return;
-  await dbDelete('user_roles', userRoleId);
-  toast('Участник удалён', 'ok');
-  if(userId === currentUser().id) {
-    _currentTeam = null;
-    const teams = await loadUserTeams();
-    if(teams.length) await switchTeam(teams[0].id);
-    else renderAuthUI('no-teams');
-  } else renderTeamSettingsPanel();
-}
-
-// ════ INVITES ════
-async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
-  if(!canManageInvites()) { toast('Нет прав на создание инвайта', 'err'); return null; }
-  const { data, error } = await _sb.rpc('create_invite_link', {
-    p_team_id: currentTeam().id,
-    p_role_id: roleId,
-    p_max_uses: maxUses,
-    p_expires_in_days: expiresInDays,
+  // Фаза 7: вкладка «Админ» — только для admin/superadmin (app_metadata),
+  // независимо от роли в текущей команде.
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin() ? '' : 'none';
   });
-  if(error) { handleError(error, 'Ошибка создания инвайта'); return null; }
 
-  // RPC возвращает токен напрямую как text
-  const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}/drafthub_ow/join/${token}`;
-  try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
-  catch { toast(link, 'ok'); }
-  return link;
+  renderAppModeSwitcher();
 }
 
-async function loadTeamInvites() {
-  const { data, error } = await _sb.from('team_invites')
-    .select('id, token, max_uses, uses, expires_at, created_at, roles(label)')
-    .eq('team_id', currentTeam().id)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending:false });
-  if(error) throw error;
-  return data || [];
+async function renderTeamSwitcher() {
+  if(!isLoggedIn()) return;   // публичный режим — переключателя команд нет
+  const teams = await loadUserTeams();
+  const el = document.getElementById('teamSwitcherPopup'); if(!el) return;
+  if(teams.length <= 1) {
+    // Скрываем явно — иначе пустой div с border/background виден как прямоугольник
+    el.innerHTML = '';
+    el.classList.add('hidden');
+    return;
+  }
+  el.classList.remove('hidden');
+  el.innerHTML = teams.map(t => `
+    <div class="team-switcher-item${t.id===currentTeam()?.id?' active':''}" onclick="switchTeam('${t.id}')">
+      <span>${t.name}</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${t.role?.label||''}</span>
+    </div>`).join('');
 }
 
-async function deleteInvite(inviteId) {
-  if(!canManageInvites()) { toast('Нет прав', 'err'); return; }
-  await dbDelete('team_invites', inviteId);
-  toast('Инвайт удалён', 'ok');
-  renderTeamSettingsPanel();
+// ════ ПАНЕЛЬ НАСТРОЕК — участники + роли + инвайты ════
+let _settingsTab = 'members'; // 'members' | 'roles' | 'invites' | 'sheets'
+
+async function renderTeamSettings() {
+  const el = document.getElementById('view-settings'); if(!el) return;
+  const team = currentTeam();
+  el.innerHTML = `
+    <div style="max-width:680px">
+      ${canManageRoles() ? `
+      <div class="role-card" style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text2)">Настройки команды</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="form-input" id="teamNameInput" value="${team?.name ?? ''}"
+            placeholder="Название команды" style="flex:1;font-size:13px"
+            onkeydown="if(event.key==='Enter')_submitRenameTeam()">
+          <button class="btn btn-primary" onclick="_submitRenameTeam()" style="font-size:11px">Сохранить</button>
+        </div>
+      </div>` : ''}
+      <div class="settings-tabs" style="display:flex;gap:6px;margin-bottom:16px">
+        <button class="f-btn${_settingsTab==='members'?' active':''}" onclick="_switchSettingsTab('members')">Участники</button>
+        ${canManageRoles()   ? `<button class="f-btn${_settingsTab==='roles'  ?' active':''}" onclick="_switchSettingsTab('roles')">Роли</button>`            : ''}
+        ${canManageInvites() ? `<button class="f-btn${_settingsTab==='invites'?' active':''}" onclick="_switchSettingsTab('invites')">Инвайты</button>`        : ''}
+        ${canExportSheets()  ? `<button class="f-btn${_settingsTab==='sheets' ?' active':''}" onclick="_switchSettingsTab('sheets')">Sheets экспорт</button>`  : ''}
+      </div>
+      <div id="settingsTabContent"></div>
+    </div>`;
+  await _renderSettingsTabContent();
 }
 
-async function updateTeamSettings(name, description) {
-  if(!canManageRoles()) { toast('Нет прав', 'err'); return; }
-  const trimmed = name?.trim();
-  if(!trimmed) { toast('Укажи название команды', 'err'); return; }
-  const { data, error } = await _sb.rpc('rename_team', {
-    p_team_id: currentTeam().id,
-    p_name:    trimmed,
-  });
-  if(error || !data?.ok) { handleError(error || new Error(data?.error)); return; }
-  _currentTeam = { ..._currentTeam, name: trimmed };
-  document.getElementById('headerTeamName').textContent = trimmed;
-  toast('Название команды обновлено ✓', 'ok');
-  renderTeamSettingsPanel();
+function _switchSettingsTab(tab){ _settingsTab = tab; _renderSettingsTabContent(); }
+
+async function _renderSettingsTabContent(){
+  const el = document.getElementById('settingsTabContent'); if(!el) return;
+  if(_settingsTab === 'members') return _renderMembersTab(el);
+  if(_settingsTab === 'roles')   return _renderRolesTab(el);
+  if(_settingsTab === 'invites') return _renderInvitesTab(el);
+  if(_settingsTab === 'sheets')  { el.innerHTML = '<div id="sheetsExportPanel"></div>'; return renderSheetsExportPanel(); }
 }
 
-function renderTeamSettingsPanel(){ renderTeamSettings?.(); }
-function renderRolesAdminPanel(){ renderTeamSettings?.(); }
+// ── Участники ──
+async function _renderMembersTab(el){
+  const [members, roles] = await Promise.all([loadTeamMembers(), loadTeamRoles()]);
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${members.map(m => {
+        const name  = m.users?.raw_user_meta_data?.full_name ?? m.users?.email ?? '—';
+        const email = m.users?.email ?? '';
+        const isSelf= m.users?.id === currentUser()?.id;
+        const roleLabel = m.roles?.label || '—';
+        return `<div class="member-row">
+          <div class="member-av">${name[0]?.toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${name}${isSelf?' (вы)':''}</div>
+            <div style="font-size:11px;color:var(--text3)">${email}</div>
+          </div>
+          ${canManageRoles() && !isSelf ? `
+            <select class="form-select" style="width:130px;font-size:11px" onchange="setMemberRole('${m.id}',this.value)">
+              ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
+            </select>
+            <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')">✕</button>
+          ` : `<span class="role-tag" style="font-size:10px">${roleLabel}</span>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── Роли (админка) ──
+async function _renderRolesTab(el){
+  const [roles, allPerms] = await Promise.all([loadTeamRoles(), loadPermissions()]);
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      ${roles.map(r => `
+        <div class="role-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:13px;font-weight:700">${r.label}</span>
+              ${r.is_system?'<span class="role-tag" style="font-size:9px">встроенная</span>':''}
+            </div>
+            ${!r.is_system?`<button class="btn btn-danger" style="font-size:9px;padding:3px 8px" onclick="deleteCustomRole('${r.id}')">Удалить</button>`:''}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            ${allPerms.map(p => `
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);
+                ${r.is_system?'opacity:.5;cursor:not-allowed':'cursor:pointer'}">
+                <input type="checkbox" data-perm="${p.key}" ${r.permKeys.has(p.key)?'checked':''} ${r.is_system?'disabled':''}
+                  onchange="_toggleRolePerm('${r.id}',this)">
+                ${p.label}
+              </label>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" onclick="_showCreateRoleForm()" style="font-size:11px">+ Создать роль</button>
+    <div id="createRoleForm" style="display:none;margin-top:12px" class="role-card">
+      <div class="form-group"><input class="form-input" id="newRoleLabel" placeholder="Название роли (напр. Аналитик)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        ${allPerms.map(p=>`
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer">
+            <input type="checkbox" name="newRolePerm" value="${p.key}">
+            ${p.label}
+          </label>`).join('')}
+      </div>
+      <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateRole()">Создать</button>
+    </div>`;
+}
+
+// Переключение одного права у существующей роли — читаем permission key
+// прямо из data-perm на чекбоксе и пересохраняем весь набор прав роли
+async function _toggleRolePerm(roleId, checkbox){
+  const permKey = checkbox.dataset.perm;
+  if(!permKey) return;
+  const roles = await loadTeamRoles();
+  const role  = roles.find(r => r.id === roleId);
+  if(!role) return;
+
+  const perms = new Set(role.permKeys);
+  if(checkbox.checked) perms.add(permKey);
+  else perms.delete(permKey);
+
+  await updateRolePermissions(roleId, [...perms]);
+}
+
+function _showCreateRoleForm(){
+  const el = document.getElementById('createRoleForm');
+  if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+async function _submitCreateRole(){
+  const label = document.getElementById('newRoleLabel')?.value;
+  if(!label?.trim()) { toast('Укажи название роли', 'err'); return; }
+  const checkedPerms = [...document.querySelectorAll('[name="newRolePerm"]:checked')].map(cb => cb.value);
+  await createCustomRole({ label, permissionKeys: checkedPerms });
+  document.getElementById('newRoleLabel').value = '';
+  _renderSettingsTabContent();
+}
+
+// ── Инвайты ──
+async function _renderInvitesTab(el){
+  const [invites, roles] = await Promise.all([loadTeamInvites(), loadTeamRoles()]);
+  el.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <select class="form-select" id="inviteRoleSelect" style="width:160px;font-size:11px">
+        ${roles.map(r=>`<option value="${r.id}">${r.label}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateInvite()">+ Создать инвайт</button>
+    </div>
+    ${invites.length ? `
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${invites.map(inv => `
+          <div class="member-row" style="gap:6px;font-size:11px">
+            <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/drafthub_ow/join/${inv.token}</code>
+            <span style="color:var(--text3)">${inv.roles?.label||''}</span>
+            <span style="color:var(--text3)">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
+            <button class="btn btn-danger" style="font-size:9px;padding:2px 6px" onclick="deleteInvite('${inv.id}')">✕</button>
+          </div>`).join('')}
+      </div>` : '<div class="empty">Нет активных инвайтов</div>'}`;
+}
+
+async function _submitCreateInvite(){
+  const roleId = document.getElementById('inviteRoleSelect')?.value;
+  if(!roleId) return;
+  await createInvite({ roleId });
+  _renderSettingsTabContent();
+}
+
+// ── Обработчики форм входа/регистрации/команды ──
+async function _submitLogin() {
+  const email = document.getElementById('loginEmail')?.value;
+  const password = document.getElementById('loginPassword')?.value;
+  if(!email || !password) return;
+  await signInWithEmail(email, password);
+}
+async function _submitRegister() {
+  const email = document.getElementById('regEmail')?.value;
+  const p1 = document.getElementById('regPassword')?.value;
+  const p2 = document.getElementById('regPassword2')?.value;
+  if(p1 !== p2) { toast('Пароли не совпадают', 'err'); return; }
+  await signUpWithEmail(email, p1);
+}
+async function _submitCreateTeam() {
+  const name = document.getElementById('newTeamName')?.value;
+  const desc = document.getElementById('newTeamDesc')?.value;
+  await createTeam(name, desc);
+}
+function _showCreateTeamForm() {
+  const el = document.getElementById('createTeamForm');
+  if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+
+async function _submitRenameTeam() {
+  const name = document.getElementById('teamNameInput')?.value;
+  await updateTeamSettings(name);
+}
