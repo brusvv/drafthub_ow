@@ -1,4 +1,4 @@
-// @hash 743a925b 2026-06-30T21:16
+// @hash e3b05311 2026-07-01T07:19
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -287,13 +287,15 @@ function renderTierHeroes(){
         ondrop="onDrop(event,'heroes','${t}')"
         ondragleave="onDragLeave(event)">
         ${items.map((name,idx)=>{
-          const h=heroMap[name]||{};
+          const h=heroMap[name];   // undefined в global-режиме без auth — не заменяем на {},
+          // иначе {} truthy → h.role=undefined → undefined!=='Tank'=true → все герои скрыты
           const src=portrait(name);
           // Фильтр по роли: прячем только если герой найден И роль не совпадает.
-          const hidden=tierHeroRoleFilter!=='all'&&(h&&h.role!==tierHeroRoleFilter);
-          const tipText=h.subrole?`${name} · ${h.subrole}`:name;
+          // Если h=undefined (global, нет командных данных) — показываем всех.
+          const hidden=tierHeroRoleFilter!=='all'&&h&&h.role!==tierHeroRoleFilter;
+          const tipText=h?.subrole?`${name} · ${h.subrole}`:name;
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
-            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h.role||''}"
+            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h?.role||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierHeroPreview('${esc(name)}')">
