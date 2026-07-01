@@ -1,4 +1,4 @@
-// @hash 72d6acb2 2026-06-30T21:16
+// @hash dc7056e4 2026-07-01T07:19
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -184,7 +184,7 @@ function _renderSharedTierView(data){
     return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:4px 0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0">
           ${names.map(name => {
             const src = mapImg(name);
             return `<div class="shared-map-pill" title="${name}">
@@ -222,21 +222,22 @@ function _renderSharedTierView(data){
       /* Самодостаточный блок — share-страница не подключена к build.sh CSS-конкатенации
          напрямую через классы карт (тут картиночные превью, не текстовые .tier-pill),
          поэтому адаптив для них держим тут же, рядом с разметкой. */
-      .shared-wrap{max-width:600px;margin:0 auto;padding:28px 20px 40px}
-      .shared-map-pill{display:flex;flex-direction:column;align-items:center;gap:3px}
-      .shared-map-pill img{width:76px;height:48px;object-fit:cover;border-radius:6px;display:block}
-      .shared-map-pill-ph{width:76px;height:48px;border-radius:6px;background:var(--bg3);
-        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
-      .shared-map-pill span{font-size:9px;font-weight:600;max-width:76px;text-align:center;
+      .shared-wrap{max-width:560px;margin:0 auto;padding:28px 20px 24px}
+      .shared-map-pill{display:flex;flex-direction:column;align-items:center;gap:4px}
+      .shared-map-pill img{width:100px;height:64px;object-fit:cover;border-radius:7px;display:block}
+      .shared-map-pill-ph{width:100px;height:64px;border-radius:7px;background:var(--bg3);
+        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+      .shared-map-pill span{font-size:10px;font-weight:600;max-width:100px;text-align:center;
         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
-      /* Чуть крупнее hero-pill на share-странице */
-      .shared-wrap .tier-hero-pill{width:54px;height:54px}
-      .shared-wrap .tier-hero-pill img{width:54px;height:54px}
-      .shared-wrap .tier-hero-pill-ph{width:54px;height:54px;font-size:15px}
+      /* Крупнее hero-pill на share-странице (~1.5x vs приложение) */
+      .shared-wrap .tier-hero-pill{width:80px;height:80px}
+      .shared-wrap .tier-hero-pill img{width:80px;height:80px}
+      .shared-wrap .tier-hero-pill-ph{width:80px;height:80px;font-size:20px}
+      .shared-wrap .tier-hero-pill-tip{font-size:10px}
       @media (max-width:480px){
-        .shared-map-pill img,.shared-map-pill-ph{width:56px;height:36px}
-        .shared-map-pill span{max-width:56px}
-        .shared-wrap .tier-hero-pill,.shared-wrap .tier-hero-pill img,.shared-wrap .tier-hero-pill-ph{width:44px;height:44px}
+        .shared-map-pill img,.shared-map-pill-ph{width:72px;height:46px}
+        .shared-map-pill span{max-width:72px}
+        .shared-wrap .tier-hero-pill,.shared-wrap .tier-hero-pill img,.shared-wrap .tier-hero-pill-ph{width:60px;height:60px}
       }
     </style>
     <div class="app" style="font-family:Inter,sans-serif">
