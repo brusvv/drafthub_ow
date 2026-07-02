@@ -1,3 +1,4 @@
+// @hash 44ee31ec 2026-07-02T08:08
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
