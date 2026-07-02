@@ -1,6 +1,14 @@
-// @hash 61ba92ea 2026-07-02T08:05
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
+
+// MIGR-5: Карты↔Тир-листы связаны — в личном режиме показываем/редактируем
+// тир из ДЕФОЛТНОГО личного сета (personalDefaultMapTierByName, db-load.js),
+// не team-shared m.tier. Fallback на m.tier если карты ещё нет в личном сете
+// (не заставляем пользователя сначала расставить всё в Tier List).
+function _effectiveMapTier(m){
+  if(tierViewMode === 'personal') return personalDefaultMapTierByName[m.name] || m.tier || 'B';
+  return m.tier;
+}
 
 // Сброс при switchTeam
 function resetMapFilter() { mapPoolFilter = 'active'; }
@@ -48,7 +56,7 @@ function renderMaps(){
         <div class="map-card-name">${m.name}</div>
         <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span class="f-btn-text">${m.type}</span>`:''}</div>
         <div class="map-card-meta">
-          <div class="tier-badge tier-${m.tier}">${m.tier}</div>
+          <div class="tier-badge tier-${_effectiveMapTier(m)}">${_effectiveMapTier(m)}</div>
           <div class="ratings">
             ${noAD
               ?`<div class="r-row">${ICON_DIF}${dots5(m.dif,'dif')}</div>`
@@ -140,7 +148,7 @@ function showMapDetail(name){
           <button class="btn" style="margin-top:2.5rem" onclick="openMapModal(maps.find(x=>x.name==='${esc(m.name)}'))">✎ Редактировать</button>
         </div>
         <div class="detail-meta">
-          <div class="m-item"><span>Tier</span><span class="tier-badge tier-${m.tier} icon-label">${m.tier}</span></div>
+          <div class="m-item"><span>Tier</span><span class="tier-badge tier-${_effectiveMapTier(m)} icon-label">${_effectiveMapTier(m)}</span></div>
           <div class="m-item"><span>Тип:</span>${mapTypeIcon(m.type,14)}<span class="m-val">${m.type}</span></div>
           <div class="m-item"><span>Приоритет:</span><span class="m-val">#${m.priority}</span></div>
           ${noAD
