@@ -1,4 +1,3 @@
-// @hash 1a26d248 2026-06-30T11:04
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
 // Тело под-таба «Импорт» внутри общей панели Google Sheets
 // (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
@@ -104,6 +103,12 @@ function _setImportScope(scope){
 
 async function _submitImport(){
   if(!_sheetsAccessToken){ toast('Сначала авторизуйся в Google', 'err'); return; }
+  // Каталог мог измениться с момента открытия страницы (superadmin добавил
+  // героя/карту) — перезагружаем и сбрасываем кэш резолвера ПЕРЕД каждым
+  // запуском импорта, иначе резолв по устаревшему индексу промахивается
+  // мимо новых записей (см. комментарий у _resetImportIndices).
+  await _loadCatalogs();
+  _resetImportIndices();
   const config = await loadSheetsConfig();
   if(!config?.sheet_id){ toast('Укажи Sheet ID', 'err'); return; }
 
