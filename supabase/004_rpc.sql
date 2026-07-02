@@ -8,6 +8,15 @@
 -- ── create_team ──
 -- Атомарно создаёт команду и добавляет создателя как manager.
 -- SECURITY DEFINER нужен — триггер создаёт роли, а user ещё не member.
+--
+-- MIGR-4: дополнительно создаёт team-scope tier_list (закрывает дыру,
+-- найденную в MIGR-2 — раньше db-load.js делал find-or-create на клиенте
+-- с обработкой гонки по unique index; теперь атомарно здесь, клиентский
+-- фолбэк остаётся как подстраховка, но в норме не должен срабатывать)
+-- и bulk-seed'ит весь hero_catalog/map_catalog в heroes/maps новой команды
+-- (решение по заметке из MIGR-2 "решить вместе с MIGR-5" — команда сразу
+-- видит полный ростер с дефолтным приоритетом, не создаёт roster-строки
+-- с нуля через модалку выбора из каталога).
 CREATE OR REPLACE FUNCTION create_team(p_name text, p_description text DEFAULT '')
 RETURNS json LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
@@ -27,6 +36,15 @@ BEGIN
 
   INSERT INTO user_roles (user_id, role_id, team_id)
   VALUES (auth.uid(), v_manager_id, v_team.id);
+
+  INSERT INTO tier_lists (scope, team_id, name)
+  VALUES ('team', v_team.id, 'Тир-лист команды');
+
+  INSERT INTO heroes (team_id, hero_id)
+  SELECT v_team.id, id FROM hero_catalog;
+
+  INSERT INTO maps (team_id, map_id)
+  SELECT v_team.id, id FROM map_catalog;
 
   RETURN to_json(v_team);
 END;
@@ -192,38 +210,42 @@ END;
 $$;
 
 -- ── create_tier_set ──
--- Создаёт именованный тир-лист; первый автоматически становится дефолтным.
+-- Создаёт именованный личный тир-лист (tier_lists, scope='personal').
+-- Лимит 10 и уникальность дефолта теперь держат триггеры из 007
+-- (trg_tier_list_limit / idx_tier_lists_default) — здесь только решаем,
+-- должен ли НОВЫЙ сет стать дефолтным (да, если это первый сет).
 CREATE OR REPLACE FUNCTION create_tier_set(p_team_id uuid, p_name text DEFAULT 'Мой тирлист')
 RETURNS json LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 DECLARE
-  v_set        personal_tier_sets%ROWTYPE;
+  v_set        tier_lists%ROWTYPE;
   v_is_default boolean;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
   v_is_default := NOT EXISTS (
-    SELECT 1 FROM personal_tier_sets WHERE user_id = auth.uid() AND team_id = p_team_id
+    SELECT 1 FROM tier_lists WHERE scope = 'personal' AND user_id = auth.uid() AND team_id = p_team_id
   );
-  INSERT INTO personal_tier_sets (user_id, team_id, name, is_default)
-  VALUES (auth.uid(), p_team_id, p_name, v_is_default)
+  INSERT INTO tier_lists (scope, user_id, team_id, name, is_default)
+  VALUES ('personal', auth.uid(), p_team_id, p_name, v_is_default)
   RETURNING * INTO v_set;
   RETURN to_json(v_set);
 END;
 $$;
 
 -- ── set_default_tier_set ──
+-- idx_tier_lists_default (partial unique на is_default=true) не даёт просто
+-- переключить флаг на новой строке, пока старая ещё true — снимаем сначала.
 CREATE OR REPLACE FUNCTION set_default_tier_set(p_set_id uuid)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
-DECLARE v_set personal_tier_sets%ROWTYPE;
+DECLARE v_set tier_lists%ROWTYPE;
 BEGIN
-  SELECT * INTO v_set FROM personal_tier_sets
-  WHERE id = p_set_id AND user_id = auth.uid() FOR UPDATE;
+  SELECT * INTO v_set FROM tier_lists
+  WHERE id = p_set_id AND scope = 'personal' AND user_id = auth.uid() FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'not_found'; END IF;
-  -- Снимаем дефолт со всех остальных сетов пользователя в этой команде
-  UPDATE personal_tier_sets SET is_default = false
-  WHERE user_id = auth.uid() AND team_id = v_set.team_id;
-  UPDATE personal_tier_sets SET is_default = true WHERE id = p_set_id;
+  UPDATE tier_lists SET is_default = false
+  WHERE scope = 'personal' AND user_id = auth.uid() AND team_id = v_set.team_id AND is_default = true;
+  UPDATE tier_lists SET is_default = true WHERE id = p_set_id;
 END;
 $$;
 
@@ -249,19 +271,19 @@ BEGIN
 
   IF v_tier_set_id IS NULL THEN
     SELECT id INTO v_tier_set_id
-    FROM personal_tier_sets
-    WHERE user_id = auth.uid() AND team_id = p_team_id AND is_default = true
+    FROM tier_lists
+    WHERE scope = 'personal' AND user_id = auth.uid() AND team_id = p_team_id AND is_default = true
     LIMIT 1;
 
     IF v_tier_set_id IS NULL THEN
-      INSERT INTO personal_tier_sets (user_id, team_id, name, is_default)
-      VALUES (auth.uid(), p_team_id, 'Мой тирлист', true)
+      INSERT INTO tier_lists (scope, user_id, team_id, name, is_default)
+      VALUES ('personal', auth.uid(), p_team_id, 'Мой тирлист', true)
       RETURNING id INTO v_tier_set_id;
     END IF;
   ELSE
     IF NOT EXISTS (
-      SELECT 1 FROM personal_tier_sets
-      WHERE id = v_tier_set_id AND user_id = auth.uid() AND team_id = p_team_id
+      SELECT 1 FROM tier_lists
+      WHERE id = v_tier_set_id AND scope = 'personal' AND user_id = auth.uid() AND team_id = p_team_id
     ) THEN
       RAISE EXCEPTION 'tier_set_not_found';
     END IF;
@@ -288,7 +310,12 @@ $$;
 
 -- ── view_shared_tier ──
 -- Просмотр тир-листа по токену — работает без авторизации (anon) для публичных.
--- Возвращает tier_set_name для отображения в заголовке share-страницы.
+-- MIGR-4: раньше LEFT JOIN heroes (per-team, обход RLS) давал role только
+-- для героев конкретной команды ссылки, а map_type не селектился ВООБЩЕ
+-- (баг найден в MIGR-3 — render-tier-share.js молча падал на фолбэк
+-- OW_MAP_TYPE/каталог для карт всегда). Теперь entity_type/hero_id/map_id
+-- джойнятся напрямую на hero_catalog/map_catalog — глобальный, не
+-- team-scoped справочник, роль и тип карты всегда есть, обход RLS не нужен.
 CREATE OR REPLACE FUNCTION view_shared_tier(p_token text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
@@ -317,22 +344,20 @@ BEGIN
     'user_id',      v_link.user_id,
     'team_id',      v_link.team_id,
     'entity_type',  v_link.entity_type,
-    'tier_set_name',(SELECT name FROM personal_tier_sets WHERE id = v_link.tier_set_id),
+    'tier_set_name',(SELECT name FROM tier_lists WHERE id = v_link.tier_set_id),
     'tiers', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
-        'entity_type', td.entity_type, 'name', td.name, 'tier', td.tier,
-        'role', h.role
-      ) ORDER BY td.position)
-      FROM tier_data td
-      -- LEFT JOIN heroes — нужен role для фильтра Tank/Damage/Support на
-      -- публичной share-странице (анонимный посетитель не может читать
-      -- heroes напрямую из-за RLS can_read_game_data(); здесь это SECURITY
-      -- DEFINER, обходит RLS). NULL для maps — это ожидаемо, фильтр ролей
-      -- на странице применяется только к героям.
-      LEFT JOIN heroes h ON h.team_id = v_link.team_id
-        AND h.name = td.name AND td.entity_type = 'hero'
-      WHERE td.tier_set_id = v_link.tier_set_id
-        AND (v_link.entity_type = 'both' OR td.entity_type = v_link.entity_type)
+        'entity_type', te.entity_type,
+        'name',        COALESCE(hc.name, mc.name),
+        'tier',        te.tier,
+        'role',        hc.role,
+        'map_type',    mc.type
+      ) ORDER BY te.position)
+      FROM tier_entries te
+      LEFT JOIN hero_catalog hc ON hc.id = te.hero_id
+      LEFT JOIN map_catalog  mc ON mc.id = te.map_id
+      WHERE te.tier_list_id = v_link.tier_set_id
+        AND (v_link.entity_type = 'both' OR te.entity_type = v_link.entity_type)
     ), '[]'::jsonb)
   );
 END;
