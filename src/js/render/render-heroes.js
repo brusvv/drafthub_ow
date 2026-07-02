@@ -19,7 +19,7 @@ function renderHeroes(){
     // Группировка по подклассу
     const subroleOrder={
       Tank:['Initiator','Bruiser','Stalwart'],
-      Damage:['Sharpshooter','Flanker','Recon','Specialist'],
+      Damage:['Flanker','Recon','Specialist','Sharpshooter'],
       Support:['Tactician','Medic','Survivor']
     };
     const order=subroleOrder[role]||[];
