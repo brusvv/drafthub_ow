@@ -1,4 +1,3 @@
-// @hash e3b05311 2026-07-01T07:19
 // ── Store proxies ──
 Object.defineProperties(window, {
   tierOrderMaps:    { get(){ return store.get('tierOrderMaps'); },    set(v){ store.set('tierOrderMaps',v); },    configurable:true },
@@ -256,10 +255,10 @@ function renderTierMaps(){
         ondragleave="onDragLeave(event)">
         ${items.map((name,idx)=>{
           const m=maps.find(x=>x.name===name);
-          // Фильтр по типу карты: прячем только если объект карты найден И тип не совпадает.
-          // Если m=undefined (глобальный режим, нет командных данных) — не прячем,
-          // иначе при любом фильтре весь тир-лист пустеет у неавторизованных.
-          const hidden=tierMapTypeFilter!=='all'&&(m&&m.type!==tierMapTypeFilter);
+          // Fallback к map_catalog (db-load.js) если maps[] пуст (неавторизованный,
+          // глобальный режим) — каталог публичный и не team-scoped, грузится всегда
+          const mapType = m?.type ?? _mapCatalogByName[name]?.type;
+          const hidden=tierMapTypeFilter!=='all'&&(mapType&&mapType!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="maps" data-name="${esc(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
@@ -290,12 +289,15 @@ function renderTierHeroes(){
           const h=heroMap[name];   // undefined в global-режиме без auth — не заменяем на {},
           // иначе {} truthy → h.role=undefined → undefined!=='Tank'=true → все герои скрыты
           const src=portrait(name);
-          // Фильтр по роли: прячем только если герой найден И роль не совпадает.
-          // Если h=undefined (global, нет командных данных) — показываем всех.
-          const hidden=tierHeroRoleFilter!=='all'&&h&&h.role!==tierHeroRoleFilter;
-          const tipText=h?.subrole?`${name} · ${h.subrole}`:name;
+          // Fallback к hero_catalog (db-load.js) если heroes[] пуст (неавторизованный) —
+          // каталог публичный и не team-scoped, грузится всегда (было: OW_HERO_ROLE из config.js)
+          const catHero=_heroCatalogByName[name];
+          const heroRole=h?.role??catHero?.role;
+          const heroSubrole=h?.subrole??catHero?.subrole;
+          const hidden=tierHeroRoleFilter!=='all'&&heroRole&&heroRole!==tierHeroRoleFilter;
+          const tipText=heroSubrole?`${name} · ${heroSubrole}`:name;
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
-            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${h?.role||''}"
+            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${heroRole||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierHeroPreview('${esc(name)}')">
