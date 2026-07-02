@@ -13,11 +13,9 @@
 // эти функции не заработают в UI — но контракт с БД корректен уже сейчас,
 // можно тестировать через консоль/RPC напрямую.
 //
-// ⚠️ ЗАВИСИМОСТЬ ОТ MIGR-4: createTierSet()/setDefaultTierSet() дергают
-// RPC create_tier_set/set_default_tier_set — их ТЕЛА ещё пишут в старую
-// personal_tier_sets, надо переписать на tier_lists (MIGR-4). Клиентский
-// вызов не меняется, поэтому здесь трогать нечего, просто не заработает
-// до готовности RPC.
+// ✅ MIGR-4 завершён: createTierSet()/setDefaultTierSet() дергают RPC
+// create_tier_set/set_default_tier_set — тела уже на tier_lists (011_rpc.sql),
+// проверено. Клиентский вызов не менялся, работает как есть.
 //
 // ⚠️ pickerSelected.preferred/bans/mapCounters — массивы ИМЁН, резолвятся
 // в hero_id через _heroCatalogByName. Резолв молча пропускает нерезолвленное
