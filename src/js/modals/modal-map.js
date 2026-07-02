@@ -1,4 +1,3 @@
-// @hash 0fe42002 2026-06-27T08:06
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
@@ -6,7 +5,7 @@ function openMapModal(map){
   document.getElementById('mapEditRow').value=map?.id??'';
   document.getElementById('mName').value=map?map.name:'';
   document.getElementById('mType').value=map?map.type:'';
-  document.getElementById('mTier').value=map?map.tier:'B';
+  document.getElementById('mTier').value=map?_effectiveMapTier(map):'B';
   document.getElementById('mPrio').value=map?map.priority:'5';
   document.getElementById('mAtk').value=map?map.atk:'3';
   document.getElementById('mDef').value=map?map.def:'3';
