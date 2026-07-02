@@ -8,7 +8,7 @@ function resetMapFilter() { mapPoolFilter = 'active'; }
 // Рендерим фильтры с иконками. Активная кнопка — только иконка (текст скрыт)
 function renderMapFilters(){
   const el=document.getElementById('mapFilters');if(!el)return;
-  const types=['all','Hybrid','Escort','Control','Push','Flashpoint'];
+  const types=['all','Control','Flashpoint','Hybrid','Escort','Push'];
   el.innerHTML=types.map(t=>{
     const isAll=t==='all';
     const active=mapFilter===t;
