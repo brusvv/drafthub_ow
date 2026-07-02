@@ -1,3 +1,4 @@
+// @hash 79f503be 2026-07-02T09:25
 // ════ DATA — LOAD (Supabase) ════
 // MIGR-2: переезд на id-based каталог (hero_catalog/map_catalog) +
 // unified tier_lists/tier_entries вместо tier_data+global_tier_data+
