@@ -1,3 +1,4 @@
+// @hash b0984739 2026-07-02T09:27
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
