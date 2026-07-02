@@ -1,4 +1,3 @@
-// @hash c7f662fb 2026-07-02T08:10
 // ════ DATA — WRITE (Supabase) ════
 // MIGR-2: переезд на id-based каталог + unified tier_lists/tier_entries
 // (см. db-load.js шапку для контекста). Использует UUID (h.id/m.id/p.id)
@@ -190,13 +189,15 @@ async function saveMap(){
     return heroCat ? { hero_id: heroCat.id, playerRole: s.role, role: heroCat.role || '' } : null;
   }).filter(Boolean);
 
+  const chosenTier = document.getElementById('mTier').value;
+
   const row = {
     team_id: _teamId(),
     map_id:  mapId,
     // name/type больше не пишем — map_catalog (MIGR-1); in_pool тоже убран
     // отсюда — теперь map_catalog.in_pool, сезонный пул — глобальный факт
     // игры, редактируется только через admin RPC каталога (MIGR-4)
-    tier:     document.getElementById('mTier').value,
+    tier:     chosenTier,
     priority: parseInt(document.getElementById('mPrio').value) || 5,
     atk: noAD ? 3 : parseInt(document.getElementById('mAtk').value) || 3,
     def: noAD ? 3 : parseInt(document.getElementById('mDef').value) || 3,
@@ -208,9 +209,26 @@ async function saveMap(){
     comp,
   };
 
+  // MIGR-5: в личном режиме тир из модалки — персональное предпочтение,
+  // не команднoe. Не перезаписываем team-shared maps.tier чужим личным
+  // выбором при РЕДАКТИРОВАНИИ существующей карты (при создании — team-строка
+  // всё равно должна получить какое-то стартовое значение, оставляем).
+  if(editId && tierViewMode === 'personal') delete row.tier;
+
   try{
     if(editId) await dbUpdate('maps', editId, row);
     else       await dbInsert('maps', row);
+
+    // Синхронизация с тир-листом — направление зависит от режима:
+    // team → командный tier_entries + maps.tier (уже совпадает, row.tier писали выше);
+    // personal → ДЕФОЛТНЫЙ личный сет (не текущий activeTierSetId, см. MIGR-5).
+    // Без этого тир из модалки не появляется на странице Tier List, пока
+    // карту туда не перетащат вручную — два источника одного факта расходились.
+    if(tierViewMode === 'personal'){
+      await _syncMapTierToPersonalDefaultList(mapId, chosenTier);
+    }else{
+      await _syncMapTierToTierList(mapId, chosenTier);
+    }
 
     toast(editId ? 'Карта обновлена ✓' : 'Карта добавлена ✓', 'ok');
     closeModal('mapModal');
@@ -218,6 +236,70 @@ async function saveMap(){
   }catch(e){
     handleError(e, e.code === '23505' ? 'Эта карта уже есть в ростере команды' : '');
   }
+}
+
+// Обновляет/создаёт запись в team-scope tier_entries под новый tier карты
+// из модалки. Не блокирует сохранение самой карты при ошибке — тир-лист
+// можно поправить руками, а вот потерять сохранённую карту нельзя.
+async function _syncMapTierToTierList(mapId, newTier){
+  try{
+    const teamTierListId = _teamTierListId || await _resolveTierListId('team', { teamId: _teamId() });
+    if(!teamTierListId) return;
+
+    const { data: existingEntry } = await _sb.from('tier_entries')
+      .select('id, tier').eq('tier_list_id', teamTierListId)
+      .eq('entity_type', 'map').eq('map_id', mapId).maybeSingle();
+
+    if(existingEntry){
+      if(existingEntry.tier !== newTier){
+        await _sb.from('tier_entries').update({ tier: newTier }).eq('id', existingEntry.id);
+      }
+    }else{
+      const { count } = await _sb.from('tier_entries').select('id', { count:'exact', head:true })
+        .eq('tier_list_id', teamTierListId).eq('entity_type', 'map').eq('tier', newTier);
+      await _sb.from('tier_entries').insert({
+        tier_list_id: teamTierListId, entity_type: 'map', map_id: mapId,
+        tier: newTier, position: count || 0,
+      });
+    }
+    await loadTeamTiers(); // обновит teamTierMaps — если страница Tier List открыта, увидит актуальное
+  }catch(e){ console.warn('_syncMapTierToTierList failed', e); }
+}
+
+// MIGR-5: аналог _syncMapTierToTierList, но для личного режима — пишет
+// в ДЕФОЛТНЫЙ личный сет (is_default=true), не в activeTierSetId. Это
+// сознательный выбор: activeTierSetId — это то что пользователь СЕЙЧАС
+// просматривает на странице Tier List и может быть любым именованным
+// сетом, а "Карты" должны быть предсказуемо привязаны к одному конкретному
+// сету вне зависимости от навигации.
+async function _syncMapTierToPersonalDefaultList(mapId, newTier){
+  try{
+    if(!currentUser()) return;
+    const defaultListId = await _resolveTierListId('personal', { teamId: _teamId(), userId: currentUser().id });
+    if(!defaultListId) return;
+
+    const { data: existingEntry } = await _sb.from('tier_entries')
+      .select('id, tier').eq('tier_list_id', defaultListId)
+      .eq('entity_type', 'map').eq('map_id', mapId).maybeSingle();
+
+    if(existingEntry){
+      if(existingEntry.tier !== newTier){
+        await _sb.from('tier_entries').update({ tier: newTier }).eq('id', existingEntry.id);
+      }
+    }else{
+      const { count } = await _sb.from('tier_entries').select('id', { count:'exact', head:true })
+        .eq('tier_list_id', defaultListId).eq('entity_type', 'map').eq('tier', newTier);
+      await _sb.from('tier_entries').insert({
+        tier_list_id: defaultListId, entity_type: 'map', map_id: mapId,
+        tier: newTier, position: count || 0,
+      });
+    }
+    await loadPersonalDefaultMapTiers(); // обновит personalDefaultMapTierByName для "Карты"
+    // Если сейчас на странице Tier List открыт именно дефолтный сет —
+    // обновим и personalTierMaps, иначе drag&drop-вид не увидит изменение
+    // до следующей перезагрузки данных.
+    if(activeTierSetId === defaultListId) await loadPersonalTiers();
+  }catch(e){ console.warn('_syncMapTierToPersonalDefaultList failed', e); }
 }
 
 async function deleteMap(){
@@ -327,6 +409,32 @@ async function saveTierOrder(entityType, tierObj){
 
   if(isPersonal){ personalTierMaps = tierOrderMaps; personalTierHeroes = tierOrderHeroes; }
   else           { teamTierMaps     = tierOrderMaps; teamTierHeroes     = tierOrderHeroes; }
+
+  // Синхронизация с ростером (см. _syncMapTierToTierList — обратное направление,
+  // модалка → тир-лист). Только team-scope и только карты: у maps.tier есть
+  // прямой аналог в tier_entries, у heroes/personal/global — нет отдельного поля.
+  if(!isPersonal && entityType === 'map'){
+    const updates = [];
+    Object.entries(tierObj).forEach(([tier, names]) => {
+      names.forEach(name => {
+        const roster = maps.find(m => m.name === name);
+        if(roster && roster.tier !== tier) updates.push({ id: roster.id, tier });
+      });
+    });
+    if(updates.length){
+      await Promise.all(updates.map(u => _sb.from('maps').update({ tier: u.tier }).eq('id', u.id)));
+      updates.forEach(u => { const m = maps.find(x => x.id === u.id); if(m) m.tier = u.tier; });
+    }
+  }
+
+  // MIGR-5: если drag&drop только что сохранил именно ДЕФОЛТНЫЙ личный сет —
+  // обновляем индекс для вкладки "Карты" (personalDefaultMapTierByName).
+  // Если пользователь сейчас на каком-то ДРУГОМ (не дефолтном) личном сете —
+  // намеренно НЕ трогаем "Карты", связь только с дефолтным по требованию.
+  if(isPersonal && entityType === 'map'){
+    const defaultListId = await _resolveTierListId('personal', { teamId: _teamId(), userId: currentUser().id });
+    if(tierListId === defaultListId) await loadPersonalDefaultMapTiers();
+  }
 
   toast('Тир-лист сохранён ✓', 'ok');
 }
