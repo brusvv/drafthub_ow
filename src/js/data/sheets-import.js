@@ -1,13 +1,21 @@
-// @hash fdf67067 2026-06-30T04:58
 // ════ SHEETS IMPORT — Google Sheets → Supabase ════
-// IMPORT-1a/1b/1c: чтение листов через _sheetsBatchGet (sheets-auth.js),
-// парсинг строк в объекты, запись в Supabase через UPSERT.
+// IMPORT-1a/1b/1c + MIGR-6: чтение листов через _sheetsBatchGet (sheets-auth.js),
+// парсинг строк в объекты, резолв имён в id каталога, запись через UPSERT.
 // UI-обвязка (выбор типа импорта, превью, кнопка запуска) — отдельно,
-// в render/render-admin-import.js (Фаза 7 admin-панель).
+// в data/sheets-import-ui.js.
+//
+// MIGR-6: после MIGR-1 (id-based каталог) старые UPSERT по text-ключам
+// (onConflict:'team_id,name' и т.п.) больше не матчат схему — heroes/maps
+// теперь ссылаются на hero_catalog/map_catalog через hero_id/map_id.
+// Каталог фиксированный, курируемый — импорт НЕ создаёт в нём новые записи;
+// имя из Sheets, не найденное в каталоге, просто выпадает из этой конкретной
+// строки/массива (console.warn со списком) — не блокирует остальной импорт.
 //
 // Зависимости: sheets-auth.js (_sheetsAccessToken, _sheetsBatchGet),
-//              auth.js (_sb), session.js (currentUser, isAdmin, canWrite),
-//              data/db-write.js (createTierSet, activeTierSetId)
+//              auth.js (_sb), session.js (currentUser, isAdmin, isSuperAdmin, canWrite),
+//              data/db-load.js (_teamId, _heroCatalogByName, _mapCatalogByName,
+//                                _resolveTierListId, activeTierSetId),
+//              data/db-write.js (createTierSet)
 
 // ════ ПАРСЕРЫ — строки листов в Supabase-объекты (IMPORT-1b) ════
 // Чистые функции, без сети — принимают rows (string[][], rows[0]=заголовок)
@@ -67,16 +75,56 @@ function _rowsToObjects(rows, expectedCols){
     });
 }
 
+// ════ РЕЗОЛВЕРЫ ИМЁН → ID КАТАЛОГА (MIGR-6) ════
+// Sheets — свободный текст, вводится руками, подвержен опечаткам/разнице
+// в форматировании ("King's Row" vs "Kings Row"). heroKey()/mapKey()
+// (config.js) — та же нормализация что уже использует portrait-matching,
+// переиспользуем вместо новой логики. Индексы строятся ЛЕНИВО и кэшируются
+// на время сессии — каталог не меняется посреди одного захода в импорт
+// (_heroCatalogByName/_mapCatalogByName уже загружены _loadCatalogs() при
+// старте приложения, доп. сетевых запросов не требуется).
+let _importHeroKeyIndex = null;   // heroKey(name) -> hero_catalog.id
+let _importMapKeyIndex  = null;   // mapKey(name)  -> map_catalog.id
+
+function _buildImportIndices(){
+  if(_importHeroKeyIndex && _importMapKeyIndex) return;
+  _importHeroKeyIndex = {};
+  Object.values(_heroCatalogByName).forEach(h => { _importHeroKeyIndex[heroKey(h.name)] = h.id; });
+  _importMapKeyIndex = {};
+  Object.values(_mapCatalogByName).forEach(m => { _importMapKeyIndex[mapKey(m.name)] = m.id; });
+}
+
+function _resolveHeroId(name){
+  if(!name) return null;
+  _buildImportIndices();
+  return _importHeroKeyIndex[heroKey(name)] || null;
+}
+function _resolveMapId(name){
+  if(!name) return null;
+  _buildImportIndices();
+  return _importMapKeyIndex[mapKey(name)] || null;
+}
+
+// Единая точка логирования нерезолвленных имён — не блокирует импорт,
+// просто оставляет след в консоли, чтобы пользователь мог поправить Sheets
+// или попросить добавить героя/карту в каталог.
+function _warnUnresolved(label, names){
+  if(!names?.length) return;
+  console.warn(`[sheets-import] ${label}: не найдены в каталоге — ${[...new Set(names)].join(', ')}`);
+}
+
 // ── Сборка Maps из 5 листов: Maps + MapPreferred + MapBans + Compositions + MapCounters ──
 // Принимает Map<sheetName,rows> от _sheetsBatchGet — листы которых нет в Map
 // (пользователь не выбрал/лист пуст) просто дают пустые join-данные, базовая
-// карта всё равно соберётся из Maps.
+// карта всё равно соберётся из Maps (если она сама резолвится в каталог).
+//
+// type/inpool больше НЕ читаем из листа — это поля map_catalog (MIGR-1),
+// правит только superadmin через админку, импорт их не трогает.
 function _assembleMapsFromSheets(sheetsMap){
   const mapsRows = sheetsMap.get('Maps');
   if(!mapsRows) return [];
 
-  const base = _rowsToObjects(mapsRows,
-    ['name','type','tier','priority','atk','def','dif','notes','inpool']);
+  const base = _rowsToObjects(mapsRows, ['name','tier','priority','atk','def','dif','notes']);
 
   // join-листы группируем по имени карты заранее — O(n) вместо O(n*m) перебора
   const groupByMap = (sheetName, cols) => {
@@ -96,26 +144,50 @@ function _assembleMapsFromSheets(sheetsMap){
   const comp      = groupByMap('Compositions', ['map','hero','role','playerRole']);
   const counters  = groupByMap('MapCounters',  ['map','hero']);
 
-  return base.map(m => ({
-    name:     m.name,
-    type:     m.type,
-    tier:     m.tier || 'B',
-    priority: parseInt(m.priority, 10) || 5,
-    atk:      parseInt(m.atk, 10) || 3,
-    def:      parseInt(m.def, 10) || 3,
-    dif:      parseInt(m.dif, 10) || 3,
-    notes:    m.notes || '',
-    in_pool:  m.inpool === undefined ? true : _parseBoolTrue(m.inpool),
-    preferred_heroes: (preferred[m.name] || []).map(r => r.hero).filter(Boolean),
-    ban_heroes:       (bans[m.name]      || []).map(r => r.hero).filter(Boolean),
-    counters:         (counters[m.name]  || []).map(r => r.hero).filter(Boolean),
-    comp: (comp[m.name] || []).map(r => ({
-      hero: r.hero, role: r.role || '', playerRole: r.playerRole || r.role || '',
-    })).filter(c => c.hero),
-  })).filter(m => m.name && m.type);
+  const unresolvedMaps = [];
+  const unresolvedHeroes = [];
+
+  // Список имён героев → список резолвленных id, нерезолвленные просто
+  // выпадают из массива (не роняют всю карту) — см. шапку файла.
+  const resolveHeroList = list => (list || []).map(r => {
+    const id = _resolveHeroId(r.hero);
+    if(!id && r.hero) unresolvedHeroes.push(r.hero);
+    return id;
+  }).filter(Boolean);
+
+  const rows = base.map(m => {
+    const mapId = _resolveMapId(m.name);
+    if(!mapId){ if(m.name) unresolvedMaps.push(m.name); return null; }
+
+    const compList = (comp[m.name] || []).map(r => {
+      const heroId = _resolveHeroId(r.hero);
+      if(!heroId){ if(r.hero) unresolvedHeroes.push(r.hero); return null; }
+      return { hero_id: heroId, role: r.role || '', playerRole: r.playerRole || r.role || '' };
+    }).filter(Boolean);
+
+    return {
+      map_id:   mapId,
+      tier:     m.tier || 'B',
+      priority: parseInt(m.priority, 10) || 5,
+      atk:      parseInt(m.atk, 10) || 3,
+      def:      parseInt(m.def, 10) || 3,
+      dif:      parseInt(m.dif, 10) || 3,
+      notes:    m.notes || '',
+      preferred_heroes: resolveHeroList(preferred[m.name]),
+      ban_heroes:       resolveHeroList(bans[m.name]),
+      counters:         resolveHeroList(counters[m.name]),
+      comp: compList,
+    };
+  }).filter(Boolean);
+
+  _warnUnresolved('Maps', unresolvedMaps);
+  _warnUnresolved('Maps → герои (preferred/bans/counters/comp)', unresolvedHeroes);
+  return rows;
 }
 
 // ── Сборка Players из 2 листов: Players + PlayerHeroes ──
+// players НЕ ссылается на каталог (MIGR-1 её не трогал) — main_heroes/
+// pool_heroes остаются text[] имён как раньше, резолв id не нужен.
 // PlayerHeroes.type: 'main' → основная роль (main_heroes), 'pool' → офф-роль
 // (pool_heroes) — подтверждено пользователем явно, не угадано.
 function _assemblePlayersFromSheets(sheetsMap){
@@ -155,46 +227,96 @@ function _assemblePlayersFromSheets(sheetsMap){
   }).filter(p => p.name);
 }
 
-// ════ ИМПОРТ — запись в Supabase через UPSERT (IMPORT-1c) ════
-// Каждая функция независима: вызывающий код (UI в render-admin-import.js)
-// оборачивает каждую в try/catch и копит {imported,skipped,errors} — одна
-// упавшая группа не должна блокировать остальные пять.
-// onConflict использует существующие UNIQUE/PK из 001_tables.sql —
-// никаких изменений схемы не требуется.
+// ════ ИМПОРТ — запись в Supabase через UPSERT (IMPORT-1c + MIGR-6) ════
+// Каждая функция независима: вызывающий код (sheets-import-ui.js) оборачивает
+// каждую в try/catch и копит {imported,skipped,errors} на уровне ГРУПП —
+// возврат {count} здесь такой же контракт что был раньше, одна упавшая
+// группа не блокирует остальные. Строки/имена, не резолвнутые в каталог —
+// отдельная более мелкая деградация внутри группы (см. _warnUnresolved),
+// не поднимаются до уровня group-error.
 
 async function importHeroesFromSheets(sheetsMap){
   const rows = sheetsMap.get('Heroes');
   if(!rows) return { count: 0 };
 
-  const heroObjs = _rowsToObjects(rows,
-    ['name','role','subrole','priority','banned','notes','counters']);
+  // role/subrole больше НЕ читаем — это поля hero_catalog (MIGR-1), правит
+  // только superadmin через админку. Имя всё ещё нужно — ключ резолва
+  // в существующего героя каталога, добавить нового героя импорт не может.
+  const heroObjs = _rowsToObjects(rows, ['name','priority','banned','notes','counters']);
 
-  const upsertRows = heroObjs.filter(h => h.name && h.role).map(h => ({
+  const unresolvedNames = [];
+  const resolved = heroObjs.map(h => {
+    const heroId = _resolveHeroId(h.name);
+    if(!heroId){ if(h.name) unresolvedNames.push(h.name); return null; }
+    return { heroId, priority: h.priority, banned: h.banned, notes: h.notes,
+             counters: _parseCounters(h.counters) };
+  }).filter(Boolean);
+  _warnUnresolved('Heroes', unresolvedNames);
+  if(!resolved.length) return { count: 0 };
+
+  const upsertRows = resolved.map(r => ({
     team_id:  _teamId(),
-    name:     h.name,
-    role:     h.role,
-    subrole:  h.subrole || '',
-    priority: parseInt(h.priority, 10) || 5,
-    banned:   _parseBoolTrue(h.banned),
-    notes:    h.notes || '',
-    counters: _parseCounters(h.counters),
+    hero_id:  r.heroId,
+    priority: parseInt(r.priority, 10) || 5,
+    banned:   _parseBoolTrue(r.banned),
+    notes:    r.notes || '',
   }));
-  if(!upsertRows.length) return { count: 0 };
-
   const { error } = await _sb.from('heroes')
-    .upsert(upsertRows, { onConflict: 'team_id,name' });
+    .upsert(upsertRows, { onConflict: 'team_id,hero_id' });
   if(error) throw error;
+
+  // Контрпики теперь отдельная таблица hero_counters (scope='team'), не
+  // heroes.counters jsonb — см. пометку в 007_catalog_tables.sql про
+  // архитектурное решение. Полностью заменяем набор контрпиков ТОЛЬКО для
+  // героев из этого импорта (delete .in(heroIds) + insert), не трогая
+  // контрпики героев не затронутых текущим импортом — тот же принцип
+  // upsert-не-wipe, что и для остальных групп.
+  await _importTeamHeroCounters(resolved.map(r => ({ heroId: r.heroId, counters: r.counters })));
+
   return { count: upsertRows.length };
 }
 
+// Bulk-версия _saveScopedHeroCounters (db-write.js) — та переписывает
+// контрпики ОДНОГО героя за раз (2 запроса на героя, для интерактивного
+// сохранения формы это нормально). Для импорта N героев это было бы 2N
+// последовательных round-trip'ов — здесь один delete + один bulk insert
+// на весь импортируемый батч.
+async function _importTeamHeroCounters(entries){
+  const withCounters = entries.filter(e => e.counters?.length);
+  if(!withCounters.length) return;
+
+  const heroIds = withCounters.map(e => e.heroId);
+  const { error: delErr } = await _sb.from('hero_counters')
+    .delete().eq('scope', 'team').eq('team_id', _teamId()).in('hero_id', heroIds);
+  if(delErr) throw delErr;
+
+  const unresolvedCounters = [];
+  const insertRows = [];
+  withCounters.forEach(e => {
+    e.counters.forEach(c => {
+      const counterId = _resolveHeroId(c.name);
+      if(!counterId){ unresolvedCounters.push(c.name); return; }
+      if(counterId === e.heroId) return; // CHECK(hero_id<>counter_hero_id) — герой не контрит сам себя
+      insertRows.push({
+        scope: 'team', team_id: _teamId(),
+        hero_id: e.heroId, counter_hero_id: counterId, score: c.score,
+      });
+    });
+  });
+  _warnUnresolved('Heroes → counters', unresolvedCounters);
+  if(!insertRows.length) return;
+
+  const { error: insErr } = await _sb.from('hero_counters').insert(insertRows);
+  if(insErr) throw insErr;
+}
+
 async function importMapsFromSheets(sheetsMap){
-  const assembled = _assembleMapsFromSheets(sheetsMap);
-  if(!assembled.length) return { count: 0 };
+  const rows = _assembleMapsFromSheets(sheetsMap);   // резолв id + warn уже внутри
+  if(!rows.length) return { count: 0 };
 
-  const upsertRows = assembled.map(m => ({ ...m, team_id: _teamId() }));
-
+  const upsertRows = rows.map(m => ({ ...m, team_id: _teamId() }));
   const { error } = await _sb.from('maps')
-    .upsert(upsertRows, { onConflict: 'team_id,name' });
+    .upsert(upsertRows, { onConflict: 'team_id,map_id' });
   if(error) throw error;
   return { count: upsertRows.length };
 }
@@ -216,18 +338,25 @@ async function importHeroMapStrengthFromSheets(sheetsMap){
   if(!rows) return { count: 0 };
 
   const objs = _rowsToObjects(rows, ['hero','map','atk','def']);
-  const upsertRows = objs.filter(r => r.hero && r.map).map(r => ({
-    team_id:   _teamId(),
-    hero_name: r.hero,
-    map_name:  r.map,
-    atk:       parseInt(r.atk, 10) || 0,
-    def:       parseInt(r.def, 10) || 0,
-  }));
+  const unresolvedHeroes = [], unresolvedMaps = [];
+  const upsertRows = objs.map(r => {
+    const heroId = _resolveHeroId(r.hero);
+    const mapId  = _resolveMapId(r.map);
+    if(!heroId && r.hero) unresolvedHeroes.push(r.hero);
+    if(!mapId  && r.map)  unresolvedMaps.push(r.map);
+    if(!heroId || !mapId) return null;
+    return {
+      team_id: _teamId(), hero_id: heroId, map_id: mapId,
+      atk: parseInt(r.atk, 10) || 0, def: parseInt(r.def, 10) || 0,
+    };
+  }).filter(Boolean);
+  _warnUnresolved('HeroMapStrength → герои', unresolvedHeroes);
+  _warnUnresolved('HeroMapStrength → карты', unresolvedMaps);
   if(!upsertRows.length) return { count: 0 };
 
-  // composite PK (team_id,hero_name,map_name) — см. 001_tables.sql
+  // PRIMARY KEY (team_id,hero_id,map_id) — полный (не partial), чистый UPSERT ok
   const { error } = await _sb.from('hero_map_strength')
-    .upsert(upsertRows, { onConflict: 'team_id,hero_name,map_name' });
+    .upsert(upsertRows, { onConflict: 'team_id,hero_id,map_id' });
   if(error) throw error;
   return { count: upsertRows.length };
 }
@@ -237,93 +366,100 @@ async function importHeroSynergyFromSheets(sheetsMap){
   if(!rows) return { count: 0 };
 
   const objs = _rowsToObjects(rows, ['hero','synergy_hero','score']);
-  const upsertRows = objs.filter(r => r.hero && r.synergy_hero).map(r => ({
-    team_id:      _teamId(),
-    hero_name:    r.hero,
-    synergy_hero: r.synergy_hero,
-    score:        parseInt(r.score, 10) || 5,
-  }));
+  const unresolvedHeroes = [];
+  const upsertRows = objs.map(r => {
+    const heroId    = _resolveHeroId(r.hero);
+    const synergyId = _resolveHeroId(r.synergy_hero);
+    if(!heroId    && r.hero)         unresolvedHeroes.push(r.hero);
+    if(!synergyId && r.synergy_hero) unresolvedHeroes.push(r.synergy_hero);
+    if(!heroId || !synergyId) return null;
+    if(heroId === synergyId) return null;   // CHECK(hero_id<>synergy_hero_id)
+    return {
+      team_id: _teamId(), hero_id: heroId, synergy_hero_id: synergyId,
+      score: parseInt(r.score, 10) || 5,
+    };
+  }).filter(Boolean);
+  _warnUnresolved('HeroSynergy', unresolvedHeroes);
   if(!upsertRows.length) return { count: 0 };
 
+  // PRIMARY KEY (team_id,hero_id,synergy_hero_id) — полный, чистый UPSERT ok
   const { error } = await _sb.from('hero_synergy')
-    .upsert(upsertRows, { onConflict: 'team_id,hero_name,synergy_hero' });
+    .upsert(upsertRows, { onConflict: 'team_id,hero_id,synergy_hero_id' });
   if(error) throw error;
   return { count: upsertRows.length };
 }
 
 // ── Тир-листы — TierMaps/TierHeroes, с выбором scope ──
 // scope: 'team' | 'personal' | 'global' — решение пользователя в UI.
-// 'global' доступен только если isAdmin() — это же проверяется в UI (radio
-// скрыт/disabled), здесь дублируем проверку на случай прямого вызова.
+// 'global' пишет в tier_lists/tier_entries с RLS "superadmin only" —
+// проверяем isSuperAdmin() (не isAdmin()!), иначе обычный admin пройдёт
+// клиентскую проверку и упадёт на RLS с непонятной ошибкой (см. 008_catalog_rls.sql
+// "tier_lists: global write" — там именно is_superadmin(), не is_app_admin()).
 //
 // position берём из порядка строк в листе (индекс внутри каждого тира) —
-// тот же принцип что в _tierObjToRows для drag&drop сохранения.
+// тот же принцип что в _tierObjToRows (db-write.js) для drag&drop сохранения.
 async function importTiersFromSheets(sheetsMap, entityType, scope){
   const sheetName = entityType === 'map' ? 'TierMaps' : 'TierHeroes';
   const rows = sheetsMap.get(sheetName);
   if(!rows) return { count: 0 };
 
-  if(scope === 'global' && !isAdmin()){
-    throw new Error('Глобальный тир-лист может импортировать только администратор');
+  if(scope === 'global' && !isSuperAdmin()){
+    throw new Error('Глобальный тир-лист может импортировать только суперадминистратор');
   }
   if(scope !== 'global' && !canWrite()){
     throw new Error('Нет прав на запись командного/личного тир-листа');
   }
 
   const objs = _rowsToObjects(rows, ['name','tier']);
+  const resolveId = entityType === 'map' ? _resolveMapId : _resolveHeroId;
 
-  // position — порядковый номер ВНУТРИ каждого тира, не глобальный индекс
-  // строки в листе (иначе сортировка S/A/B/C/D вперемешку даст неверный
-  // порядок отображения — ровно так же считает _tierObjToRows на фронте).
   const posCounters = {};
-  const baseRows = objs.filter(r => r.name && r.tier).map(r => {
+  const unresolvedNames = [];
+  const entryRows = objs.filter(r => r.name && r.tier).map(r => {
+    const id = resolveId(r.name);
+    if(!id){ unresolvedNames.push(r.name); return null; }
     const tier = r.tier.toUpperCase();
     if(!(tier in posCounters)) posCounters[tier] = 0;
     const position = posCounters[tier]++;
-    return { entity_type: entityType, name: r.name, tier, position };
-  });
-  if(!baseRows.length) return { count: 0 };
+    return {
+      entity_type: entityType,
+      hero_id: entityType === 'hero' ? id : null,
+      map_id:  entityType === 'map'  ? id : null,
+      tier, position,
+    };
+  }).filter(Boolean);
+  _warnUnresolved(`Tier${entityType === 'map' ? 'Maps' : 'Heroes'}`, unresolvedNames);
+  if(!entryRows.length) return { count: 0 };
 
+  // Резолв/создание контейнера — переиспользуем MIGR-2 хелперы, не пишем
+  // свою версию (_resolveTierListId — db-load.js, createTierSet — db-write.js).
+  let tierListId;
   if(scope === 'global'){
-    const { error } = await _sb.from('global_tier_data')
-      .upsert(baseRows, { onConflict: 'entity_type,name' });
-    if(error) throw error;
-    return { count: baseRows.length };
-  }
-
-  const isPersonal = scope === 'personal';
-  // Личный тир-лист требует активного tier_set_id — создаём «Импортировано»
-  // если у пользователя ещё нет ни одного личного сета в этой команде.
-  let tierSetId = null;
-  if(isPersonal){
-    tierSetId = activeTierSetId;
-    if(!tierSetId){
+    tierListId = await _resolveTierListId('global', {});
+  } else if(scope === 'team'){
+    tierListId = await _resolveTierListId('team', { teamId: _teamId() });
+  } else {
+    // Личный: активный сет или создаём новый — та же логика что уже была
+    // до MIGR-6, только имя переменной/таблицы сменилось (tier_set → tier_list).
+    tierListId = activeTierSetId;
+    if(!tierListId){
       const created = await createTierSet('Импортировано');
-      tierSetId = created?.id ?? null;
-      if(!tierSetId) throw new Error('Не удалось создать личный тир-сет для импорта');
+      tierListId = created?.id ?? null;
     }
   }
+  if(!tierListId) throw new Error('Не удалось определить тир-лист для импорта');
 
-  const upsertRows = baseRows.map(r => ({
-    ...r,
-    team_id:     _teamId(),
-    scope:       isPersonal ? 'personal' : 'team',
-    user_id:     isPersonal ? currentUser().id : null,
-    tier_set_id: isPersonal ? tierSetId : null,
-  }));
+  const rowsWithList = entryRows.map(r => ({ ...r, tier_list_id: tierListId }));
 
-  // Delete-then-insert как в saveTierOrder — у tier_data нет единого
-  // uniq-индекса покрывающего оба scope сразу (idx_tier_team_unique и
-  // idx_tier_personal_unique частичные), проще и надёжнее снести старые
-  // записи этого entity_type+scope перед вставкой новых, чем городить UPSERT
-  // с разным onConflict в зависимости от scope.
-  let delQuery = _sb.from('tier_data').delete()
-    .eq('team_id', _teamId()).eq('entity_type', entityType).eq('scope', isPersonal ? 'personal' : 'team');
-  if(isPersonal) delQuery = delQuery.eq('user_id', currentUser().id).eq('tier_set_id', tierSetId);
-  const { error: delErr } = await delQuery;
+  // Delete-then-insert — тот же паттерн что _writeTierEntries (db-write.js):
+  // idx_tier_entries_hero/_map частичные unique-индексы (WHERE entity_type=...),
+  // чистый UPSERT с ON CONFLICT под partial index PostgREST не поддерживает.
+  const { error: delErr } = await _sb.from('tier_entries').delete()
+    .eq('tier_list_id', tierListId).eq('entity_type', entityType);
   if(delErr) throw delErr;
 
-  const { error: insErr } = await _sb.from('tier_data').insert(upsertRows);
+  const { error: insErr } = await _sb.from('tier_entries').insert(rowsWithList);
   if(insErr) throw insErr;
-  return { count: upsertRows.length };
+
+  return { count: rowsWithList.length };
 }
