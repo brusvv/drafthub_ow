@@ -1,3 +1,4 @@
+// @hash c7f662fb 2026-07-02T08:10
 // ════ DATA — WRITE (Supabase) ════
 // MIGR-2: переезд на id-based каталог + unified tier_lists/tier_entries
 // (см. db-load.js шапку для контекста). Использует UUID (h.id/m.id/p.id)
