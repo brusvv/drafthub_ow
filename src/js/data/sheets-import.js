@@ -87,6 +87,18 @@ function _rowsToObjects(rows, expectedCols){
 let _importHeroKeyIndex = null;   // heroKey(name) -> hero_catalog.id
 let _importMapKeyIndex  = null;   // mapKey(name)  -> map_catalog.id
 
+// БАГ (найден): индекс строился один раз за сессию и больше никогда не
+// обновлялся. Если каталог меняется после первой загрузки страницы
+// (superadmin добавил карту/героя в hero_catalog/map_catalog, например
+// добавили 'Neon Junction' в map_catalog уже после того как пользователь
+// открыл вкладку) — резолв по старому кэшу либо промахивался мимо новых
+// записей, либо расходился между двумя запусками импорта в одной сессии
+// (team отработал по свежему кэшу, global — по кэшу построенному раньше,
+// или наоборот, в зависимости от того что вызывалось первым). Теперь
+// перестраиваем индекс на каждый ЗАПУСК импорта (не на каждый вызов
+// resolveId — дорого), а не один раз за всю сессию.
+function _resetImportIndices(){ _importHeroKeyIndex = null; _importMapKeyIndex = null; }
+
 function _buildImportIndices(){
   if(_importHeroKeyIndex && _importMapKeyIndex) return;
   _importHeroKeyIndex = {};
