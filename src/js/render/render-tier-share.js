@@ -1,4 +1,3 @@
-// @hash dc7056e4 2026-07-01T07:19
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -126,9 +125,12 @@ async function handleSharedTierUrl(tokenOverride){
   // /tier/TOKEN странице до этого никогда не доходит, иначе portrait()/
   // mapImg() возвращают пусто. Грузим явно перед рендером.
   try {
-    await Promise.all([loadPortraits(), loadMapScreenshots()]);
+    // _loadCatalogs() (db-load.js) — нужен ДО _renderSharedTierView(), иначе
+    // _heroCatalogByName/_mapCatalogByName пустые и фолбэк роли/типа не сработает
+    // (публичная /tier/TOKEN страница никогда не проходит через loadAllData())
+    await Promise.all([loadPortraits(), loadMapScreenshots(), _loadCatalogs()]);
   } catch(e) {
-    console.warn('handleSharedTierUrl: failed to load images', e.message);
+    console.warn('handleSharedTierUrl: failed to load images/catalogs', e.message);
   }
 
   _renderSharedTierView(result);
@@ -140,17 +142,22 @@ async function handleSharedTierUrl(tokenOverride){
 // не в #app, но JS один и тот же файл — поэтому отдельные имена с префиксом _shared).
 let _sharedTierTab  = 'maps'; // 'maps' | 'heroes'
 let _sharedHeroRole = 'all';  // 'all' | 'Tank' | 'Damage' | 'Support'
+let _sharedMapType  = 'all';  // 'all' | 'Control' | 'Escort' | 'Hybrid' | 'Push' | 'Flashpoint'
 let _sharedTierData = null;   // последний результат RPC — нужен для перерисовки при переключении таба/фильтра
 
 function _renderSharedTierView(data){
   _sharedTierData = data;
   const tiers = data.tiers || [];
   const byType = { map:{S:[],A:[],B:[],C:[],D:[]}, hero:{S:[],A:[],B:[],C:[],D:[]} };
-  // roleByName — нужен для фильтра Tank/Damage/Support (RPC теперь отдаёт role для героев)
+  // roleByName/typeByName — для фильтров. Сначала данные из RPC (после MIGR-4
+  // view_shared_tier джойнит hero_catalog/map_catalog сама), fallback на
+  // публичный каталог из db-load.js (было: статика OW_HERO_ROLE/OW_MAP_TYPE)
   const roleByName = {};
+  const typeByName = {};
   tiers.forEach(r => {
     if(byType[r.entity_type]?.[r.tier]) byType[r.entity_type][r.tier].push(r.name);
-    if(r.entity_type === 'hero' && r.role) roleByName[r.name] = r.role;
+    if(r.entity_type === 'hero') roleByName[r.name] = r.role || _heroCatalogByName[r.name]?.role || '';
+    if(r.entity_type === 'map')  typeByName[r.name] = r.map_type || _mapCatalogByName[r.name]?.type || '';
   });
 
   const showMaps   = data.entity_type === 'both' || data.entity_type === 'map';
@@ -167,7 +174,7 @@ function _renderSharedTierView(data){
       return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
-        <div class="tier-maps">
+        <div class="tier-maps" style="justify-content:flex-start">
           ${names.map(name => {
             const hidden = _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
             const src = portrait(name);
@@ -186,8 +193,9 @@ function _renderSharedTierView(data){
         <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0">
           ${names.map(name => {
+            const hidden = _sharedMapType!=='all' && typeByName[name] && typeByName[name]!==_sharedMapType;
             const src = mapImg(name);
-            return `<div class="shared-map-pill" title="${name}">
+            return `<div class="shared-map-pill" title="${name}" style="${hidden?'display:none':''}">
               ${src?`<img src="${src}" alt="${name}">`:`<div class="shared-map-pill-ph">${name[0]}</div>`}
               <span>${name}</span>
             </div>`;
@@ -215,6 +223,16 @@ function _renderSharedTierView(data){
       <button class="f-btn${_sharedHeroRole==='Tank'?' active':''}" onclick="_setSharedHeroRole('Tank')">Tank</button>
       <button class="f-btn${_sharedHeroRole==='Damage'?' active':''}" onclick="_setSharedHeroRole('Damage')">Damage</button>
       <button class="f-btn${_sharedHeroRole==='Support'?' active':''}" onclick="_setSharedHeroRole('Support')">Support</button>
+    </div>` : '';
+
+  const mapFiltersHtml = (showMaps && _sharedTierTab==='maps') ? `
+    <div class="filters" style="margin-bottom:12px">
+      <button class="f-btn${_sharedMapType==='all'?' active':''}" onclick="_setSharedMapType('all')">Все</button>
+      <button class="f-btn${_sharedMapType==='Control'?' active':''}" onclick="_setSharedMapType('Control')">Control</button>
+      <button class="f-btn${_sharedMapType==='Flashpoint'?' active':''}" onclick="_setSharedMapType('Flashpoint')">Flashpoint</button>
+      <button class="f-btn${_sharedMapType==='Hybrid'?' active':''}" onclick="_setSharedMapType('Hybrid')">Hybrid</button>
+      <button class="f-btn${_sharedMapType==='Escort'?' active':''}" onclick="_setSharedMapType('Escort')">Escort</button>
+      <button class="f-btn${_sharedMapType==='Push'?' active':''}" onclick="_setSharedMapType('Push')">Push</button>
     </div>` : '';
 
   document.body.innerHTML = `
@@ -250,7 +268,7 @@ function _renderSharedTierView(data){
         ${tabsHtml}
         <div id="sharedTabContent">
           ${_sharedTierTab==='maps'
-            ? buildTable(byType.map, 'map')
+            ? mapFiltersHtml + buildTable(byType.map, 'map')
             : roleFiltersHtml + buildTable(byType.hero, 'hero')}
         </div>
       </div>
@@ -267,5 +285,10 @@ function _switchSharedTab(tab){
 // нет смысла городить частичный re-render ради 30-40 пилюль)
 function _setSharedHeroRole(role){
   _sharedHeroRole = role;
+  if(_sharedTierData) _renderSharedTierView(_sharedTierData);
+}
+
+function _setSharedMapType(type){
+  _sharedMapType = type;
   if(_sharedTierData) _renderSharedTierView(_sharedTierData);
 }
