@@ -1,35 +1,66 @@
-// @hash 8a39b8f0 2026-06-30T05:38
 // ════ DATA — WRITE (Supabase) ════
-// Замена write-hero.js / write-map.js / write-player.js.
-// Использует UUID (h.id / m.id / p.id) вместо rowIndex.
-// Включает запись тир-листов трёх уровней + share-ссылки.
+// MIGR-2: переезд на id-based каталог + unified tier_lists/tier_entries
+// (см. db-load.js шапку для контекста). Использует UUID (h.id/m.id/p.id)
+// как раньше — но ТЕПЕРЬ ЕЩЁ И hero.heroId/map.mapId (ссылка на
+// hero_catalog/map_catalog), которые db-load.js кладёт на каждый объект.
 //
-// Зависимости: auth.js (_sb, dbInsert/dbUpdate/dbDelete), session.js (currentTeam, canWrite)
+// ⚠️ ЗАВИСИМОСТЬ ОТ MIGR-5 (пока не сделан): saveHero()/saveMap() ждут
+// от модалки поля #hHeroId / #mMapId — id выбранного героя/карты ИЗ
+// КАТАЛОГА (select, не текстовый ввод). Роль/тип/subrole/in_pool больше
+// не редактируются здесь — это факты каталога, правит только superadmin
+// через отдельный admin RPC (MIGR-4). Пока модалки не обновлены (MIGR-5),
+// эти функции не заработают в UI — но контракт с БД корректен уже сейчас,
+// можно тестировать через консоль/RPC напрямую.
+//
+// ⚠️ ЗАВИСИМОСТЬ ОТ MIGR-4: createTierSet()/setDefaultTierSet() дергают
+// RPC create_tier_set/set_default_tier_set — их ТЕЛА ещё пишут в старую
+// personal_tier_sets, надо переписать на tier_lists (MIGR-4). Клиентский
+// вызов не меняется, поэтому здесь трогать нечего, просто не заработает
+// до готовности RPC.
+//
+// ⚠️ pickerSelected.preferred/bans/mapCounters — массивы ИМЁН, резолвятся
+// в hero_id через _heroCatalogByName. Резолв молча пропускает нерезолвленное
+// имя (см. _resolveIds ниже) — если picker-компонент когда-нибудь начнёт
+// отдавать имя не 1-в-1 с hero_catalog.name (например "Lúcio" вместо
+// канонiческого "Lucio", см. обсуждение в AGENT_TASKS MIGR-1), это будет
+// молчаливая потеря данных, а не ошибка. Проверять после MIGR-5.
+//
+// Зависимости: auth.js (_sb, dbInsert/dbUpdate/dbDelete), session.js
+// (currentTeam, canWrite), db-load.js (_heroCatalogById(ByName),
+// _mapCatalogById(ByName), _globalTierListId, _teamTierListId, activeTierSetId)
 
 function _requireWrite(){
   if(!canWrite()){ toast('Нет прав на редактирование', 'err'); return false; }
   return true;
 }
 
+function _resolveIds(names, byName = _heroCatalogByName){
+  return (names||[]).map(n => byName[n]?.id).filter(Boolean);
+}
+
 // ════ HEROES ════
 async function saveHero(){
-  const name = document.getElementById('hName').value.trim();
-  const _rawHeroId = document.getElementById('heroEditRow').value;
-  const editId = (_rawHeroId && _rawHeroId !== 'undefined') ? _rawHeroId : null;
+  // hero_id — из нового select'а каталога (MIGR-5) для новой roster-записи,
+  // либо уже известен на редактируемой (heroes[].heroId).
+  const _rawHeroCatalogId = document.getElementById('hHeroId')?.value;
+  const heroCatalogId = (_rawHeroCatalogId && _rawHeroCatalogId !== 'undefined') ? _rawHeroCatalogId : null;
+  const _rawRowId = document.getElementById('heroEditRow').value;
+  const editId = (_rawRowId && _rawRowId !== 'undefined') ? _rawRowId : null;
+  const existing = editId ? heroes.find(h => h.id === editId) : null;
+  const heroId = existing?.heroId || heroCatalogId;
+  if(!heroId){ toast('Выбери героя из каталога', 'err'); return; }
+
   const newCounters = counterPickerSelected.map(c => ({ name:c.name, score:c.score }));
 
   // ── Глобальный / Личный режим — трогаем ТОЛЬКО контрпики (hero_counters).
-  // Роль/приоритет/синергии/сила на картах всегда командные (heroes.counters
-  // и связанные таблицы), поэтому остальные поля заблокированы в модалке
-  // (см. modal-hero.js openHeroModal) и здесь не сохраняются вовсе.
+  // Роль/приоритет/синергии/сила на картах всегда командные, редактируются
+  // только в team-режиме (см. modal-hero.js openHeroModal). ──
   if(tierViewMode !== 'team'){
-    if(!editId){ toast('Создавать героев можно только в командном режиме', 'err'); return; }
-    if(!name){ toast('Нет имени героя', 'err'); return; }
     if(tierViewMode === 'global' && !isSuperAdmin()){
       toast('Редактировать глобальные контрпики может только superadmin', 'err'); return;
     }
     try{
-      await _saveScopedHeroCounters(name, newCounters);
+      await _saveScopedHeroCounters(tierViewMode, heroId, newCounters);
       toast('Контрпики обновлены ✓', 'ok');
       closeModal('heroModal');
       await loadHeroCounters();
@@ -38,86 +69,92 @@ async function saveHero(){
     return;
   }
 
-  // ── Командный режим — как раньше, весь хero полностью ──
+  // ── Командный режим ──
   if(!_requireWrite()) return;
-  const role = document.getElementById('hRole').value;
-  if(!name || !role){ toast('Заполни имя и роль', 'err'); return; }
 
   const row = {
     team_id:  _teamId(),
-    name, role,
-    subrole:  document.getElementById('hSub').value.trim(),
+    hero_id:  heroId,
+    // role/subrole больше не пишем — это hero_catalog, не heroes (MIGR-1)
     priority: parseInt(document.getElementById('hPrio').value) || 5,
     banned:   document.getElementById('hBanned').checked,
     notes:    document.getElementById('hNotes').value.trim(),
-    counters: newCounters,
   };
 
   try{
     if(editId) await dbUpdate('heroes', editId, row);
     else       await dbInsert('heroes', row);
 
-    await saveHeroMapStrength(name);
-    await saveHeroSynergy(name);
+    await saveHeroMapStrength(heroId);
+    await saveHeroSynergy(heroId);
+    await _saveScopedHeroCounters('team', heroId, newCounters); // было: counters прямо в row выше, колонка heroes.counters удалена
 
     toast(editId ? 'Обновлено ✓' : 'Добавлено ✓', 'ok');
     closeModal('heroModal');
     await Promise.all([loadHeroes(), loadHeroMapStrength(), loadHeroSynergy()]);
-    await loadHeroCounters();   // heroes.counters сменился — пересобрать teamHeroCounters/applyCounterMode
+    await loadHeroCounters();   // hero_counters(scope='team') сменился — пересобрать teamHeroCounters/applyCounterMode
     renderCurrentView();
   }catch(e){ handleError(e); }
 }
 
-// Контрпики вне командного режима — отдельная таблица hero_counters,
-// delete+insert (тот же паттерн что saveTierOrder() для тир-листов).
-async function _saveScopedHeroCounters(heroName, counters){
-  const scope = tierViewMode; // 'global' | 'personal'
-  let delQuery = _sb.from('hero_counters').delete().eq('scope', scope).eq('hero_name', heroName);
+// Контрпики — единая таблица hero_counters на все 3 scope (MIGR-1).
+// delete+insert, тот же паттерн что _writeTierEntries() для тир-листов.
+async function _saveScopedHeroCounters(scope, heroId, counters){
+  let delQuery = _sb.from('hero_counters').delete().eq('scope', scope).eq('hero_id', heroId);
+  if(scope === 'team')     delQuery = delQuery.eq('team_id', _teamId());
   if(scope === 'personal') delQuery = delQuery.eq('team_id', _teamId()).eq('user_id', currentUser().id);
   const { error: delErr } = await delQuery;
   if(delErr) throw delErr;
 
   if(!counters.length) return;
-  const rows = counters.map(c => ({
-    scope, hero_name: heroName, counter_hero: c.name, score: c.score,
-    team_id: scope === 'personal' ? _teamId() : null,
-    user_id: scope === 'personal' ? currentUser().id : null,
-  }));
+  const rows = counters.map(c => {
+    const counterId = _heroCatalogByName[c.name]?.id;
+    return counterId ? {
+      scope, hero_id: heroId, counter_hero_id: counterId, score: c.score,
+      team_id: scope !== 'global' ? _teamId() : null,
+      user_id: scope === 'personal' ? currentUser().id : null,
+    } : null;
+  }).filter(Boolean);
+  if(!rows.length) return;
   const { error: insErr } = await _sb.from('hero_counters').insert(rows);
   if(insErr) throw insErr;
 }
 
-async function saveHeroMapStrength(heroName){
+async function saveHeroMapStrength(heroId){
   if(!heroStrengthEdits?.length) return;
   const rated = heroStrengthEdits.filter(e => e.atk || e.def);
 
   await _sb.from('hero_map_strength')
-    .delete().eq('team_id', _teamId()).eq('hero_name', heroName);
+    .delete().eq('team_id', _teamId()).eq('hero_id', heroId);
 
   if(rated.length){
-    const rows = rated.map(e => ({
-      team_id: _teamId(), hero_name: heroName, map_name: e.map,
-      atk: e.atk || 0, def: e.def || 0,
-    }));
-    const { error } = await _sb.from('hero_map_strength').insert(rows);
-    if(error) throw error;
+    const rows = rated.map(e => {
+      const mapId = _mapCatalogByName[e.map]?.id;
+      return mapId ? { team_id: _teamId(), hero_id: heroId, map_id: mapId, atk: e.atk || 0, def: e.def || 0 } : null;
+    }).filter(Boolean);
+    if(rows.length){
+      const { error } = await _sb.from('hero_map_strength').insert(rows);
+      if(error) throw error;
+    }
   }
 }
 
-async function saveHeroSynergy(heroName){
+async function saveHeroSynergy(heroId){
   if(!heroSynergyEdits) return;
 
   await _sb.from('hero_synergy')
-    .delete().eq('team_id', _teamId()).eq('hero_name', heroName);
+    .delete().eq('team_id', _teamId()).eq('hero_id', heroId);
 
   const rated = heroSynergyEdits.filter(e => e.score >= 1);
   if(rated.length){
-    const rows = rated.map(e => ({
-      team_id: _teamId(), hero_name: heroName,
-      synergy_hero: e.name, score: e.score,
-    }));
-    const { error } = await _sb.from('hero_synergy').insert(rows);
-    if(error) throw error;
+    const rows = rated.map(e => {
+      const synId = _heroCatalogByName[e.name]?.id;
+      return synId ? { team_id: _teamId(), hero_id: heroId, synergy_hero_id: synId, score: e.score } : null;
+    }).filter(Boolean);
+    if(rows.length){
+      const { error } = await _sb.from('hero_synergy').insert(rows);
+      if(error) throw error;
+    }
   }
 }
 
@@ -135,31 +172,38 @@ async function deleteHero(){
 // ════ MAPS ════
 async function saveMap(){
   if(!_requireWrite()) return;
-  const name = document.getElementById('mName').value.trim();
-  const type = document.getElementById('mType').value;
-  if(!name || !type){ toast('Заполни название и тип', 'err'); return; }
 
-  const _rawMapId = document.getElementById('mapEditRow').value;
-  const editId = (_rawMapId && _rawMapId !== 'undefined') ? _rawMapId : null;
-  const noAD = NO_ATKDEF.includes(type);
+  const _rawMapCatalogId = document.getElementById('mMapId')?.value; // MIGR-5: select карты из map_catalog
+  const mapCatalogId = (_rawMapCatalogId && _rawMapCatalogId !== 'undefined') ? _rawMapCatalogId : null;
+  const _rawRowId = document.getElementById('mapEditRow').value;
+  const editId = (_rawRowId && _rawRowId !== 'undefined') ? _rawRowId : null;
+  const existing = editId ? maps.find(m => m.id === editId) : null;
+  const mapId = existing?.mapId || mapCatalogId;
+  if(!mapId){ toast('Выбери карту из каталога', 'err'); return; }
 
-  const comp = compSlots.filter(s => s.hero).map(s => ({
-    hero: s.hero, playerRole: s.role, role: (heroMap[s.hero]||{}).role || '',
-  }));
+  const mapCat = _mapCatalogById[mapId] || {};
+  const noAD = NO_ATKDEF.includes(mapCat.type);
+
+  const comp = compSlots.filter(s => s.hero).map(s => {
+    const heroCat = _heroCatalogByName[s.hero];
+    return heroCat ? { hero_id: heroCat.id, playerRole: s.role, role: heroCat.role || '' } : null;
+  }).filter(Boolean);
 
   const row = {
     team_id: _teamId(),
-    name, type,
+    map_id:  mapId,
+    // name/type больше не пишем — map_catalog (MIGR-1); in_pool тоже убран
+    // отсюда — теперь map_catalog.in_pool, сезонный пул — глобальный факт
+    // игры, редактируется только через admin RPC каталога (MIGR-4)
     tier:     document.getElementById('mTier').value,
     priority: parseInt(document.getElementById('mPrio').value) || 5,
     atk: noAD ? 3 : parseInt(document.getElementById('mAtk').value) || 3,
     def: noAD ? 3 : parseInt(document.getElementById('mDef').value) || 3,
     dif: noAD ? parseInt(document.getElementById('mDif').value) || 3 : 3,
     notes:       document.getElementById('mNotes').value.trim(),
-    in_pool:     document.getElementById('mInPool').checked,
-    preferred_heroes: pickerSelected.preferred || [],
-    ban_heroes:       pickerSelected.bans || [],
-    counters:         pickerSelected.mapCounters || [],
+    preferred_heroes: _resolveIds(pickerSelected.preferred),
+    ban_heroes:       _resolveIds(pickerSelected.bans),
+    counters:         _resolveIds(pickerSelected.mapCounters),
     comp,
   };
 
@@ -171,7 +215,7 @@ async function saveMap(){
     closeModal('mapModal');
     await loadMaps(); renderCurrentView();
   }catch(e){
-    handleError(e, e.code === '23505' ? 'Карта с таким именем уже есть' : '');
+    handleError(e, e.code === '23505' ? 'Эта карта уже есть в ростере команды' : '');
   }
 }
 
@@ -188,7 +232,7 @@ async function deleteMap(){
   }catch(e){ handleError(e); }
 }
 
-// ════ PLAYERS ════
+// ════ PLAYERS ════ (не тронуто MIGR-1 — players не ссылается на каталог)
 async function savePlayer(){
   if(!_requireWrite()) return;
   const name     = document.getElementById('pName').value.trim();
@@ -252,16 +296,19 @@ async function deletePlayer(){
   }catch(e){ handleError(e); }
 }
 
-// ════ TIERS — три уровня ════
+// ════ TIERS — единый механизм на 3 scope (MIGR-1: tier_lists/tier_entries
+// вместо global_tier_data + tier_data). Раньше global шёл upsert'ом в
+// global_tier_data, team/personal — delete+insert в tier_data. Теперь один
+// путь _writeTierEntries() для всех трёх, отличается только tier_list_id. ════
 async function saveTierOrder(entityType, tierObj){
   const isPersonal = tierViewMode === 'personal';
   const isGlobal   = tierViewMode === 'global';
 
   if(isGlobal){
-    const rows = _tierObjToRows(entityType, tierObj);
-    const { error } = await _sb.from('global_tier_data')
-      .upsert(rows, { onConflict:'entity_type,name' });
-    if(error){ handleError(error); return; }
+    if(!isSuperAdmin()){ toast('Редактировать глобальный тир-лист может только superadmin', 'err'); return; }
+    if(!_globalTierListId){ toast('Глобальный тир-лист ещё не готов, попробуй ещё раз', 'err'); return; }
+    const ok = await _writeTierEntries(_globalTierListId, entityType, tierObj);
+    if(!ok) return;
     await loadGlobalTiers();
     toast('Глобальный тир-лист сохранён ✓', 'ok');
     return;
@@ -271,25 +318,11 @@ async function saveTierOrder(entityType, tierObj){
     toast('Нет прав на редактирование командного тир-листа', 'err'); return;
   }
 
-  let delQuery = _sb.from('tier_data').delete()
-    .eq('team_id', _teamId()).eq('entity_type', entityType)
-    .eq('scope', isPersonal ? 'personal' : 'team');
-  if(isPersonal) delQuery = delQuery.eq('user_id', currentUser().id);
-  const { error: delErr } = await delQuery;
-  if(delErr){ handleError(delErr); return; }
+  const tierListId = isPersonal ? activeTierSetId : _teamTierListId;
+  if(!tierListId){ toast('Тир-лист ещё не готов, попробуй ещё раз через секунду', 'err'); return; }
 
-  const rows = _tierObjToRows(entityType, tierObj).map(r => ({
-    ...r, team_id: _teamId(),
-    scope: isPersonal ? 'personal' : 'team',
-    user_id: isPersonal ? currentUser().id : null,
-    // Привязываем к активному сету если личный
-    tier_set_id: isPersonal ? (activeTierSetId ?? null) : null,
-  }));
-
-  if(rows.length){
-    const { error: insErr } = await _sb.from('tier_data').insert(rows);
-    if(insErr){ handleError(insErr); return; }
-  }
+  const ok = await _writeTierEntries(tierListId, entityType, tierObj);
+  if(!ok) return;
 
   if(isPersonal){ personalTierMaps = tierOrderMaps; personalTierHeroes = tierOrderHeroes; }
   else           { teamTierMaps     = tierOrderMaps; teamTierHeroes     = tierOrderHeroes; }
@@ -297,43 +330,63 @@ async function saveTierOrder(entityType, tierObj){
   toast('Тир-лист сохранён ✓', 'ok');
 }
 
-function _tierObjToRows(entityType, tierObj){
+async function _writeTierEntries(tierListId, entityType, tierObj){
+  const rows = _tierObjToRows(entityType, tierObj, tierListId);
+
+  const { error: delErr } = await _sb.from('tier_entries').delete()
+    .eq('tier_list_id', tierListId).eq('entity_type', entityType);
+  if(delErr){ handleError(delErr); return false; }
+
+  if(rows.length){
+    const { error: insErr } = await _sb.from('tier_entries').insert(rows);
+    if(insErr){ handleError(insErr); return false; }
+  }
+  return true;
+}
+
+function _tierObjToRows(entityType, tierObj, tierListId){
+  const byName = entityType === 'map' ? _mapCatalogByName : _heroCatalogByName;
   const rows = [];
   Object.entries(tierObj).forEach(([tier, names]) =>
-    names.forEach((name, idx) => rows.push({ entity_type: entityType, name, tier, position: idx }))
+    names.forEach((name, idx) => {
+      const id = byName[name]?.id;
+      if(!id) return; // имя не резолвится в каталог — пропускаем, не роняем весь save (см. шапку файла про Lúcio/Lucio)
+      rows.push({
+        tier_list_id: tierListId, entity_type: entityType,
+        hero_id: entityType === 'hero' ? id : null,
+        map_id:  entityType === 'map'  ? id : null,
+        tier, position: idx,
+      });
+    })
   );
   return rows;
 }
 
-// ════ PERSONAL TIER SETS — CRUD ════
+// ════ PERSONAL TIER LISTS — CRUD (были personal_tier_sets, теперь
+// tier_lists со scope='personal', см. db-load.js) ════
 async function createTierSet(name){
   if(!currentUser()) return null;
-  const isFirst = tierSets.length === 0;
   try {
     const { data, error } = await _sb.rpc('create_tier_set', {
       p_team_id: _teamId(),
       p_name:    name.trim(),
-      // p_set_default убран — 005 определяет is_default автоматически (первый сет = дефолт)
     });
     if(error) throw error;
     toast(`Тир-лист "${name}" создан ✓`, 'ok');
     await loadTierSets();
-    // create_tier_set RPC возвращает весь объект строки (to_json(v_set)),
-    // не голый uuid — берём .id явно, иначе activeTierSetId = объект
-    // и любой следующий запрос с tier_set_id падает с invalid uuid syntax.
     const newSet = typeof data === 'string' ? JSON.parse(data) : data;
     activeTierSetId = newSet?.id ?? null;
     renderTiers();
     return newSet;
   } catch(e){
-    handleError(e, e.message?.includes('max_personal_tier_sets') ? 'Максимум 10 личных тир-листов' : '');
+    handleError(e, e.message?.includes('max_personal_tier_lists') ? 'Максимум 10 личных тир-листов' : '');
     return null;
   }
 }
 
 async function deleteTierSet(setId){
   if(!confirm('Удалить этот тир-лист и все его записи?')) return;
-  const { error } = await _sb.from('personal_tier_sets').delete().eq('id', setId);
+  const { error } = await _sb.from('tier_lists').delete().eq('id', setId);
   if(error){ handleError(error); return; }
   toast('Тир-лист удалён', 'ok');
   if(activeTierSetId === setId) activeTierSetId = null;
@@ -343,7 +396,7 @@ async function deleteTierSet(setId){
 }
 
 async function renameTierSet(setId, newName){
-  const { error } = await _sb.from('personal_tier_sets')
+  const { error } = await _sb.from('tier_lists')
     .update({ name: newName }).eq('id', setId);
   if(error){ handleError(error); return; }
   toast('Переименовано ✓', 'ok');
@@ -362,16 +415,16 @@ async function setDefaultTierSet(setId){
 
 // ════ SHARE LINKS — для личного тир-листа ════
 async function loadShareLinks(){
-  // Фаза 6: join на personal_tier_sets чтобы получить имя сета для отображения
+  // tier_share_links.tier_set_id теперь FK на tier_lists (MIGR-1, репойнт),
+  // было personal_tier_sets — join-таблица в select() поменялась.
   const { data, error } = await _sb.from('tier_share_links')
-    .select('*, personal_tier_sets(name)')
+    .select('*, tier_lists(name)')
     .eq('user_id', currentUser().id).eq('team_id', _teamId())
     .order('created_at', { ascending: false });
   if(error) throw error;
-  // Нормализуем: tier_set_name на верхний уровень
   return (data || []).map(l => ({
     ...l,
-    tier_set_name: l.personal_tier_sets?.name ?? null,
+    tier_set_name: l.tier_lists?.name ?? null,
   }));
 }
 
@@ -386,7 +439,6 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
   });
   if(error){ handleError(error, 'Ошибка создания ссылки'); return null; }
 
-  // RPC возвращает токен напрямую как text
   const token = typeof data === 'string' ? data : data?.token;
   const link = `${window.location.origin}/drafthub_ow/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
