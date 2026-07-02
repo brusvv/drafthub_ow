@@ -1,4 +1,3 @@
-// @hash a32c9482 2026-07-02T08:10
 // ════ DATA — LOAD (Supabase) ════
 // MIGR-2: переезд на id-based каталог (hero_catalog/map_catalog) +
 // unified tier_lists/tier_entries вместо tier_data+global_tier_data+
@@ -291,7 +290,10 @@ let _teamTierListId   = null;
 let tierViewMode = 'team'; // 'global' | 'team' | 'personal'
 
 async function loadTiers(){
-  await Promise.all([loadGlobalTiers(), loadTeamTiers(), loadPersonalTiers()]);
+  await Promise.all([
+    loadGlobalTiers(), loadTeamTiers(), loadPersonalTiers(),
+    loadPersonalDefaultMapTiers(), // MIGR-5: для вкладки "Карты" в личном режиме
+  ]);
   _applyTierMode(tierViewMode);
 }
 
@@ -331,6 +333,29 @@ async function loadPersonalTiers(){
   await loadTierSets(); // наполняет tierSets[] и activeTierSetId
   const { mapsObj, heroesObj } = await _loadTierEntries(activeTierSetId);
   personalTierMaps = mapsObj; personalTierHeroes = heroesObj;
+}
+
+// MIGR-5: Карты↔Тир-листы в личном режиме связаны конкретно с ДЕФОЛТНЫМ
+// личным сетом (is_default=true), а не с тем что сейчас открыт на странице
+// Tier List (activeTierSetId может указывать на другой именованный сет,
+// если пользователь переключился) — по требованию: "связь должна быть
+// с тирлистом который выбран по умолчанию", независимо от навигации.
+// Формат — плоский объект name→tier (не S/A/B/C/D массивы) для O(1) лукапа
+// во вкладке "Карты" (render-maps.js).
+let personalDefaultMapTierByName = {};
+
+async function loadPersonalDefaultMapTiers(){
+  personalDefaultMapTierByName = {};
+  if(!currentUser()) return;
+  const defaultListId = await _resolveTierListId('personal', { teamId: _teamId(), userId: currentUser().id });
+  if(!defaultListId) return;
+  const { data, error } = await _sb.from('tier_entries')
+    .select('map_id, tier').eq('tier_list_id', defaultListId).eq('entity_type', 'map');
+  if(error){ console.warn('loadPersonalDefaultMapTiers error', error); return; }
+  (data||[]).forEach(r => {
+    const name = _mapCatalogById[r.map_id]?.name;
+    if(name) personalDefaultMapTierByName[name] = r.tier;
+  });
 }
 
 // ════ PERSONAL TIER LISTS (были personal_tier_sets, теперь строки
