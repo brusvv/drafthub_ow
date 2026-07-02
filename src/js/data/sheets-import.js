@@ -1,3 +1,4 @@
+// @hash d92b1158 2026-07-02T08:48
 // ════ SHEETS IMPORT — Google Sheets → Supabase ════
 // IMPORT-1a/1b/1c + MIGR-6: чтение листов через _sheetsBatchGet (sheets-auth.js),
 // парсинг строк в объекты, резолв имён в id каталога, запись через UPSERT.
