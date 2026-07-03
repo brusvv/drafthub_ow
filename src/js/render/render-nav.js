@@ -1,15 +1,61 @@
-// @hash 72d55afb 2026-06-25T22:21
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
 
-function showView(v, btn) {
+// ── Роутинг вкладок ──────────────────────────────────────────
+// Даёт вкладкам реальные bookmark-able/shareable URL (/maps, /heroes и
+// т.п.) через History API. Не меняет сам факт что это SPA — просто
+// синхронизирует адресную строку с активной вкладкой.
+//
+// Deep-link на hard-reload (например открыли https://.../drafthub_ow/heroes
+// не кликом внутри приложения, а напрямую) идёт через уже существующий
+// GitHub Pages 404.html → sessionStorage → history.replaceState трюк
+// (см. session.js initSession) — он восстанавливает location.pathname
+// ДО того как эта логика вообще успевает посмотреть на него, так что
+// отдельно обрабатывать hard-reload здесь не нужно, достаточно один раз
+// прочитать pathname при старте (см. session.js switchTeam → _viewFromPath).
+const VIEW_PATHS = {
+  maps: '/maps', heroes: '/heroes', tiers: '/tiers', bans: '/bans',
+  players: '/players', roster: '/roster', settings: '/settings', admin: '/admin',
+};
+
+// pathname → ключ вкладки, или null если путь ни на что не похож
+// (тогда вызывающий код сам решает дефолт — обычно 'maps').
+function _viewFromPath(pathname){
+  const rel = pathname.startsWith(BASE_PATH) ? pathname.slice(BASE_PATH.length) : pathname;
+  const entry = Object.entries(VIEW_PATHS).find(([, p]) => p === rel);
+  return entry ? entry[0] : null;
+}
+
+// opts.pushState (default true) — false при восстановлении из URL
+// (popstate/начальная загрузка), чтобы не плодить лишние записи в history
+// и не зациклить popstate-обработчик сам на себя.
+function showView(v, btn, opts = {}) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-  if (btn) btn.classList.add('active');
+  document.getElementById('view-' + v)?.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    // btn не передан (роутинг/popstate) — находим кнопку сами по onclick,
+    // чтобы подсветка активной вкладки в nav не расходилась с URL.
+    document.querySelector(`.nav-btn[onclick*="showView('${v}'"]`)?.classList.add('active');
+  }
+
+  if (opts.pushState !== false && VIEW_PATHS[v]) {
+    const path = BASE_PATH + VIEW_PATHS[v];
+    if (window.location.pathname !== path) history.pushState({ view: v }, '', path);
+  }
+
   renderCurrentView();
 }
+
+// Back/Forward между вкладками — обычное ожидание пользователя раз URL
+// теперь меняется при навигации.
+window.addEventListener('popstate', () => {
+  const v = _viewFromPath(window.location.pathname);
+  if (v) showView(v, null, { pushState: false });
+});
 
 // ════ ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМА (хедер) ════
 // Постоянно видимый в хедере дубликат _renderTierModeSwitcher()
@@ -55,10 +101,13 @@ function _toggleAppModePopup() {
 
 function _pickAppMode(mode) {
   document.getElementById('appModePopup')?.classList.add('hidden');
+  // switchTierMode() сама перерисовывает renderTiers()/renderHeroes() —
+  // этого достаточно, Maps/Bans/Players/Roster не зависят от tierViewMode.
+  // Раньше здесь был принудительный showView('tiers',...) — прыгал на
+  // Tier List даже если пользователь сменил режим находясь на другой
+  // вкладке. Убрано по просьбе пользователя: смена режима не должна
+  // менять активную вкладку.
   switchTierMode(mode);
-  if (!document.getElementById('view-tiers')?.classList.contains('active')) {
-    showView('tiers', document.getElementById('navTiersBtn'));
-  }
 }
 
 // Закрытие попапа кликом снаружи
