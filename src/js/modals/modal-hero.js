@@ -1,4 +1,4 @@
-// @hash bb341182 2026-06-28T16:51
+// @hash 833ed2d7 2026-07-03T07:54
 // ════ MODAL — HERO (core) ════
 // Содержит: открытие модалки героя, синергия-пикер.
 // Зависимости:
@@ -13,27 +13,27 @@ let heroSynergyEdits=[];    // [{name, score}] — синергии текуще
 // ОТКРЫТИЕ МОДАЛКИ ГЕРОЯ
 // ════════════════════════════════════════════════════════════
 function openHeroModal(hero){
-  document.getElementById('heroModalTitle').textContent=hero?'Редактировать героя':'Добавить героя';
-  document.getElementById('heroEditRow').value=hero?.id??'';
-  document.getElementById('hName').value=hero?hero.name:'';
-  document.getElementById('hRole').value=hero?hero.role:'';
-  document.getElementById('hSub').value=hero?hero.subrole:'';
-  document.getElementById('hPrio').value=hero?hero.priority:'5';
-  document.getElementById('hBanned').checked=hero?hero.banned:false;
-  document.getElementById('hNotes').value=hero?hero.notes:'';
+  if(!hero) return;   // MIGR-5: добавления больше нет — bulk-seed даёт весь каталог сразу при создании команды
+  document.getElementById('heroModalTitle').textContent='Редактировать героя';
+  document.getElementById('heroEditRow').value=hero.id;
+  document.getElementById('hName').value=hero.name;
+  document.getElementById('hRole').value=hero.role;
+  document.getElementById('hSub').value=hero.subrole;
+  document.getElementById('hPrio').value=hero.priority;
+  document.getElementById('hBanned').checked=hero.banned;
+  document.getElementById('hNotes').value=hero.notes;
 
   // Контрпики: counterPickerSelected живёт в picker-counters.js
-  counterPickerSelected=hero?(hero.counters.map(c=>({name:c.name,score:c.score!==undefined?c.score:5}))):[];
-  document.getElementById('heroDeleteBtn').style.display=hero?'inline-flex':'none';
+  counterPickerSelected=hero.counters.map(c=>({name:c.name,score:c.score!==undefined?c.score:5}));
 
   // Сила на картах: heroStrengthEdits живёт в modal-hero-strength.js
   heroStrengthEdits=maps.map(m=>{
-    const entry=(heroMapStrength[hero?hero.name:'']||{})[m.name]||{};
+    const entry=(heroMapStrength[hero.name]||{})[m.name]||{};
     return{map:m.name,type:m.type,atk:entry.atk||0,def:entry.def||0};
   });
 
   // Синергии
-  heroSynergyEdits=hero?(heroSynergy[hero.name]||[]).map(s=>({...s})):[];
+  heroSynergyEdits=(heroSynergy[hero.name]||[]).map(s=>({...s}));
 
   renderHeroCounterBlock();    // modal-hero-chips.js
   renderStrengthPreview();     // modal-hero-strength.js
@@ -41,13 +41,15 @@ function openHeroModal(hero){
 
   // ── Режим Глобальный/Личный (см. db-load.js tierViewMode) — в этих
   // режимах редактируются ТОЛЬКО контрпики (hero_counters), остальные
-  // поля героя (роль/приоритет/синергии/сила на картах) всегда командные
+  // поля героя (приоритет/синергии/сила на картах) всегда командные
   // и поэтому блокируются, чтобы не создавать иллюзию что они сохранятся.
+  // name/role/subrole блокированы ВСЕГДА (см. ниже) — это каталог,
+  // не команда, редактирует только superadmin через отдельную панель.
   const isTeamMode = tierViewMode === 'team';
-  ['hName','hRole','hSub','hPrio','hBanned','hNotes'].forEach(id => {
+  ['hPrio','hBanned','hNotes'].forEach(id => {
     document.getElementById(id).disabled = !isTeamMode;
   });
-  document.getElementById('heroDeleteBtn').style.display = (hero && isTeamMode) ? 'inline-flex' : 'none';
+  document.getElementById('heroDeleteBtn').style.display = isTeamMode ? 'inline-flex' : 'none';
   document.getElementById('hSynergyAddBtn').disabled  = !isTeamMode;
   document.getElementById('hStrengthAddBtn').disabled = !isTeamMode;
 
