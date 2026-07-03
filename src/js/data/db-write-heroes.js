@@ -1,4 +1,4 @@
-// @hash 1ef096ab 2026-07-03T08:26
+// @hash 4e59a845 2026-07-03T08:30
 // @hash PLACEHOLDER
 // ════ DATA — WRITE HEROES (Supabase) ════
 // Выделено из db-write.js (был 564 строки — один из крупнейших файлов
