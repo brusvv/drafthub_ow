@@ -107,9 +107,15 @@ JS_MODULES=(
   js/auth/team.js
   js/auth/ui.js
 
-  # Data: load до write (write использует структуры из load)
+  # Data: load до write (write использует структуры из load).
+  # db-write.js — общие хелперы + players/tiers/share-links.
+  # db-write-heroes.js/db-write-maps.js вынесены отдельно (был 564-строчный
+  # файл) — порядок после db-write.js неважен для выполнения (все объявления
+  # через function, hoisting), важен только для читаемости диффа сборки.
   js/data/db-load.js
   js/data/db-write.js
+  js/data/db-write-heroes.js
+  js/data/db-write-maps.js
   js/data/sheets-auth.js
   js/data/sheets-import.js
   js/data/sheets-export.js
