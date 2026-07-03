@@ -1,4 +1,3 @@
-// @hash 6fc6eaf9 2026-07-02T10:31
 // ════ DATA — WRITE (Supabase) ════
 // MIGR-2: переезд на id-based каталог + unified tier_lists/tier_entries
 // (см. db-load.js шапку для контекста). Использует UUID (h.id/m.id/p.id)
@@ -548,7 +547,7 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
   if(error){ handleError(error, 'Ошибка создания ссылки'); return null; }
 
   const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}/drafthub_ow/tier/${token}`;
+  const link = `${window.location.origin}${BASE_PATH}/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch{ toast(link, 'ok'); }
   return link;
