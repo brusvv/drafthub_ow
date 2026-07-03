@@ -1,4 +1,4 @@
-// @hash 2242d622 2026-07-03T07:35
+// @hash 032bf864 2026-07-03T08:43
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -249,14 +249,22 @@ function _renderSharedTierView(data){
          из отношения ширины контейнера к minmax()), см. src/css/base/responsive.css
          для точки зрения на остальной адаптив приложения. */
       .shared-wrap{
-        max-width:760px;
-        /* Чуть левее центра на широких экранах: на 1440px margin-left≈260px
-           против margin-right≈420px. На узких — просто 20px от края (не
-           уезжает за левый край и не выглядит "прибитым" к центру). */
-        margin-left:max(20px, calc(50vw - 460px));
-        margin-right:auto;
+        /* БАГ (найден по скриншоту): margin-left:max(20px, calc(50vw - 460px))
+           не имел верхнего предела — на ≥1440px рос линейно без потолка
+           (820px на 2560px, 1460px на 4K), утаскивая контент далеко вправо
+           при том что max-width оставался фиксированным 760px — справа
+           оставалось СТОЛЬКО ЖЕ пустого места, сколько контент "съезжал"
+           влево от него. На ≤768px формула наоборот давала переполнение
+           (content: 20-780 при viewport 768 → горизонтальный скролл).
+           Теперь — обычное центрирование, max-width растёт вместе с экраном
+           (даёт больше колонок в CSS Grid ниже вместо одной узкой колонки,
+           застрявшей у правого края на широких мониторах). */
+        max-width:1100px;
+        width:calc(100% - 40px);
+        margin:0 auto;
         padding:28px 20px 24px;
       }
+      @media (min-width:1440px){ .shared-wrap{max-width:1320px} }
       .shared-title{font-size:25px}
       .shared-subtitle{font-size:12px}
 
@@ -283,7 +291,7 @@ function _renderSharedTierView(data){
       .shared-wrap .tier-hero-pill-tip{font-size:11px}
 
       @media (max-width:480px){
-        .shared-wrap{margin-left:20px;padding:20px 16px 18px}
+        .shared-wrap{padding:20px 16px 18px}
         .shared-title{font-size:20px}
         .shared-map-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
         .shared-hero-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
