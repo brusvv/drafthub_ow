@@ -78,6 +78,22 @@ async function loadPermissions() {
 }
 
 // Создать кастомную роль
+// DEDUPE-1: было продублировано почти дословно в createCustomRole() и
+// updateRolePermissions() (разница только role.id/roleId) — резолв ключей
+// прав в id + insert в role_permissions. Общий хелпер, вызывающий код сам
+// решает нужно ли предварительно делать DELETE (updateRolePermissions делает,
+// createCustomRole — нет, роль только что создана, старых прав быть не может).
+async function _assignRolePermissions(roleId, permissionKeys){
+  if(!permissionKeys.length) return;
+  const { data: perms } = await _sb.from('permissions')
+    .select('id').in('key', permissionKeys);
+  if(perms?.length){
+    await _sb.from('role_permissions').insert(
+      perms.map(p => ({ role_id: roleId, permission_id: p.id }))
+    );
+  }
+}
+
 async function createCustomRole({ label, permissionKeys = [] }) {
   if(!canManageRoles()) { toast('Нет прав на управление ролями', 'err'); return null; }
   const key = 'custom_' + label.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,20) + '_' + Date.now().toString(36).slice(-4);
@@ -89,16 +105,7 @@ async function createCustomRole({ label, permissionKeys = [] }) {
       is_system: false,
       sort_order: 99,
     });
-    // Назначаем права
-    if(permissionKeys.length) {
-      const { data: perms } = await _sb.from('permissions')
-        .select('id').in('key', permissionKeys);
-      if(perms?.length) {
-        await _sb.from('role_permissions').insert(
-          perms.map(p => ({ role_id: role.id, permission_id: p.id }))
-        );
-      }
-    }
+    await _assignRolePermissions(role.id, permissionKeys);
     toast(`Роль "${role.label}" создана ✓`, 'ok');
     return role;
   } catch(e) { handleError(e); return null; }
@@ -110,16 +117,7 @@ async function updateRolePermissions(roleId, permissionKeys = []) {
   try {
     // Удаляем старые права
     await _sb.from('role_permissions').delete().eq('role_id', roleId);
-    // Вставляем новые
-    if(permissionKeys.length) {
-      const { data: perms } = await _sb.from('permissions')
-        .select('id').in('key', permissionKeys);
-      if(perms?.length) {
-        await _sb.from('role_permissions').insert(
-          perms.map(p => ({ role_id: roleId, permission_id: p.id }))
-        );
-      }
-    }
+    await _assignRolePermissions(roleId, permissionKeys);
     toast('Права обновлены ✓', 'ok');
     renderRolesAdminPanel();
   } catch(e) { handleError(e); }
