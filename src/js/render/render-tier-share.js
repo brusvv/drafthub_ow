@@ -266,12 +266,17 @@ function _renderSharedTierView(data){
         display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px}
       .shared-map-pill span{font-size:11px;font-weight:600;max-width:100%;text-align:center;
         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
-      .shared-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+      .shared-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
+        min-width:0} /* без этого — классический flex-баг: .shared-map-grid лежит
+        внутри .tier-row(flex), у flex-элементов min-width:auto по умолчанию,
+        грид считает свою ширину по max-content (сумма всех минимальных колонок),
+        не сжимается — визуально все карты/герои в один нескончаемый ряд */
 
       /* Крупнее hero-pill на share-странице (~1.5x vs приложение) + умная
          сетка вместо flex-wrap — на ~760px контейнере даёт 6-7 в ряд сама,
          без хардкода числа колонок. */
-      .shared-hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+      .shared-hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;
+        min-width:0} /* см. комментарий у .shared-map-grid выше — тот же баг */
       .shared-wrap .tier-hero-pill{width:100%;height:auto;aspect-ratio:1}
       .shared-wrap .tier-hero-pill img,.shared-wrap .tier-hero-pill-ph{width:100%;height:100%;aspect-ratio:1}
       .shared-wrap .tier-hero-pill-ph{font-size:20px}
