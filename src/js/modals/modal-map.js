@@ -1,19 +1,20 @@
-// @hash b0984739 2026-07-02T09:27
+// @hash da2d97af 2026-07-03T07:54
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
-  document.getElementById('mapModalTitle').textContent=map?'Редактировать карту':'Добавить карту';
-  document.getElementById('mapEditRow').value=map?.id??'';
-  document.getElementById('mName').value=map?map.name:'';
-  document.getElementById('mType').value=map?map.type:'';
-  document.getElementById('mTier').value=map?_effectiveMapTier(map):'B';
-  document.getElementById('mPrio').value=map?map.priority:'5';
-  document.getElementById('mAtk').value=map?map.atk:'3';
-  document.getElementById('mDef').value=map?map.def:'3';
-  document.getElementById('mDif').value=map?map.dif:'3';
-  document.getElementById('mNotes').value=map?map.notes:'';
-  document.getElementById('mInPool').checked=map?map.inPool!==false:true;
-  document.getElementById('mapDeleteBtn').style.display=map?'inline-flex':'none';
+  if(!map) return;   // MIGR-5: добавления больше нет — bulk-seed даёт весь каталог сразу при создании команды
+  document.getElementById('mapModalTitle').textContent='Редактировать карту';
+  document.getElementById('mapEditRow').value=map.id;
+  document.getElementById('mName').value=map.name;
+  document.getElementById('mType').value=map.type;
+  document.getElementById('mTier').value=_effectiveMapTier(map);
+  document.getElementById('mPrio').value=map.priority;
+  document.getElementById('mAtk').value=map.atk;
+  document.getElementById('mDef').value=map.def;
+  document.getElementById('mDif').value=map.dif;
+  document.getElementById('mNotes').value=map.notes;
+  document.getElementById('mInPool').checked=map.inPool!==false;
+  document.getElementById('mapDeleteBtn').style.display='inline-flex';
   onMapTypeChange();
   // Вставляем SVG-иконки ATK/DEF в редакторе карты
   const atkIco=document.getElementById('mAtkIcon');
@@ -22,10 +23,10 @@ function openMapModal(map){
   if(defIco)defIco.innerHTML=ICON_DEF;
   pickerSelected={
     ...pickerSelected,
-    preferred:map?[...map.preferredHeroes]:[],
-    bans:map?[...map.bans]:[],
-    comp:map?map.comp.map(c=>c.hero):[],
-    mapCounters:map?[...(map.counters||[])]:[],
+    preferred:[...map.preferredHeroes],
+    bans:[...map.bans],
+    comp:map.comp.map(c=>c.hero),
+    mapCounters:[...(map.counters||[])],
   };
   renderSelPreview();
   initCompSlots(map);
