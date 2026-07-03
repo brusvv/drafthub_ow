@@ -31,6 +31,11 @@ if [ -f ".env" ]; then export $(grep -v '^#' .env | xargs); fi
 SUPABASE_URL="${SUPABASE_URL:-__SUPABASE_URL__}"
 SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-__SUPABASE_ANON_KEY__}"
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-__GOOGLE_CLIENT_ID__}"
+# Путь публикации GitHub Pages (репозиторий не в корне домена, а в подпапке).
+# Единственное место где это значение задаётся руками — дальше распространяется
+# через sed (__BASE_PATH__) в JS-бандл (config.js → BASE_PATH) и в 404.html.
+# Переопределить: BASE_PATH=/other-path bash build.sh, или тем же ключом в .env.
+BASE_PATH="${BASE_PATH:-/drafthub_ow}"
 
 cat > "$OUT" <<'HEADER'
 <!DOCTYPE html>
@@ -157,6 +162,7 @@ done
 sed -i "s|__SUPABASE_URL__|${SUPABASE_URL}|g"           "$OUT"
 sed -i "s|__SUPABASE_ANON_KEY__|${SUPABASE_ANON_KEY}|g" "$OUT"
 sed -i "s|__GOOGLE_CLIENT_ID__|${GOOGLE_CLIENT_ID}|g"   "$OUT"
+sed -i "s|__BASE_PATH__|${BASE_PATH}|g"                 "$OUT"
 
 cat >> "$OUT" <<'FOOTER'
 </script>
@@ -173,5 +179,6 @@ sed -i "s|__GOOGLE_CLIENT_ID__|${GOOGLE_CLIENT_ID}|g" "$OUT"
 # каталога. Должен лежать в корне dist/ — GitHub Pages ищет 404.html
 # только на корневом уровне опубликованного каталога.
 cp "$SRC/html/404.html" "$(dirname "$OUT")/404.html"
+sed -i "s|__BASE_PATH__|${BASE_PATH}|g" "$(dirname "$OUT")/404.html"
 
 echo "✓ Собрано: $OUT ($(wc -l < "$OUT") строк)"
