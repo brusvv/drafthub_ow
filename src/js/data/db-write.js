@@ -1,4 +1,4 @@
-// @hash f9b60e20 2026-07-03T06:51
+// @hash 536d39ea 2026-07-03T07:54
 // ════ DATA — WRITE (Supabase) ════
 // MIGR-2: переезд на id-based каталог + unified tier_lists/tier_entries
 // (см. db-load.js шапку для контекста). Использует UUID (h.id/m.id/p.id)
@@ -39,15 +39,13 @@ function _resolveIds(names, byName = _heroCatalogByName){
 
 // ════ HEROES ════
 async function saveHero(){
-  // hero_id — из нового select'а каталога (MIGR-5) для новой roster-записи,
-  // либо уже известен на редактируемой (heroes[].heroId).
-  const _rawHeroCatalogId = document.getElementById('hHeroId')?.value;
-  const heroCatalogId = (_rawHeroCatalogId && _rawHeroCatalogId !== 'undefined') ? _rawHeroCatalogId : null;
+  // MIGR-5: добавления больше нет (bulk-seed даёт весь каталог сразу при
+  // создании команды) — editId всегда есть, heroId всегда из существующей записи.
   const _rawRowId = document.getElementById('heroEditRow').value;
   const editId = (_rawRowId && _rawRowId !== 'undefined') ? _rawRowId : null;
   const existing = editId ? heroes.find(h => h.id === editId) : null;
-  const heroId = existing?.heroId || heroCatalogId;
-  if(!heroId){ toast('Выбери героя из каталога', 'err'); return; }
+  const heroId = existing?.heroId;
+  if(!heroId){ toast('Герой не найден', 'err'); return; }
 
   const newCounters = counterPickerSelected.map(c => ({ name:c.name, score:c.score }));
 
@@ -172,13 +170,12 @@ async function deleteHero(){
 async function saveMap(){
   if(!_requireWrite()) return;
 
-  const _rawMapCatalogId = document.getElementById('mMapId')?.value; // MIGR-5: select карты из map_catalog
-  const mapCatalogId = (_rawMapCatalogId && _rawMapCatalogId !== 'undefined') ? _rawMapCatalogId : null;
+  // MIGR-5: добавления больше нет — editId всегда есть, mapId всегда из существующей записи.
   const _rawRowId = document.getElementById('mapEditRow').value;
   const editId = (_rawRowId && _rawRowId !== 'undefined') ? _rawRowId : null;
   const existing = editId ? maps.find(m => m.id === editId) : null;
-  const mapId = existing?.mapId || mapCatalogId;
-  if(!mapId){ toast('Выбери карту из каталога', 'err'); return; }
+  const mapId = existing?.mapId;
+  if(!mapId){ toast('Карта не найдена', 'err'); return; }
 
   const mapCat = _mapCatalogById[mapId] || {};
   const noAD = NO_ATKDEF.includes(mapCat.type);
