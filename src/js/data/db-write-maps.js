@@ -1,4 +1,4 @@
-// @hash 34960ae7 2026-07-03T08:26
+// @hash 73b2b86f 2026-07-03T08:32
 // @hash PLACEHOLDER
 // ════ DATA — WRITE MAPS (Supabase) ════
 // Выделено из db-write.js при добавлении MIGR-5. Логика не менялась,
