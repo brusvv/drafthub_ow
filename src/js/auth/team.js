@@ -1,4 +1,3 @@
-// @hash 5c1ebbda 2026-06-28T22:45
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -188,7 +187,7 @@ async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
 
   // RPC возвращает токен напрямую как text
   const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}/drafthub_ow/join/${token}`;
+  const link = `${window.location.origin}${BASE_PATH}/join/${token}`;
   try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch { toast(link, 'ok'); }
   return link;
