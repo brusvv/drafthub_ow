@@ -3,20 +3,18 @@
   <div class="modal">
     <!-- Заголовок с кнопкой X справа -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <div class="modal-title" id="heroModalTitle" style="margin:0">Добавить героя</div>
+      <div class="modal-title" id="heroModalTitle" style="margin:0">Редактировать героя</div>
       <button onclick="closeModal('heroModal')" style="background:none;border:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px" title="Закрыть">×</button>
     </div>
     <input type="hidden" id="heroEditRow">
     <div id="heroModeNote" style="display:none;font-size:11px;color:var(--text3);background:var(--bg3);
       border:1px solid var(--border);border-radius:7px;padding:7px 10px;margin-bottom:10px"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Имя *</label><input class="form-input" id="hName" placeholder="Tracer"></div>
-      <div class="form-group"><label class="form-label">Роль *</label>
-        <select class="form-select" id="hRole"><option value="">— роль —</option><option>Tank</option><option>Damage</option><option>Support</option></select>
-      </div>
+      <div class="form-group"><label class="form-label">Имя</label><input class="form-input" id="hName" disabled></div>
+      <div class="form-group"><label class="form-label">Роль</label><input class="form-input" id="hRole" disabled></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Подкласс</label><input class="form-input" id="hSub" placeholder="Flanker"></div>
+      <div class="form-group"><label class="form-label">Подкласс</label><input class="form-input" id="hSub" disabled></div>
       <div class="form-group"><label class="form-label">Приоритет (1–10)</label><input class="form-input" id="hPrio" type="number" min="1" max="10" value="5"></div>
     </div>
     <div class="form-group">
