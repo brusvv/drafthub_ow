@@ -1,13 +1,11 @@
 <!-- MAP MODAL -->
 <div class="modal-overlay hidden" id="mapModal">
   <div class="modal">
-    <div class="modal-title" id="mapModalTitle">Добавить карту</div>
+    <div class="modal-title" id="mapModalTitle">Редактировать карту</div>
     <input type="hidden" id="mapEditRow">
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Название *</label><input class="form-input" id="mName" placeholder="King's Row"></div>
-      <div class="form-group"><label class="form-label">Тип *</label>
-        <select class="form-select" id="mType" onchange="onMapTypeChange()"><option value="">— тип —</option><option>Hybrid</option><option>Escort</option><option>Control</option><option>Push</option><option>Flashpoint</option></select>
-      </div>
+      <div class="form-group"><label class="form-label">Название</label><input class="form-input" id="mName" disabled></div>
+      <div class="form-group"><label class="form-label">Тип</label><input class="form-input" id="mType" disabled></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Тир</label>
@@ -17,10 +15,10 @@
     </div>
     <!-- ATK/DEF (Hybrid/Escort/Push) -->
     <div class="form-group">
-      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="mInPool" checked style="accent-color:var(--support);width:15px;height:15px">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="mInPool" disabled style="accent-color:var(--support);width:15px;height:15px">
         <span>Карта в актуальном пуле</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(снять если карта убрана из ротации)</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">(редактируется в каталоге, не здесь)</span>
       </label>
     </div>
     <!-- СЛОЖНОСТЬ — иконка + точки в одну строку -->
