@@ -1,4 +1,3 @@
-// @hash 1fd1348c 2026-07-02T08:09
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -63,7 +62,7 @@ async function renderTierSharePanel(){
               </div>
               <code style="font-family:var(--mono);font-size:9px;color:var(--text3);
                 display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                /drafthub_ow/tier/${l.token}
+                ${BASE_PATH}/tier/${l.token}
               </code>
             </div>
             <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${l.views} просм.</span>
@@ -86,7 +85,7 @@ async function renderTierSharePanel(){
 function _shareEntityLabel(t){ return t==='map'?'Карты':t==='hero'?'Герои':'Карты и герои'; }
 
 async function copyShareLink(token){
-  const link = `${window.location.origin}/drafthub_ow/tier/${token}`;
+  const link = `${window.location.origin}${BASE_PATH}/tier/${token}`;
   try{ await navigator.clipboard.writeText(link); toast('Скопировано ✓','ok'); }
   catch{ toast(link,'ok'); }
 }
@@ -102,7 +101,7 @@ async function _submitCreateShareLink(){
 
 // ════ ОБРАБОТКА /tier/TOKEN — публичный просмотр без авторизации ════
 async function handleSharedTierUrl(tokenOverride){
-  const match = window.location.pathname.match(/^\/drafthub_ow\/tier\/([A-Za-z0-9_=-]{10,})$/);
+  const match = window.location.pathname.match(basePathRegex('\\/tier\\/([A-Za-z0-9_=-]{10,})'));
   const token = tokenOverride || (match ? match[1] : null);
   if(!token) return false;
 
@@ -169,13 +168,13 @@ function _renderSharedTierView(data){
 
   const buildRow = (tier, names, type) => {
     if(type === 'hero'){
-      // Используем родные классы .tier-hero-pill — автоматически наследуют
-      // мобильный размер (46px) из responsive.css, не нужно дублировать
-      // media-query здесь. cursor:default — read-only, без drag.
+      // .tier-hero-pill/.tier-hero-pill-ph/.tier-hero-pill-tip — родные классы
+      // из tiers.css, размер переопределён в <style> ниже через .shared-wrap.
+      // cursor:default — read-only, без drag.
       return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
-        <div class="tier-maps" style="justify-content:flex-start">
+        <div class="shared-hero-grid" style="flex:1">
           ${names.map(name => {
             const hidden = _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
             const src = portrait(name);
@@ -188,11 +187,11 @@ function _renderSharedTierView(data){
       </div>`;
     }
     // Карты — картиночные превью (не текстовые .tier-pill как в основном
-    // приложении), своя responsive-сетка через .shared-map-pill ниже в <style>
+    // приложении), своя responsive-сетка через .shared-map-pill/-grid ниже в <style>
     return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0">
+        <div class="shared-map-grid" style="flex:1">
           ${names.map(name => {
             const hidden = _sharedMapType!=='all' && typeByName[name] && typeByName[name]!==_sharedMapType;
             const src = mapImg(name);
@@ -238,33 +237,58 @@ function _renderSharedTierView(data){
 
   document.body.innerHTML = `
     <style>
-      /* Самодостаточный блок — share-страница не подключена к build.sh CSS-конкатенации
-         напрямую через классы карт (тут картиночные превью, не текстовые .tier-pill),
-         поэтому адаптив для них держим тут же, рядом с разметкой. */
-      .shared-wrap{max-width:560px;margin:0 auto;padding:28px 20px 24px}
-      .shared-map-pill{display:flex;flex-direction:column;align-items:center;gap:4px}
-      .shared-map-pill img{width:100px;height:64px;object-fit:cover;border-radius:7px;display:block}
-      .shared-map-pill-ph{width:100px;height:64px;border-radius:7px;background:var(--bg3);
-        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
-      .shared-map-pill span{font-size:10px;font-weight:600;max-width:100px;text-align:center;
+      /* Самодостаточный блок — переопределяет размеры поверх базовых классов
+         .tier-hero-pill/.tier-badge/.tier-maps (они уже в общем tiers.css,
+         тот же index.html), плюс свои .shared-map-pill (картиночные превью
+         карт, не текстовые .tier-pill как в основном приложении).
+
+         Раскладка карт/героев — CSS Grid auto-fill, а не flex-wrap: даёт
+         устойчивое количество колонок на любой ширине экрана без ручных
+         точек перелома под конкретное число «6 или 7» (оно само получается
+         из отношения ширины контейнера к minmax()), см. src/css/base/responsive.css
+         для точки зрения на остальной адаптив приложения. */
+      .shared-wrap{
+        max-width:760px;
+        /* Чуть левее центра на широких экранах: на 1440px margin-left≈260px
+           против margin-right≈420px. На узких — просто 20px от края (не
+           уезжает за левый край и не выглядит "прибитым" к центру). */
+        margin-left:max(20px, calc(50vw - 460px));
+        margin-right:auto;
+        padding:28px 20px 24px;
+      }
+      .shared-title{font-size:25px}
+      .shared-subtitle{font-size:12px}
+
+      .shared-map-pill{display:flex;flex-direction:column;align-items:center;gap:5px}
+      .shared-map-pill img{width:100%;aspect-ratio:100/64;object-fit:cover;border-radius:8px;display:block}
+      .shared-map-pill-ph{width:100%;aspect-ratio:100/64;border-radius:8px;background:var(--bg3);
+        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px}
+      .shared-map-pill span{font-size:11px;font-weight:600;max-width:100%;text-align:center;
         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
-      /* Крупнее hero-pill на share-странице (~1.5x vs приложение) */
-      .shared-wrap .tier-hero-pill{width:80px;height:80px}
-      .shared-wrap .tier-hero-pill img{width:80px;height:80px}
-      .shared-wrap .tier-hero-pill-ph{width:80px;height:80px;font-size:20px}
-      .shared-wrap .tier-hero-pill-tip{font-size:10px}
+      .shared-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+
+      /* Крупнее hero-pill на share-странице (~1.5x vs приложение) + умная
+         сетка вместо flex-wrap — на ~760px контейнере даёт 6-7 в ряд сама,
+         без хардкода числа колонок. */
+      .shared-hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+      .shared-wrap .tier-hero-pill{width:100%;height:auto;aspect-ratio:1}
+      .shared-wrap .tier-hero-pill img,.shared-wrap .tier-hero-pill-ph{width:100%;height:100%;aspect-ratio:1}
+      .shared-wrap .tier-hero-pill-ph{font-size:20px}
+      .shared-wrap .tier-hero-pill-tip{font-size:11px}
+
       @media (max-width:480px){
-        .shared-map-pill img,.shared-map-pill-ph{width:72px;height:46px}
-        .shared-map-pill span{max-width:72px}
-        .shared-wrap .tier-hero-pill,.shared-wrap .tier-hero-pill img,.shared-wrap .tier-hero-pill-ph{width:60px;height:60px}
+        .shared-wrap{margin-left:20px;padding:20px 16px 18px}
+        .shared-title{font-size:20px}
+        .shared-map-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+        .shared-hero-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
       }
     </style>
     <div class="app" style="font-family:Inter,sans-serif">
       <div class="shared-wrap">
         <div style="margin-bottom:20px">
-          <div style="font-size:22px;font-weight:800;margin-bottom:4px">${title}</div>
-          ${data.tier_set_name && data.label ? `<div style="font-size:11px;color:var(--text3);margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">Draft Hub · Read only</div>
+          <div class="shared-title" style="font-weight:800;margin-bottom:4px">${title}</div>
+          ${data.tier_set_name && data.label ? `<div class="shared-subtitle" style="color:var(--text3);margin-bottom:2px">📋 ${data.tier_set_name}</div>` : ''}
+          <div class="shared-subtitle" style="font-family:var(--mono);color:var(--text3)">Draft Hub · Read only</div>
         </div>
         ${tabsHtml}
         <div id="sharedTabContent">
