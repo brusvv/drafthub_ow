@@ -1,5 +1,19 @@
-// @hash f51da427 2026-06-14T08:30
 // ════ CONFIG ════
+
+// ── Базовый путь публикации (GitHub Pages, репозиторий в подпапке) ──
+// Единственный источник — переменная BASE_PATH в build.sh, подставляется
+// сюда через sed (__BASE_PATH__). Не хардкодить '/drafthub_ow' больше
+// нигде в JS — всегда через BASE_PATH или basePathRegex() отсюда.
+const BASE_PATH = '__BASE_PATH__';
+
+// Собирает RegExp вида ^BASE_PATH<suffix>$ с корректно экранированным
+// BASE_PATH (на случай если в пути когда-нибудь появятся спецсимволы regex).
+// Пример: basePathRegex('/tier/([A-Za-z0-9_=-]{10,})') →
+//   /^\/drafthub_ow\/tier\/([A-Za-z0-9_=-]{10,})$/
+function basePathRegex(suffixPattern){
+  const escapedBase = BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp('^' + escapedBase + suffixPattern + '$');
+}
 
 // ── Прокси для обратной совместимости ──────────────────────
 // Пока файлы не мигрированы на store.get()/set(),
