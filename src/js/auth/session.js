@@ -1,4 +1,3 @@
-// @hash 8dcdf718 2026-06-28T22:45
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -45,7 +44,7 @@ async function initSession() {
   // GitHub Pages 404.html (src/html/404.html) сохраняет оригинальный путь
   // в sessionStorage перед редиректом на index.html — восстанавливаем его
   // здесь, ДО любых проверок pathname, иначе /tier/ и /join/ ниже всегда
-  // увидят '/drafthub_ow/' и ничего не сработает.
+  // увидят BASE_PATH+'/' и ничего не сработает.
   const stashedPath = sessionStorage.getItem('gh_pages_redirect_path');
   if(stashedPath){
     sessionStorage.removeItem('gh_pages_redirect_path');
@@ -54,7 +53,7 @@ async function initSession() {
 
   // Сначала проверяем публичную share-ссылку — она может быть открыта
   // человеком без аккаунта вообще (если is_public=true)
-  const isSharedTierUrl = window.location.pathname.startsWith('/drafthub_ow/tier/');
+  const isSharedTierUrl = window.location.pathname.startsWith(BASE_PATH + '/tier/');
   if(isSharedTierUrl){
     const handled = await handleSharedTierUrl();
     if(handled) return;   // страница уже отрендерена как read-only
@@ -81,7 +80,7 @@ async function _onSignIn(joinToken) {
       if(error) throw error;
       if(data?.ok) {
         toast(`Добавлен в команду как ${data.role} ✓`, 'ok');
-        history.replaceState({}, '', '/drafthub_ow/');
+        history.replaceState({}, '', BASE_PATH + '/');
       } else {
         toast(data?.error === 'invalid_or_expired' ? 'Инвайт недействителен или истёк' : 'Ошибка инвайта', 'err');
       }
@@ -171,7 +170,15 @@ async function switchTeam(teamId) {
 
   await loadAllData();
   renderAuthUI('app');
-  renderCurrentView();
+
+  // Deep-link: если пользователь пришёл по прямой ссылке /maps, /heroes и
+  // т.п. (или это hard-reload, путь уже восстановлен из 404.html-стэша
+  // выше в initSession) — открываем именно эту вкладку, а не дефолтную
+  // Карты. showView сама вызывает renderCurrentView(), отдельный вызов
+  // не нужен. pushState:false — это не пользовательский клик по навигации,
+  // URL уже правильный, плодить лишнюю запись в history не нужно.
+  const routedView = _viewFromPath(window.location.pathname);
+  showView(routedView || 'maps', null, { pushState:false });
 
   // Показываем вкладку Админ если есть app_role
   const appRole = (await _sb.auth.getSession())?.data?.session?.user?.app_metadata?.app_role;
@@ -193,7 +200,7 @@ function _resetTeamSpecificState() {
 async function signInWithProvider(provider) {
   const { error } = await _sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.origin + '/drafthub_ow/', scopes: provider === 'discord' ? 'identify email guilds' : undefined },
+    options: { redirectTo: window.location.origin + BASE_PATH + '/', scopes: provider === 'discord' ? 'identify email guilds' : undefined },
   });
   if(error) toast('Ошибка входа: ' + error.message, 'err');
 }
@@ -204,7 +211,7 @@ async function signInWithEmail(email, password) {
 }
 
 async function signUpWithEmail(email, password) {
-  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin + '/drafthub_ow/' } });
+  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin + BASE_PATH + '/' } });
   if(error) toast('Ошибка регистрации: ' + error.message, 'err');
   else toast('Письмо с подтверждением отправлено', 'ok');
 }
@@ -212,7 +219,7 @@ async function signUpWithEmail(email, password) {
 async function signOut() { await _sb.auth.signOut(); }
 
 function _extractJoinToken() {
-  const match = window.location.pathname.match(/^\/drafthub_ow\/join\/([A-Za-z0-9_=-]{10,})$/);
+  const match = window.location.pathname.match(basePathRegex('\\/join\\/([A-Za-z0-9_=-]{10,})'));
   return match ? match[1] : null;
 }
 
