@@ -61,9 +61,14 @@ async function _loadCatalogs(){
 
 function _resolveHeroNames(ids){ return (ids||[]).map(id => _heroCatalogById[id]?.name).filter(Boolean); }
 function _resolveComp(comp){
+  // ВАЖНО: поле называется .hero (не .name) — render-maps.js buildCompDisplay()
+  // читает c.hero везде (heroMap[c.hero], portrait(c.hero), c.hero[0] для
+  // плейсхолдера). Раньше здесь стояло .name — c.hero был undefined,
+  // c.hero[0] кидал TypeError на любой карте с составом. Найдено при
+  // проверке "preferred_heroes/comp — id vs имя" после MIGR-5.
   return (comp||[]).map(entry => {
     const cat = _heroCatalogById[entry.hero_id] || {};
-    return { ...entry, name: cat.name || '(?)', role: cat.role || entry.role };
+    return { ...entry, hero: cat.name || '(?)', role: cat.role || entry.role };
   });
 }
 
