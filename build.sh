@@ -112,15 +112,18 @@ JS_MODULES=(
   # db-write-heroes.js/db-write-maps.js вынесены отдельно (был 564-строчный
   # файл) — порядок после db-write.js неважен для выполнения (все объявления
   # через function, hoisting), важен только для читаемости диффа сборки.
-  js/data/db-load.js
-  js/data/db-write.js
-  js/data/db-write-heroes.js
-  js/data/db-write-maps.js
-  js/data/sheets-auth.js
-  js/data/sheets-import.js
-  js/data/sheets-export.js
-  js/data/sheets-import-ui.js
-  js/data/sheets-settings-panel.js
+  js/data/db/db-load.js
+  js/data/db/db-load-tiers.js
+  js/data/db/db-write.js
+  js/data/db/db-write-heroes.js
+  js/data/db/db-write-maps.js
+  js/data/sheets/sheets-auth.js
+  js/data/sheets/sheets-import-parse.js
+  js/data/sheets/sheets-import-resolve.js
+  js/data/sheets/sheets-import.js
+  js/data/sheets/sheets-export.js
+  js/data/sheets/sheets-import-ui.js
+  js/data/sheets/sheets-settings-panel.js
 
   # Scoring: maps → bans → comp (comp зависит от maps)
   js/scoring/scoring-maps.js
@@ -142,12 +145,14 @@ JS_MODULES=(
   js/render/render-utils.js
   js/render/render-maps.js
   js/render/render-heroes.js
-  js/render/render-tiers.js
-  js/render/render-tier-share.js
+  js/render/tiers/render-tiers.js
+  js/render/tiers/render-tiers-dnd.js
+  js/render/tiers/render-tiers-preview.js
+  js/render/tiers/render-tier-share.js
   js/render/render-players.js
   js/render/render-roster.js
-  js/render/render-admin-import.js
-  js/render/render-admin-ui.js
+  js/render/admin/render-admin-import.js
+  js/render/admin/render-admin-ui.js
   js/render/render-nav.js
 
   # Draft: core первый (общие хелперы для competitive и tournament)
