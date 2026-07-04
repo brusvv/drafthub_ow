@@ -1,4 +1,4 @@
-// @hash 229fdba1 2026-07-04T10:04
+// @hash b54e98f9 2026-07-04T23:29
 // ════ SHEETS IMPORT — ЗАПИСЬ В SUPABASE (IMPORT-1c + MIGR-6) ════
 // Основной файл группы sheets-import-*.js после FILESPLIT-1 (03.07) —
 // парсеры вынесены в sheets-import-parse.js, резолв имён→id каталога в

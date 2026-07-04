@@ -1,4 +1,4 @@
-// @hash 09cf3ebc 2026-07-03T20:00
+// @hash e9fb58cd 2026-07-04T23:29
 // ════ RENDER — TIERS: РЯДЫ S/A/B/C/D + DRAG&DROP ════
 // Часть группы render-tiers-*.js (FILESPLIT-1, 03.07) — см. шапку
 // render-tiers.js за общим описанием разбивки.
