@@ -1,4 +1,4 @@
-// @hash d5b959a0 2026-07-02T09:28
+// @hash 66d361d3 2026-07-04T10:04
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
 // Тело под-таба «Импорт» внутри общей панели Google Sheets
 // (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
@@ -39,7 +39,7 @@ const _IMPORT_GROUPS = [
 // модульная переменная, не store (чисто UI-состояние формы импорта).
 let _importChecked = Object.fromEntries(_IMPORT_GROUPS.map(g => [g.key, true]));
 let _importScope = 'team';   // 'team' | 'personal' | 'global'
-let _importLastReport = null;   // {imported:[], skipped:[], errors:[]} | null
+let _importLastReport = null;   // {imported:[], skipped:[], partial:[], errors:[]} | null
 
 function _renderImportSection(){
   const hasTierSelected = _importChecked.tierMaps || _importChecked.tierHeroes;
@@ -74,8 +74,11 @@ function _renderImportSection(){
 
   const reportHtml = _importLastReport ? `
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11px">
-      ${_importLastReport.imported.map(r => `<div style="color:var(--support)">✓ ${r.label}: ${r.count}</div>`).join('')}
+      ${_importLastReport.imported.map(r => `<div style="color:var(--support)">✓ ${r.label}: ${r.count}${
+        r.unresolved.length ? ` <span style="color:var(--accent)">(не найдено: ${r.unresolved.map(esc).join(', ')})</span>` : ''
+      }</div>`).join('')}
       ${_importLastReport.skipped.map(r => `<div style="color:var(--text3)">– ${r.label}: пусто, пропущено</div>`).join('')}
+      ${_importLastReport.partial.map(r => `<div style="color:var(--accent)">⚠ ${r.label}: не найдено в каталоге — ${r.unresolved.map(esc).join(', ')}</div>`).join('')}
       ${_importLastReport.errors.map(r => `<div style="color:var(--damage)">✗ ${r.label}: ${esc(r.message)}</div>`).join('')}
     </div>` : '';
 
@@ -131,7 +134,7 @@ async function _submitImport(){
   // дублируются благодаря Set).
   const sheetNames = [...new Set(selected.flatMap(g => g.sheets))];
 
-  const report = { imported: [], skipped: [], errors: [] };
+  const report = { imported: [], skipped: [], partial: [], errors: [] };
 
   try{
     const sheetsMap = await _sheetsBatchGet(config.sheet_id, sheetNames);
@@ -141,7 +144,14 @@ async function _submitImport(){
     for(const g of selected){
       try{
         const result = await g.run(sheetsMap, _importScope);
-        if(result.count > 0) report.imported.push({ label:g.label, count:result.count });
+        const unresolved = result.unresolved || [];
+        // IMPORT-BUG-1: раньше unresolved нигде не показывался пользователю —
+        // теперь три исхода вместо двух:
+        //   count>0                        → imported (частично резолвлено — показываем inline)
+        //   count===0 && unresolved.length → partial (лист был непустой, но НИЧЕГО не резолвилось)
+        //   count===0 && !unresolved.length → skipped (лист реально пуст/отсутствует)
+        if(result.count > 0) report.imported.push({ label:g.label, count:result.count, unresolved });
+        else if(unresolved.length) report.partial.push({ label:g.label, unresolved });
         else report.skipped.push({ label:g.label });
       }catch(e){
         report.errors.push({ label:g.label, message:e.message });
@@ -158,10 +168,13 @@ async function _submitImport(){
 
   _importLastReport = report;
   const total = report.imported.reduce((s,r) => s+r.count, 0);
+  const hasPartialIssues = report.partial.length || report.imported.some(r => r.unresolved.length);
   toast(
     report.errors.length
       ? `Импорт завершён с ошибками: ${total} записей, ${report.errors.length} групп с ошибкой`
-      : `Импорт завершён ✓ (${total} записей)`,
+      : hasPartialIssues
+        ? `Импорт завершён ✓ (${total} записей) — есть нерезолвленные имена, см. отчёт`
+        : `Импорт завершён ✓ (${total} записей)`,
     report.errors.length ? 'err' : 'ok'
   );
 
