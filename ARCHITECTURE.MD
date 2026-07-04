@@ -47,10 +47,21 @@ drafthub_ow/
 │       │   └── ui.js         # Формы входа/регистрации, настройки команды, панель ролей
 │       │
 │       ├── data/
-│       │   ├── db-load.js    # SELECT из Supabase → герои/карты/игроки + тир-листы
-│       │   ├── db-write.js   # INSERT/UPDATE/DELETE + saveTierOrder + share-ссылки
-│       │   ├── db-sync.js    # Seed стартовых данных
-│       │   └── sheets-bridge.js  # Экспорт в Google Sheets (отдельный OAuth)
+│       │   ├── db/
+│       │   │   ├── db-load.js        # SELECT героев/карт/игроков (id-based каталог, MIGR-2)
+│       │   │   ├── db-load-tiers.js  # SELECT тир-листов: tier_lists/tier_entries, 3 scope, личные сеты
+│       │   │   ├── db-write.js       # INSERT/UPDATE/DELETE игроков/тир-листов + share-ссылки
+│       │   │   ├── db-write-heroes.js # saveHero + team hero_counters
+│       │   │   └── db-write-maps.js  # saveMap
+│       │   │
+│       │   └── sheets/
+│       │       ├── sheets-auth.js           # OAuth + низкоуровневые вызовы Sheets API
+│       │       ├── sheets-import-parse.js   # Парсеры строк листа (без сети)
+│       │       ├── sheets-import-resolve.js # Резолв имён → id каталога (MIGR-6)
+│       │       ├── sheets-import.js         # importXFromSheets — запись в Supabase
+│       │       ├── sheets-export.js         # exportTeamToSheets (снимок команды)
+│       │       ├── sheets-import-ui.js      # Чеклист/scope-селектор/отчёт импорта
+│       │       └── sheets-settings-panel.js # Общий shell с под-табами Импорт/Экспорт
 │       │
 │       ├── scoring/          { scoring-maps, scoring-bans, scoring-comp }.js
 │       ├── picker/           { picker-core, picker-counters, picker-comp }.js
@@ -62,10 +73,19 @@ drafthub_ow/
 │       │
 │       ├── render/
 │       │   ├── render-utils.js      # renderCurrentView, Esc-обработчик, skeleton loaders
-│       │   ├── render-maps.js / render-heroes.js / render-tiers.js
-│       │   ├── render-tier-share.js # Share-панель + публичный просмотр /tier/TOKEN
+│       │   ├── render-maps.js / render-heroes.js
 │       │   ├── render-players.js / render-roster.js
-│       │   └── render-nav.js        # showView, toast
+│       │   ├── render-nav.js        # showView, toast, updateNavCounts
+│       │   │
+│       │   ├── tiers/
+│       │   │   ├── render-tiers.js         # renderTiers() + режим-свитчер + управление сетами
+│       │   │   ├── render-tiers-dnd.js     # Ряды S/A/B/C/D + drag&drop
+│       │   │   ├── render-tiers-preview.js # Попапы карточки карты/героя из тир-листа
+│       │   │   └── render-tier-share.js    # Share-панель + публичный просмотр /tier/TOKEN
+│       │   │
+│       │   └── admin/
+│       │       ├── render-admin-ui.js      # Команды/юзеры/глобальный тир (админка)
+│       │       └── render-admin-import.js  # CSV-импорт (легаси-путь, отдельно от Sheets)
 │       │
 │       └── draft/
 │           ├── render-bans-core.js
@@ -74,10 +94,10 @@ drafthub_ow/
 │           ├── render-bans-tournament-herobans.js
 │           └── render-draft-comp.js
 │
-└── supabase/
-    ├── 001_initial_schema.sql   # Все таблицы, индексы, триггеры, GRANT
-    ├── 002_roles_and_rls.sql    # Роли, права, RLS, RPC-функции
-    └── 005_personal_tiers.sql   # Личные тир-листы и share-ссылки (добавляет scope/user_id к tier_data)
+└── supabase/   # ⚠️ секция ниже не обновлена с MIGR-1 (001-005 переименованы/
+                # объединены в 001_tables/002_functions/003_rls/006-011,
+                # см. AGENT_FILE_LOG.md за актуальным списком) — отдельная задача,
+                # не входит в FILESPLIT-1
 ```
 
 > **Нумерация:** файлы 003 и 004 удалены (их содержимое вошло в 001 и 002).
@@ -309,12 +329,24 @@ cp .env.example .env   # SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_CLIENT_ID
 ```
 core/store → core/config
 auth/auth → auth/session → auth/team → auth/ui
-data/db-load → data/db-write → data/db-sync → data/sheets-bridge
+data/db/db-load → db-load-tiers → db-write → db-write-heroes → db-write-maps
+data/sheets/sheets-auth → sheets-import-parse → sheets-import-resolve → sheets-import
+     → sheets-export → sheets-import-ui → sheets-settings-panel
 scoring/scoring-maps → scoring-bans → scoring-comp
 picker/picker-core → picker-counters → picker-comp
 modals/modal-hero → modal-hero-chips → modal-hero-strength → modal-map
-render/render-utils → render-maps → render-heroes → render-tiers → render-tier-share
-       → render-players → render-roster → render-nav
+render/render-utils → render-maps → render-heroes
+render/tiers/render-tiers → render-tiers-dnd → render-tiers-preview → render-tier-share
+render/render-players → render-roster
+render/admin/render-admin-import → render-admin-ui
+render/render-nav
 draft/render-bans-core → render-bans-competitive → render-bans-tournament-draft
      → render-bans-tournament-herobans → render-draft-comp
 ```
+
+**FILESPLIT-1 (03.07):** `data/`/`render/` разрослись до 10 файлов каждая
+с двумя разными зонами ответственности внутри — разбиты на подпапки
+(`data/db/` + `data/sheets/`, `render/tiers/` + `render/admin/`). Заодно
+разбиты 3 крупных файла: `db-load.js` (418→247+193 строк), `render-tiers.js`
+(467→193+219+77), `sheets-import.js` (478→60+177+250). `db-write.js` уже был
+разбит раньше (см. CHANGELOG).
