@@ -1,4 +1,4 @@
-// @hash cf5ded7e 2026-07-03T06:51
+// @hash 47a1d430 2026-07-05T00:45
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -106,8 +106,14 @@ function _renderHeader() {
 
   // Фаза 7: вкладка «Админ» — только для admin/superadmin (app_metadata),
   // независимо от роли в текущей команде.
+  //
+  // БАГ (найден): el.style.display=isAdmin()?'':'none' не работал —
+  // '' не "включает" элемент, а лишь СНИМАЕТ inline-стиль, и браузер
+  // возвращается к CSS-правилу класса .admin-only{display:none} —
+  // кнопка Админ оставалась скрытой ДАЖЕ для superadmin. Переключаем
+  // сам класс, а не боремся с display напрямую.
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = isAdmin() ? '' : 'none';
+    el.classList.toggle('admin-only-visible', isAdmin());
   });
 
   renderAppModeSwitcher();
