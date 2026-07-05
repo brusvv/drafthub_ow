@@ -1,4 +1,4 @@
-// @hash 550944fc 2026-07-05T01:59
+// @hash 192051ee 2026-07-05T20:16
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -105,6 +105,11 @@ async function _onSignIn(joinToken) {
 
 function _onSignOut() {
   _session = null; _currentTeam = null;
+  // BACK-3: отписываемся от командного tier_entries-канала — при следующем
+  // switchTeam() (другого пользователя на этом же браузере, или того же
+  // после повторного входа) подписка пересоздастся сама на актуальный id,
+  // но висящий канал с УЖЕ невалидным контекстом сессии лучше не оставлять.
+  if(typeof _unsubscribeTeamTierRealtime === 'function') _unsubscribeTeamTierRealtime();
   // AUD-3: сбрасываем то же самое что и при switchTeam() — иначе на общем
   // браузере пользователь A начинает турнирный драфт (banMode/draftState/
   // tournMapPool/tournHeroBans), выходит, и пока страница в публичном
