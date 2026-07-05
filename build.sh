@@ -46,16 +46,21 @@ cat > "$OUT" <<'HEADER'
 <title>Draft Hub — Team Analyst</title>
 <!-- SEC-1: CSP — домены только те что реально используются (Supabase REST/RPC,
      Google Sheets API + Identity Services для экспорта/импорта, overfast-api
-     для портретов героев/карт, jsdelivr для supabase-js). unsafe-inline на
+     для скриншотов карт и как сам API-хост героев/карт, d15f34w2p8l1cc.
+     cloudfront.net — реальный CDN где OverFast API хостит ПОРТРЕТЫ героев
+     (отдельный домен от самого API — раньше не был в img-src, портреты
+     героев молча блокировались CSP), jsdelivr для supabase-js). unsafe-inline на
      script/style нужен пока весь JS монолитный инлайн и style="" используется
-     по всему коду — сужение это отдельный, гораздо больший рефакторинг. -->
+     по всему коду — сужение это отдельный, гораздо больший рефакторинг.
+     jsdelivr также в connect-src — браузер тянет .map файл (sourcemap) для
+     отладки бандла supabase-js отдельным запросом, не подпадает под script-src. -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
-  img-src 'self' data: https://static.wikia.nocookie.net https://overfast-api.tekrop.fr;
-  connect-src 'self' https://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr;
+  img-src 'self' data: https://static.wikia.nocookie.net https://overfast-api.tekrop.fr https://d15f34w2p8l1cc.cloudfront.net;
+  connect-src 'self' https://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr https://cdn.jsdelivr.net;
   frame-src https://accounts.google.com;
   object-src 'none';
   base-uri 'self';
