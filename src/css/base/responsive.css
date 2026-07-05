@@ -1,4 +1,3 @@
-/* @hash 30ed2fad 2026-07-05T02:54 */
 /* ════════════════════════════════════════════════
    responsive.css — адаптивность Draft Hub
    Breakpoints:
@@ -10,24 +9,33 @@
      xs  < 480px   (телефон)
    ════════════════════════════════════════════════ */
 
-/* ── XXL: 1440p и шире. Раньше xl (1200px) был единственной верхней точкой
-   и растягивался одинаково хоть на 1201px, хоть на 2560px — контент на
-   реальном 1440p выглядел так же тесно, как на обычном 13" ноутбуке.
-   Даём больше воздуха, но с потолком (max-width не растёт бесконечно
-   и на 4K/ultrawide — читаемая ширина важнее, чем "занять весь экран"). ── */
-@media (min-width:1440px){
-  .app{max-width:1360px}
-  .map-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
-  .hero-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-  .player-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-}
-
-/* ── XL: используем лишнее пространство ── */
+/* ── XL: используем лишнее пространство ──
+   ⚠️ Идёт ПЕРЕД XXL специально: оба блока совпадают одновременно на
+   ширине ≥1440px (min-width:1200px И min-width:1440px оба true), при
+   равной специфичности выигрывает объявление, которое позже в файле.
+   Раньше XXL шёл первым — XL тихо перебивал .map-grid/.hero-grid обратно
+   на более узкие XL-размеры на 1440p+, XXL-версия этих двух свойств
+   никогда не применялась (баг найден в Design Audit, не гипотетический —
+   .app{max-width} и .player-grid не были задеты, т.к. XL их не трогает,
+   поэтому баг был частичным и незаметным на глаз). ── */
 @media (min-width:1200px){
   .app{max-width:1160px}
   .map-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
   .hero-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
   .detail-grid{grid-template-columns:1fr 1fr}
+}
+
+/* ── XXL: 1440p и шире. Раньше xl (1200px) был единственной верхней точкой
+   и растягивался одинаково хоть на 1201px, хоть на 2560px — контент на
+   реальном 1440p выглядел так же тесно, как на обычном 13" ноутбуке.
+   Даём больше воздуха, но с потолком (max-width не растёт бесконечно
+   и на 4K/ultrawide — читаемая ширина важнее, чем "занять весь экран").
+   Идёт ПОСЛЕ XL — см. комментарий у XL-блока выше про порядок. ── */
+@media (min-width:1440px){
+  .app{max-width:1360px}
+  .map-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .hero-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .player-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 }
 
 /* ── MD: планшет горизонтально ── */
