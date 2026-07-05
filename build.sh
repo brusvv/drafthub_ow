@@ -44,7 +44,26 @@ cat > "$OUT" <<'HEADER'
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draft Hub — Team Analyst</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- SEC-1: CSP — домены только те что реально используются (Supabase REST/RPC,
+     Google Sheets API + Identity Services для экспорта/импорта, overfast-api
+     для портретов героев/карт, jsdelivr для supabase-js). unsafe-inline на
+     script/style нужен пока весь JS монолитный инлайн и style="" используется
+     по всему коду — сужение это отдельный, гораздо больший рефакторинг. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: https://static.wikia.nocookie.net https://overfast-api.tekrop.fr;
+  connect-src 'self' https://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr;
+  frame-src https://accounts.google.com;
+  object-src 'none';
+  base-uri 'self';
+">
+<!-- SEC-3: шрифт не блокирует первую отрисовку — preload+onload вместо
+     прямого <link rel="stylesheet">, noscript-фолбэк для отключённого JS. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js"></script>
 <style>
 HEADER
