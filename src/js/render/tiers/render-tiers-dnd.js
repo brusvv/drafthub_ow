@@ -1,4 +1,4 @@
-// @hash e9fb58cd 2026-07-04T23:29
+// @hash 0d76a204 2026-07-05T12:19
 // ════ RENDER — TIERS: РЯДЫ S/A/B/C/D + DRAG&DROP ════
 // Часть группы render-tiers-*.js (FILESPLIT-1, 03.07) — см. шапку
 // render-tiers.js за общим описанием разбивки.
@@ -69,7 +69,7 @@ function renderTierMaps(){
   el.innerHTML=['S','A','B','C','D'].map(t=>{
     const items=tierOrderMaps[t]||[];
     const style=ts[t];
-    return`<div class="tier-row" data-tier="${t}">
+    return`<div class="tier-row" data-tier="${t}" data-editable="${_canEditCurrentTier()}">
       <div class="tier-lbl" style="background:${style.bg};color:${style.c}">${t}</div>
       <div class="tier-maps" id="tierMapZone_${t}"
         ondragover="onDragOver(event,'maps','${t}')"
@@ -101,7 +101,7 @@ function renderTierHeroes(){
   el.innerHTML=['S','A','B','C','D'].map(t=>{
     const items=tierOrderHeroes[t]||[];
     const style=ts[t];
-    return`<div class="tier-row" data-tier="${t}">
+    return`<div class="tier-row" data-tier="${t}" data-editable="${_canEditCurrentTier()}">
       <div class="tier-lbl" style="background:${style.bg};color:${style.c}">${t}</div>
       <div class="tier-maps" id="tierHeroZone_${t}"
         ondragover="onDragOver(event,'heroes','${t}')"
