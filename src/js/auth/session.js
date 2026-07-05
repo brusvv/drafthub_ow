@@ -1,4 +1,4 @@
-// @hash 38004c68 2026-07-04T16:00
+// @hash 9fa3679d 2026-07-05T00:45
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -193,7 +193,9 @@ async function switchTeam(teamId) {
   const appRole = (await _sb.auth.getSession())?.data?.session?.user?.app_metadata?.app_role;
   window._jwtAppRole = appRole ?? null;
   const adminBtn = document.getElementById('navAdminBtn');
-  if(adminBtn) adminBtn.style.display = appRole ? '' : 'none';
+  // БАГ (тот же что в ui.js _renderHeader): style.display='' не включает
+  // элемент при наличии CSS-правила .admin-only{display:none} — переключаем класс.
+  if(adminBtn) adminBtn.classList.toggle('admin-only-visible', !!appRole);
 }
 
 // Сброс состояния специфичного для команды при переключении
