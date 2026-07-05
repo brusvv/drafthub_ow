@@ -1,4 +1,4 @@
-// @hash 1a10d363 2026-07-03T06:57
+// @hash 99ab242c 2026-07-05T11:48
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
