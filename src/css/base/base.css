@@ -1,4 +1,4 @@
-/* @hash a535fe91 2026-06-27T06:28 */
+/* @hash a58c703c 2026-07-05T00:45 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -219,3 +219,9 @@ body.public-mode #headerTeamName_public { display: inline !important; }
    isAdmin()/isSuperAdmin() — по умолчанию скрыта, в т.ч. в public-mode,
    где _renderHeader() вообще не вызывается. */
 .admin-only { display: none; }
+/* БАГ (найден): JS раньше делал el.style.display='' чтобы "показать" —
+   но '' лишь снимает inline-стиль, оставляя это правило (display:none)
+   в силе. Явный модификатор для показа вместо борьбы с display напрямую;
+   .nav-btn ничего не переопределяет для display, поэтому inline-block —
+   тот же браузерный дефолт что и у обычной <button>. */
+.admin-only.admin-only-visible { display: inline-block; }
