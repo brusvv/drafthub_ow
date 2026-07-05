@@ -53,14 +53,19 @@ cat > "$OUT" <<'HEADER'
      script/style нужен пока весь JS монолитный инлайн и style="" используется
      по всему коду — сужение это отдельный, гораздо больший рефакторинг.
      jsdelivr также в connect-src — браузер тянет .map файл (sourcemap) для
-     отладки бандла supabase-js отдельным запросом, не подпадает под script-src. -->
+     отладки бандла supabase-js отдельным запросом, не подпадает под script-src.
+     wss://*.supabase.co отдельно от https://*.supabase.co — БАГ (найден,
+     BACK-3): CSP различает схемы, https:// НЕ покрывает wss:// автоматически,
+     даже для того же хоста. Без явного wss:// Supabase Realtime (WebSocket)
+     блокировался CSP на этапе connect, а не молча деградировал — ошибка
+     в консоли, но обычный пользователь её не видит и решает что фича не работает. -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
   img-src 'self' data: https://static.wikia.nocookie.net https://overfast-api.tekrop.fr https://d15f34w2p8l1cc.cloudfront.net;
-  connect-src 'self' https://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr https://cdn.jsdelivr.net;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr https://cdn.jsdelivr.net;
   frame-src https://accounts.google.com;
   object-src 'none';
   base-uri 'self';
