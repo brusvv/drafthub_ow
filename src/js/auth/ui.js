@@ -143,7 +143,7 @@ async function renderTeamSettings() {
   const el = document.getElementById('view-settings'); if(!el) return;
   const team = currentTeam();
   el.innerHTML = `
-    <div style="max-width:680px">
+    <div class="panel-narrow">
       ${canManageRoles() ? `
       <div class="role-card" style="margin-bottom:16px">
         <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--text2)">Настройки команды</div>
