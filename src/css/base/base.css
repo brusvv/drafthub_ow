@@ -226,6 +226,13 @@ body.public-mode #headerTeamName_public { display: inline !important; }
    тот же браузерный дефолт что и у обычной <button>. */
 .admin-only.admin-only-visible { display: inline-block; }
 
+/* Замена inline style="max-width:680px/780px" в auth/ui.js (Настройки) и
+   render/admin/render-admin-ui.js (Админ) — были захардкожены без единой
+   точки адаптива, на 1440p+ давали много пустого пространства по бокам
+   при том что .app сам растёт до 1360px. XXL-апгрейд — responsive.css. */
+.panel-narrow{max-width:680px}
+.panel-medium{max-width:780px}
+
 /* ── SEC-2: focus-visible ──
    Убирает браузерный дефолтный outline на обычный клик мышью (визуально
    шумно, не несёт информации), но оставляет явное кольцо для клавиатурной
