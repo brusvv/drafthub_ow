@@ -1,5 +1,4 @@
 // @hash 6ba82d9f 2026-07-03T20:00
-// @hash PLACEHOLDER
 // ════ DATA — LOAD TIERS (Supabase) ════
 // Вынесено из db-load.js (FILESPLIT-1, 03.07 — файл разросся до 418 строк,
 // тир-часть больше половины и логически самодостаточна: свой набор
@@ -108,6 +107,58 @@ async function loadTeamTiers(){
   _teamTierListId = await _resolveTierListId('team', { teamId: _teamId() });
   const { mapsObj, heroesObj } = await _loadTierEntries(_teamTierListId);
   teamTierMaps = mapsObj; teamTierHeroes = heroesObj;
+  _subscribeTeamTierRealtime(_teamTierListId); // BACK-3
+}
+
+// ════ BACK-3 — realtime для совместной работы над командным тир-листом ════
+// Только team-scope: global редактирует только superadmin (редкие правки,
+// не требуют live-синка), personal — по определению один пользователь.
+// Именно team — сценарий "несколько тренеров одновременно двигают карты".
+//
+// Подписка живёт на _teamTierListId конкретной команды — при смене команды
+// (switchTeam) старый канал снимается и открывается новый на новый id,
+// иначе события чужой (предыдущей) команды продолжали бы прилетать.
+let _teamTierChannel       = null;
+let _teamTierChannelListId = null;  // на какой tier_list_id сейчас подписаны — избегаем пересоздания канала при повторных loadTeamTiers() с тем же id
+let _lastLocalTierWriteAt  = 0;     // db/db-write.js выставляет перед своей записью — окно подавления эха ниже
+
+function _subscribeTeamTierRealtime(tierListId){
+  if(tierListId === _teamTierChannelListId) return; // уже подписаны на этот же список — не пересоздаём канал зря
+  if(_teamTierChannel){ _sb.removeChannel(_teamTierChannel); _teamTierChannel = null; }
+  _teamTierChannelListId = tierListId;
+  if(!tierListId) return; // ещё не резолвлен (например, команда только создана) — переподпишемся на следующий loadTeamTiers()
+
+  _teamTierChannel = _sb.channel(`tier_entries_team_${tierListId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'tier_entries',
+      filter: `tier_list_id=eq.${tierListId}`,
+    }, () => _onTeamTierRealtimeChange(tierListId))
+    .subscribe();
+}
+
+function _unsubscribeTeamTierRealtime(){
+  if(_teamTierChannel){ _sb.removeChannel(_teamTierChannel); _teamTierChannel = null; }
+  _teamTierChannelListId = null;
+}
+
+async function _onTeamTierRealtimeChange(tierListId){
+  // Окно подавления эха собственной записи — см. комментарий у
+  // _lastLocalTierWriteAt выставления в db/db-write.js saveTierOrder().
+  // 2.5с с запасом покрывает: 800ms debounce в render-tiers-dnd.js +
+  // сетевой round-trip delete+insert батча + сам postgres_changes latency.
+  if(Date.now() - _lastLocalTierWriteAt < 2500) return;
+  if(tierListId !== _teamTierListId) return; // событие от уже сменённой команды — не должно случаться благодаря _teamTierChannelListId-проверке, но не доверяем молча
+
+  const { mapsObj, heroesObj } = await _loadTierEntries(tierListId);
+  teamTierMaps = mapsObj; teamTierHeroes = heroesObj;
+
+  // Перерисовываем только если реально смотрим на командный тир-лист —
+  // иначе просто тихо обновили данные, увидит при следующем переключении.
+  if(tierViewMode === 'team'){
+    _applyTierMode('team');
+    if(typeof renderTiers === 'function') renderTiers();
+    if(typeof toast === 'function') toast('Тир-лист обновлён другим участником команды', 'ok');
+  }
 }
 
 async function loadPersonalTiers(){
