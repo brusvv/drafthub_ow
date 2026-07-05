@@ -174,7 +174,7 @@ function _renderSharedTierView(data){
       // cursor:default — read-only, без drag.
       return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
-        <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
+        <div class="tier-lbl" style="background:${ts[tier].bg};color:${ts[tier].c}">${tier}</div>
         <div class="shared-hero-grid" style="flex:1">
           ${names.map(name => {
             const hidden = _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
@@ -191,7 +191,7 @@ function _renderSharedTierView(data){
     // приложении), своя responsive-сетка через .shared-map-pill/-grid ниже в <style>
     return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
-        <div class="tier-badge" style="background:${ts[tier].bg};color:${ts[tier].c};width:40px;height:40px;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800">${tier}</div>
+        <div class="tier-lbl" style="background:${ts[tier].bg};color:${ts[tier].c}">${tier}</div>
         <div class="shared-map-grid" style="flex:1">
           ${names.map(name => {
             const hidden = _sharedMapType!=='all' && typeByName[name] && typeByName[name]!==_sharedMapType;
@@ -239,8 +239,13 @@ function _renderSharedTierView(data){
   document.body.innerHTML = `
     <style>
       /* Самодостаточный блок — переопределяет размеры поверх базовых классов
-         .tier-hero-pill/.tier-badge/.tier-maps (они уже в общем tiers.css,
-         тот же index.html), плюс свои .shared-map-pill (картиночные превью
+         .tier-hero-pill/.tier-lbl/.tier-maps (они уже в общем tiers.css,
+         тот же index.html — БАГ был найден и исправлен: буква тира здесь
+         рисовалась через отдельный .tier-badge с захардкоженными inline
+         width/height/font-size, никак не связанный с .tier-lbl из tiers.css —
+         не наследовала ни увеличенный шрифт, ни любые будущие правки размера
+         "родного" класса. Теперь оба места — один и тот же .tier-lbl),
+         плюс свои .shared-map-pill (картиночные превью
          карт, не текстовые .tier-pill как в основном приложении).
 
          Раскладка карт/героев — CSS Grid auto-fill, а не flex-wrap: даёт
