@@ -17,7 +17,7 @@ async function renderAdminPanel() {
   }
 
   el.innerHTML = `
-    <div style="max-width:780px">
+    <div class="panel-medium">
       <div class="admin-tabs" style="display:flex;gap:6px;margin-bottom:16px">
         <button class="f-btn active" onclick="_switchAdminTab('import',this)">📥 Импорт CSV</button>
         <button class="f-btn" onclick="_switchAdminTab('teams',this)">👥 Команды</button>
