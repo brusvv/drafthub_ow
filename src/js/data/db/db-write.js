@@ -1,4 +1,3 @@
-// @hash 5c84f97c 2026-07-04T23:29
 // ════ DATA — WRITE (Supabase) ════
 // Общие хелперы (_requireWrite, _resolveIds) + players + tiers + share-links.
 // Героев и карты см. db-write-heroes.js / db-write-maps.js (вынесены отсюда —
@@ -111,7 +110,15 @@ async function saveTierOrder(entityType, tierObj){
     if(!isSuperAdmin()){ toast('Редактировать глобальный тир-лист может только superadmin', 'err'); return; }
     if(!_globalTierListId){ toast('Глобальный тир-лист ещё не готов, попробуй ещё раз', 'err'); return; }
     const ok = await _writeTierEntries(_globalTierListId, entityType, tierObj);
-    if(!ok) return;
+    if(!ok){
+      // BACK-1: откат — сеть упала, но карточка уже "успешно" перетащена
+      // локально (оптимистичный рендер в onDrop). Перечитываем настоящее
+      // серверное состояние вместо попытки восстановить локальный снапшот —
+      // из-за debounce (800ms) несколько drag могли схлопнуться в один
+      // network-запрос, откатывать конкретно "предыдущий" снапшот не к чему.
+      await loadGlobalTiers(); renderTiers();
+      return;
+    }
     await loadGlobalTiers();
     toast('Глобальный тир-лист сохранён ✓', 'ok');
     return;
@@ -125,7 +132,12 @@ async function saveTierOrder(entityType, tierObj){
   if(!tierListId){ toast('Тир-лист ещё не готов, попробуй ещё раз через секунду', 'err'); return; }
 
   const ok = await _writeTierEntries(tierListId, entityType, tierObj);
-  if(!ok) return;
+  if(!ok){
+    // BACK-1 откат — см. комментарий у global-ветки выше, тот же принцип
+    if(isPersonal) await loadPersonalTiers(); else await loadTeamTiers();
+    renderTiers();
+    return;
+  }
 
   if(isPersonal){ personalTierMaps = tierOrderMaps; personalTierHeroes = tierOrderHeroes; }
   else           { teamTierMaps     = tierOrderMaps; teamTierHeroes     = tierOrderHeroes; }
