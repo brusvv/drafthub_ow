@@ -104,6 +104,14 @@ async function deletePlayer(){
 // global_tier_data, team/personal — delete+insert в tier_data. Теперь один
 // путь _writeTierEntries() для всех трёх, отличается только tier_list_id. ════
 async function saveTierOrder(entityType, tierObj){
+  // BACK-3: единая точка отсечки для realtime-подписки на tier_entries —
+  // _writeTierEntries ниже делает delete+insert батчем, это НЕСКОЛЬКО
+  // postgres_changes событий на один drag&drop. Без окна подавления (см.
+  // _onTeamTierRealtimeChange, db/db-load-tiers.js) собственное же
+  // изменение прилетало бы обратно как "чужое" и дёргало перерисовку
+  // поверх ещё не устаканившегося optimistic-состояния (BACK-1).
+  _lastLocalTierWriteAt = Date.now();
+
   const isPersonal = tierViewMode === 'personal';
   const isGlobal   = tierViewMode === 'global';
 
