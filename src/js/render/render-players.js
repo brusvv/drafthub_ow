@@ -1,4 +1,3 @@
-// @hash c073d9c1 2026-06-14T08:30
 // ════════════════════════════════════════════════════════════
 // render-players.js — вкладка «Игроки»
 //
@@ -62,7 +61,7 @@ function renderPlayers(){
     return;
   }
 
-  grid.innerHTML = players.map(p => {
+  grid.innerHTML = players.map((p, idx) => {
     const isFlex = p.mainRole === 'Flex';
     const hasOff = p.offRole && p.offRole !== p.mainRole;
     const mainH  = isFlex ? flexTop5(p) : p.mainHeroes.slice(0,5);
@@ -79,7 +78,7 @@ function renderPlayers(){
         : `<div class="mini-av-ph">${n[0]}</div>`;
     }).join('');
 
-    return `<div class="player-card" data-name="${esc(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
+    return `<div class="player-card" style="--card-i:${Math.min(idx,12)}" data-name="${esc(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
       <div class="player-card-top">
         <div class="player-av">${p.name[0].toUpperCase()}</div>
         <div><div class="player-name">${p.name}</div><div class="player-btag">${p.btag||'—'}</div></div>
