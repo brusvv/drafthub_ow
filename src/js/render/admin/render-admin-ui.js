@@ -1,4 +1,4 @@
-// @hash e7cf0a5c 2026-06-25T22:21
+// @hash d6b132aa 2026-07-05T12:22
 // ════ ADMIN UI — навигация, команды, пользователи, глобальный тир-лист ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isAdmin, isSuperAdmin, currentTeam, currentUser),
@@ -121,12 +121,16 @@ async function _submitSetAppRole() {
 // ════ ГЛОБАЛЬНЫЙ ТИР-ЛИСТ ════
 async function _renderGlobalTiersTab(el) {
   el.innerHTML = '<div style="color:var(--text3);font-size:12px">Загрузка...</div>';
-  const { data, error } = await _sb.from('global_tier_data')
-    .select('entity_type,name,tier').order('entity_type').order('tier');
-  if(error) { el.innerHTML = `<div class="admin-error">${error.message}</div>`; return; }
+  // BUG-FIX (переприменено — потеряно между сессиями, см. CHANGELOG BUG-11-класс):
+  // раньше запрос шёл в global_tier_data — таблица удалена в MIGR-1
+  // (007_catalog_tables.sql), переехала в единый tier_lists/tier_entries на
+  // 3 scope. Переиспользуем _resolveTierListId/_loadTierEntries из
+  // db-load-tiers.js (MIGR-2) — та же логика что читает public /tier
+  // страницу и обычный global-режим, не пишем параллельный запрос.
+  const globalListId = await _resolveTierListId('global', {});
+  const { mapsObj, heroesObj } = await _loadTierEntries(globalListId);
 
-  const byType = { map:{S:[],A:[],B:[],C:[],D:[]}, hero:{S:[],A:[],B:[],C:[],D:[]} };
-  (data||[]).forEach(r => { if(byType[r.entity_type]?.[r.tier]) byType[r.entity_type][r.tier].push(r.name); });
+  const byType = { map: mapsObj, hero: heroesObj };
 
   const renderType = (label, type) => `
     <div style="margin-bottom:16px">
