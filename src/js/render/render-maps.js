@@ -1,4 +1,3 @@
-// @hash 7a038437 2026-07-02T09:27
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -48,10 +47,10 @@ function renderMaps(){
     countEl.textContent=`${n} карт${n===1?'а':n>=2&&n<=4?'ы':''}`;
   }
   if(!filtered.length){grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Карта" или Seed.</div>';return}
-  grid.innerHTML=filtered.map(m=>{
+  grid.innerHTML=filtered.map((m,idx)=>{
     const src=mapImg(m.name);
     const noAD=NO_ATKDEF.includes(m.type);
-    return`<div class="map-card" onclick="showMapDetail('${esc(m.name)}')">
+    return`<div class="map-card" style="--card-i:${Math.min(idx,12)}" onclick="showMapDetail('${esc(m.name)}')">
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
