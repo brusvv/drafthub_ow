@@ -1,4 +1,3 @@
-// @hash b437f00d 2026-06-25T22:21
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
@@ -34,7 +33,7 @@ function _renderImportTab(el) {
         <label class="admin-file-label">
           <input type="file" id="adminCsvFile" accept=".csv" onchange="_onCsvFileSelected(this)"
             style="display:none">
-          <span class="btn" onclick="document.getElementById('adminCsvFile').click()">
+          <span class="btn">
             📂 Выбрать CSV файл
           </span>
           <span id="adminCsvFileName" style="font-size:11px;color:var(--text3);margin-left:8px">Файл не выбран</span>
@@ -313,18 +312,62 @@ async function _importHeroSynergy(teamId, rows) {
 }
 
 // ── Импорт глобального тир-листа ──
+// BUG-FIX: раньше писал в global_tier_data (текстовые entity_type/name) —
+// таблица удалена в MIGR-1, переехала в tier_lists/tier_entries (hero_id/
+// map_id FK на каталог). Не через generic _batchUpsert — idx_tier_entries_
+// hero/_map частичные unique-индексы, чистый UPSERT с ON CONFLICT под них
+// не работает (та же причина что в sheets-import.js importTiersFromSheets),
+// нужен delete-then-insert. Резолв имён → id берём готовый из
+// _resolveHeroId/_resolveMapId (sheets-import-resolve.js, MIGR-6) — не
+// пишем вторую версию резолвера.
 async function _importGlobalTiers(rows) {
-  const mapped = rows
-    .filter(r => r.entity_type && r.name && r.tier && ['S','A','B','C','D'].includes(r.tier))
-    .map(r => ({
-      entity_type: r.entity_type,
-      name:        r.name,
-      tier:        r.tier,
-      updated_by:  currentUser()?.id,
-    }));
-  const skipped = rows.length - mapped.length;
-  const result  = await _batchUpsert('global_tier_data', mapped, 'entity_type,name');
-  return { ...result, skipped: result.skipped + skipped };
+  if(!isSuperAdmin()){
+    return { imported: 0, skipped: 0, errors: ['Глобальный тир-лист может импортировать только суперадминистратор'] };
+  }
+
+  const posCounters = { hero: {}, map: {} };
+  const unresolved = [];
+  const entries = rows
+    .filter(r => r.entity_type && r.name && ['S','A','B','C','D'].includes(r.tier))
+    .map(r => {
+      const entityType = r.entity_type === 'map' ? 'map' : 'hero';
+      const id = entityType === 'map' ? _resolveMapId(r.name) : _resolveHeroId(r.name);
+      if(!id){ unresolved.push(r.name); return null; }
+      const bucket = posCounters[entityType];
+      if(!(r.tier in bucket)) bucket[r.tier] = 0;
+      const position = bucket[r.tier]++;
+      return {
+        entity_type: entityType,
+        hero_id: entityType === 'hero' ? id : null,
+        map_id:  entityType === 'map'  ? id : null,
+        tier: r.tier, position,
+      };
+    })
+    .filter(Boolean);
+
+  const skipped = rows.length - entries.length;
+  if(!entries.length) return { imported: 0, skipped, errors: [] };
+
+  const tierListId = await _resolveTierListId('global', {});
+  if(!tierListId) return { imported: 0, skipped, errors: ['Не удалось определить глобальный тир-лист'] };
+
+  const entryRows = entries.map(e => ({ ...e, tier_list_id: tierListId }));
+
+  // Полный ре-импорт заменяет ВЕСЬ глобальный список по каждому затронутому
+  // entity_type — так же ведёт себя import из Sheets (importTiersFromSheets),
+  // не точечный upsert по строкам.
+  const touchedTypes = [...new Set(entryRows.map(e => e.entity_type))];
+  for(const t of touchedTypes){
+    const { error: delErr } = await _sb.from('tier_entries').delete()
+      .eq('tier_list_id', tierListId).eq('entity_type', t);
+    if(delErr) return { imported: 0, skipped, errors: [delErr.message] };
+  }
+
+  const { error: insErr } = await _sb.from('tier_entries').insert(entryRows);
+  if(insErr) return { imported: 0, skipped, errors: [insErr.message] };
+
+  if(unresolved.length) console.warn(`[admin CSV] GlobalTiers: не найдены в каталоге — ${[...new Set(unresolved)].join(', ')}`);
+  return { imported: entryRows.length, skipped, errors: [] };
 }
 
 // ── Хелпер парсинга контрпиков из CSV ──
