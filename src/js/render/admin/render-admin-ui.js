@@ -1,4 +1,4 @@
-// @hash d810494a 2026-07-05T15:37
+// @hash 2e07bb20 2026-07-05T20:20
 // ════ ADMIN UI — навигация, команды, пользователи, глобальный тир-лист ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isAdmin, isSuperAdmin, currentTeam, currentUser),
@@ -132,6 +132,14 @@ async function _renderGlobalTiersTab(el) {
 
   const byType = { map: mapsObj, hero: heroesObj };
 
+  // БАГ (найден): `${data?.length || 0} записей` — data осталась от СТАРОГО
+  // запроса к global_tier_data (см. комментарий выше про BUG-FIX), после
+  // переезда на _loadTierEntries() эта переменная нигде не объявлена —
+  // ReferenceError при каждом открытии вкладки. Считаем из реальных данных.
+  const totalCount = ['S','A','B','C','D'].reduce(
+    (sum, t) => sum + mapsObj[t].length + heroesObj[t].length, 0
+  );
+
   const renderType = (label, type) => `
     <div style="margin-bottom:16px">
       <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">${label}</div>
@@ -145,7 +153,7 @@ async function _renderGlobalTiersTab(el) {
   el.innerHTML = `
     <div class="admin-section">
       <div class="admin-section-title">Глобальный тир-лист
-        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:8px">${data?.length || 0} записей</span>
+        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:8px">${totalCount} записей</span>
       </div>
       <p class="admin-desc">Редактировать через вкладку Tier List (режим «Глобальный»), или через импорт CSV выше.</p>
       ${renderType('Карты', 'map')}
