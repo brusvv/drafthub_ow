@@ -129,6 +129,9 @@ async function renderPublicMode() {
   // Класс на body — CSS прячет всё, что требует авторизации
   // (Настройки, Sync, Выйти, остальные вкладки) — см. base.css
   document.body.classList.add('public-mode');
+  // POL-1: сбрасываем заголовок вкладки на дефолт — предыдущая команда
+  // (если была) уже не активна.
+  document.title = 'Draft Hub — Team Analyst';
 
   authScreen.style.display = 'none';
   appEl.style.display      = '';
@@ -168,6 +171,9 @@ async function switchTeam(teamId) {
     permissions: new Set(ctx.permissions || []),
   };
   localStorage.setItem('draft_active_team', teamId);
+  // POL-1: заголовок вкладки отражает активную команду — удобно различать
+  // несколько открытых вкладок с разными командами.
+  document.title = `${_currentTeam.name} — Draft Hub`;
 
   // Сбрасываем состояние предыдущей команды до загрузки новых данных
   _resetTeamSpecificState();
