@@ -1,4 +1,3 @@
-// @hash cbafee55 2026-07-05T02:39
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -47,7 +46,11 @@ function renderMaps(){
     const n=filtered.length;
     countEl.textContent=`${n} карт${n===1?'а':n>=2&&n<=4?'ы':''}`;
   }
-  if(!filtered.length){grid.innerHTML='<div class="empty">Нет карт. Нажми "+ Карта" или Seed.</div>';return}
+  if(!filtered.length){grid.innerHTML=`<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">Ничего не найдено</div>
+      <div class="empty-desc">Попробуй сбросить фильтр по типу или пулу карт</div>
+    </div>`;return}
   grid.innerHTML=filtered.map((m,idx)=>{
     const src=mapImg(m.name);
     const noAD=NO_ATKDEF.includes(m.type);
