@@ -16,8 +16,12 @@
 // отдельно обрабатывать hard-reload здесь не нужно, достаточно один раз
 // прочитать pathname при старте (см. session.js switchTeam → _viewFromPath).
 const VIEW_PATHS = {
-  maps: '/maps', heroes: '/heroes', tiers: '/tiers', bans: '/bans',
+  maps: '/maps', heroes: '/heroes', tiers: '/tiers', bans: '/draft',
   players: '/players', roster: '/roster', settings: '/settings', admin: '/admin',
+  // ⚠️ Внутренний ключ 'bans' и view-bans/renderBans() остаются как есть —
+  // это просто внутреннее имя, не URL. Меняем только публичный путь: кнопка
+  // в nav уже называется "Драфт" (main-app.html), теперь и адресная строка
+  // соответствует (/draft вместо /bans).
 };
 
 // pathname → ключ вкладки, или null если путь ни на что не похож
