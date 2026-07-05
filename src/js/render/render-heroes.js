@@ -1,4 +1,3 @@
-// @hash 55152e4e 2026-07-02T08:05
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -9,6 +8,14 @@ function renderHeroes(){
     addBtn.disabled = !isTeamMode;
     addBtn.title = isTeamMode ? '' : 'Создание героев доступно только в командном режиме';
   }
+
+  // POL-2 (JS-часть): счётчик карточек сквозной по всей вьюхе (не сбрасывается
+  // на каждой подгруппе роли/подкласса) — иначе анимация fade-up (base.css)
+  // переигрывала бы с задержки 0 в начале каждой подгруппы, что выглядело бы
+  // как повторяющийся "рывок" вместо одной плавной волны сверху вниз.
+  // Math.min(...,12) — после 12-й карточки задержка перестаёт расти, иначе
+  // длинные списки грузились бы визуально "долго" по нарастающей.
+  let _cardIdx = 0;
 
   const pool=document.getElementById('heroPool');
   const roles=heroFilter==='all'?['Tank','Damage','Support']:[heroFilter];
@@ -46,7 +53,7 @@ function renderHeroes(){
               <div class="h-counter-score" style="color:${cc}">${c.score}</div>
             </div>`;
           }).join('');
-          return`<div class="h-card ${hero.banned?'banned':''}" onclick="openHeroInfoPopup('${esc(hero.name)}')">
+          return`<div class="h-card ${hero.banned?'banned':''}" style="--card-i:${Math.min(_cardIdx++,12)}" onclick="openHeroInfoPopup('${esc(hero.name)}')">
             <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
             ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
             ${hero.banned?'<div class="banned-tag">БАН</div>':''}
