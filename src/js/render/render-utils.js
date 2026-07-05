@@ -1,4 +1,3 @@
-// @hash 89e2de64 2026-06-25T10:08
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -115,6 +114,52 @@ function closeTopModal() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.preventDefault(); closeTopModal(); }
 });
+
+// ════ ФОКУС-МЕНЕДЖМЕНТ МОДАЛОК (Design Audit #1, пункт 6) ════
+// До этого фикса: ни одна модалка не ловила Tab — клавиатурный пользователь
+// уводился фокусом в фон под открытой модалкой. Централизовано здесь (не
+// в каждом open*Modal() по отдельности — их много и разбросаны по файлам,
+// единой точки открытия нет) через MutationObserver на класс .hidden у
+// .modal-overlay/.picker-overlay — работает для любой такой модалки без
+// правок в остальных файлах.
+// ⚠️ Не покрывает compMapPopup/rosterPickerBg (см. knownIds выше) — они
+// создаются через insertAdjacentHTML и удаляются через .remove(), не
+// toggle класса .hidden, другой паттерн. Отдельная задача, не в этом фиксе.
+function _focusableIn(container){
+  return Array.from(container.querySelectorAll(
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+  )).filter(el => el.offsetParent !== null);
+}
+
+let _focusBeforeModal = null;
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const modal = document.querySelector('.modal-overlay:not(.hidden), .picker-overlay:not(.hidden)');
+  if (!modal) return;
+  const list = _focusableIn(modal);
+  if (!list.length) return;
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+
+new MutationObserver(muts => {
+  muts.forEach(m => {
+    const el = m.target;
+    if (!el.classList || !(el.classList.contains('modal-overlay') || el.classList.contains('picker-overlay'))) return;
+    if (!el.classList.contains('hidden')) {
+      // Модалка только что открылась — запоминаем откуда пришли, фокусируем первое поле
+      _focusBeforeModal = document.activeElement;
+      const list = _focusableIn(el);
+      if (list.length) list[0].focus();
+    } else if (_focusBeforeModal) {
+      // Закрылась — возвращаем фокус туда, откуда открыли (кнопка "+ Герой" и т.д.)
+      _focusBeforeModal.focus();
+      _focusBeforeModal = null;
+    }
+  });
+}).observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
 
 // ════════════════════════════════════════════════════════════
 // УВЕДОМЛЕНИЯ И ОШИБКИ
