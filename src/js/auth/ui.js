@@ -1,4 +1,3 @@
-// @hash 13045638 2026-07-05T20:16
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -195,7 +194,7 @@ async function _renderMembersTab(el){
             <select class="form-select" style="width:130px;font-size:11px" onchange="setMemberRole('${m.id}',this.value)">
               ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
             </select>
-            <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')">✕</button>
+            <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')" aria-label="Удалить участника ${esc(name)}">✕</button>
           ` : `<span class="role-tag" style="font-size:10px">${roleLabel}</span>`}
         </div>`;
       }).join('')}
@@ -288,7 +287,7 @@ async function _renderInvitesTab(el){
             <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${BASE_PATH}/join/${inv.token}</code>
             <span style="color:var(--text3)">${inv.roles?.label||''}</span>
             <span style="color:var(--text3)">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
-            <button class="btn btn-danger" style="font-size:9px;padding:2px 6px" onclick="deleteInvite('${inv.id}')">✕</button>
+            <button class="btn btn-danger" style="font-size:9px;padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+esc(inv.roles.label):''}">✕</button>
           </div>`).join('')}
       </div>` : '<div class="empty">Нет активных инвайтов</div>'}`;
 }
