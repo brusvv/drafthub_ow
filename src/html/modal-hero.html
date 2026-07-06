@@ -4,7 +4,7 @@
     <!-- Заголовок с кнопкой X справа -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <div class="modal-title" id="heroModalTitle" style="margin:0">Редактировать героя</div>
-      <button onclick="closeModal('heroModal')" style="background:none;border:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px" title="Закрыть">×</button>
+      <button onclick="closeModal('heroModal')" style="background:none;border:none;color:var(--text3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px" title="Закрыть" aria-label="Закрыть">×</button>
     </div>
     <input type="hidden" id="heroEditRow">
     <div id="heroModeNote" style="display:none;font-size:11px;color:var(--text3);background:var(--bg3);
@@ -57,7 +57,7 @@
       </div>
     </div>
 
-    <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="hNotes" placeholder="Комментарии..."></textarea></div>
+    <div class="form-group"><label class="form-label">Заметки</label><textarea class="form-textarea" id="hNotes" placeholder="Комментарии..." maxlength="500"></textarea></div>
 
     <div class="modal-footer">
       <button class="btn btn-danger" id="heroDeleteBtn" onclick="deleteHero()" style="display:none">Удалить</button>
