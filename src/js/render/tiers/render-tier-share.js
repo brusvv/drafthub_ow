@@ -1,4 +1,3 @@
-// @hash 2d7c0618 2026-07-05T20:16
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -24,7 +23,7 @@ async function renderTierSharePanel(){
         <div style="font-size:13px;font-weight:700">Поделиться тир-листом</div>
         ${activeSet ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">Сет: ${activeSet.name}</div>` : ''}
       </div>
-      <button onclick="document.getElementById('tierSharePanel').remove()"
+      <button onclick="document.getElementById('tierSharePanel').remove()" aria-label="Закрыть панель"
         style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">×</button>
     </div>
     <p style="font-size:11px;color:var(--text3);margin-bottom:12px">
@@ -73,7 +72,7 @@ async function renderTierSharePanel(){
             </label>
             <button onclick="copyShareLink('${l.token}')"
               class="btn btn-xs">Скопировать</button>
-            <button onclick="deleteShareLink('${l.id}')"
+            <button onclick="deleteShareLink('${l.id}')" aria-label="Удалить ссылку ${esc(l.label || _shareEntityLabel(l.entity_type))}"
               class="btn btn-danger btn-xs">✕</button>
           </div>`;
         }).join('')}
