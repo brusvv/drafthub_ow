@@ -1,4 +1,4 @@
-/* @hash 88738e6e 2026-07-05T20:16 */
+/* @hash 0520ba70 2026-07-09T11:39 */
 /* ── TIER LIST ──
    .tier-row/.tier-lbl/.tier-maps/.tier-pill дублировались здесь и в блоке
    "TIER DRAG & DROP" ниже. Проверено построчно (cascade + box model, см.
@@ -52,8 +52,8 @@
 .tier-hero-pill{position:relative;cursor:grab;transition:transform .1s,opacity .1s;flex-shrink:0}
 .tier-hero-pill:hover{transform:translateY(-2px)}
 .tier-hero-pill.dragging{opacity:.35;cursor:grabbing;transform:scale(.96)}
-.tier-hero-pill img{width:48px;height:48px;border-radius:7px;object-fit:cover;display:block;border:2px solid transparent}
-.tier-hero-pill-ph{width:48px;height:48px;border-radius:7px;background:var(--bg3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
+.tier-hero-pill img{width:var(--fluid-icon-tier-pill);height:var(--fluid-icon-tier-pill);border-radius:7px;object-fit:cover;display:block;border:2px solid transparent}
+.tier-hero-pill-ph{width:var(--fluid-icon-tier-pill);height:var(--fluid-icon-tier-pill);border-radius:7px;background:var(--bg3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
 .tier-hero-pill[data-role="Tank"] img,.tier-hero-pill[data-role="Tank"] .tier-hero-pill-ph{border-color:var(--tank)}
 .tier-hero-pill[data-role="Damage"] img,.tier-hero-pill[data-role="Damage"] .tier-hero-pill-ph{border-color:var(--damage)}
 .tier-hero-pill[data-role="Support"] img,.tier-hero-pill[data-role="Support"] .tier-hero-pill-ph{border-color:var(--support)}
