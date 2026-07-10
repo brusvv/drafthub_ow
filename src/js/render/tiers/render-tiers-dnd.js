@@ -1,4 +1,4 @@
-// @hash 0d76a204 2026-07-05T12:19
+// @hash 6c6ecd15 2026-07-09T11:39
 // ════ RENDER — TIERS: РЯДЫ S/A/B/C/D + DRAG&DROP ════
 // Часть группы render-tiers-*.js (FILESPLIT-1, 03.07) — см. шапку
 // render-tiers.js за общим описанием разбивки.
@@ -98,6 +98,11 @@ function renderTierMaps(){
 function renderTierHeroes(){
   initTierHeroes();
   const el=document.getElementById('tierListHeroes');
+  // DESIGN-1: сквозной счётчик через все 5 тиров (S/A/B/C/D), не сбрасывается
+  // на каждом — та же логика что в render-heroes.js для подролей: иначе
+  // fade-up анимация "перезапускалась" бы с задержки 0 в начале каждого тира,
+  // выглядело бы как повторяющийся рывок вместо одной волны сверху вниз.
+  let _cardIdx=0;
   el.innerHTML=['S','A','B','C','D'].map(t=>{
     const items=tierOrderHeroes[t]||[];
     const style=ts[t];
@@ -118,7 +123,7 @@ function renderTierHeroes(){
           const heroSubrole=h?.subrole??catHero?.subrole;
           const hidden=tierHeroRoleFilter!=='all'&&heroRole&&heroRole!==tierHeroRoleFilter;
           const tipText=heroSubrole?`${name} · ${heroSubrole}`:name;
-          return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
+          return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" style="--card-i:${Math.min(_cardIdx++,12)}" draggable="${_canEditCurrentTier()}"
             data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${heroRole||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
