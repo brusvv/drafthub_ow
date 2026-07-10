@@ -1,4 +1,4 @@
-/* @hash c5ef87d6 2026-07-07T21:32 */
+/* @hash 137568c2 2026-07-09T11:39 */
 /* ════════════════════════════════════════════════
    responsive.css — адаптивность Draft Hub
    Breakpoints:
@@ -25,39 +25,13 @@
   .hero-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
   .detail-grid{grid-template-columns:1fr 1fr}
 
-  /* Общий #pickerOverlay (openPicker() из picker-core.js) — используется
-     и обычным Драфтом (выбор героев для банов, render-bans-competitive.js)
-     и другими picker-режимами. Ни разу не масштабировался вверх — только
-     вниз для мобильных (см. SM/XS ниже), поэтому на широких экранах
-     оставался capped на "ноутбучных" 680px/88px, тогда как весь остальной
-     контент вокруг (см. .app/.hero-grid выше) уже растёт. */
-  .picker-box{max-width:760px}
-  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
-
-  /* Турнирный драфт — баны героев по картам (render-bans-tournament-herobans.js).
-     .comp-ban-chip — отдельный, не связанный с picker-grid компонент
-     (это не попап, а всегда видимая инлайн-сетка), тоже не имел вообще
-     никакого responsive-масштабирования вверх. */
-  .comp-ban-chip{width:40px;height:40px}
-
-  /* Драфт — .ban-panel сам по себе безразмерный (стилями заданы только
-     background/border/padding), его ширину полностью определяет родитель
-     #view-bans. Та же история что и с .panel-narrow/.panel-medium ниже:
-     эта строка раньше была ТОЛЬКО в XXL — в диапазоне 1200-1439px
-     #view-bans оставался без ограничения совсем, что визуально выглядело
-     непоследовательно на фоне уже расширенного .app. Переносим сюда же,
-     тем же значением (900px и в XL, и в XXL — это финальный комфортный
-     потолок читаемости для списка банов, а не промежуточный шаг роста). */
-  #view-bans{max-width:900px}
-
-  /* Настройки/Админ — раньше жёстко захардкожены inline (max-width:680px/
-     780px в auth/ui.js и render/admin/render-admin-ui.js). Классы
-     .panel-narrow/.panel-medium существовали только с base-значениями
-     (680/780, см. base.css) и XXL-апгрейдом ниже — между 1200 и 1439px
-     не было ПРОМЕЖУТОЧНОГО шага роста вообще, та же дыра что была у
-     .app/.hero-grid/.map-grid до их XL-фикса. */
-  .panel-narrow{max-width:760px}
-  .panel-medium{max-width:880px}
+  /* .picker-box/.picker-grid/.comp-ban-chip/#view-bans/.panel-narrow/
+     .panel-medium раньше жили здесь как отдельные фиксированные ступени
+     (760px/96px/40px/900px/760px/880px) — заменено на непрерывный
+     clamp()-рост через --fluid-* переменные (см. base.css :root), которые
+     уже применены прямо в base-правилах (bans.css/base.css) и работают
+     на ЛЮБОЙ ширине, не только на 1200/1440px. Ступеней с этими же
+     значениями в XXL-блоке ниже больше нет — искать их там не нужно. */
 }
 
 /* ── XXL: 1440p и шире. Раньше xl (1200px) был единственной верхней точкой
@@ -77,10 +51,10 @@
      трогал только map/hero/player-grid — остальные разделы оставались
      в "ноутбучных" 13" размерах на большом мониторе. */
 
-  /* Tier List — герои: были 48px и на 1440p, весь остальной контент
-     растёт (см. hero-grid выше), а тут — нет, из-за чего ряды тиров
-     выглядели "потерянными" в лишнем пространстве строки. */
-  .tier-hero-pill img,.tier-hero-pill-ph{width:58px;height:58px}
+  /* Tier List — герои: было 48px флэт до 1440px, скачок на 58px — теперь
+     непрерывный рост через --fluid-icon-tier-pill (см. base.css :root,
+     tiers.css), это XXL-правило больше не нужно. Font-size плейсхолдера
+     оставлен явным — он не в переменной, отдельная мелкая деталь. */
   .tier-hero-pill-ph{font-size:21px}
 
   /* Фильтры/навигация — 10px читается некрупно на 1440p+, где пиксель
@@ -88,26 +62,13 @@
   .f-btn,.nav-btn{font-size:11px;padding-top:7px;padding-bottom:7px}
 
   /* Драфт — #bansGrid это flex-column (см. bans.css), одна узкая колонка
-     чипов. max-width для #view-bans теперь задаётся в XL-блоке выше
-     (тем же значением 900px — работает и здесь, min-width-медиа-запросы
-     не "выключаются" на более широких экранах) — сюда переносить не нужно,
-     дублирование значения тут же было тем самым паттерном, который сам
-     ловился как баг в этом файле несколько раз. Здесь оставлены только
-     ban-chip — они РЕАЛЬНО другие на этом шаге (28px, иконка растёт до 34px). */
-  .ban-chip img,.ban-chip-ph{width:34px;height:34px}
-  .ban-chip-name{font-size:12px}
-
-  /* Настройки/Админ — раньше жёстко захардкожены inline (max-width:680px/
-     780px в auth/ui.js и render/admin/render-admin-ui.js) без единой точки
-     адаптива. Теперь классы вместо inline — здесь один общий XXL-апгрейд. */
-  .panel-narrow{max-width:820px}
-  .panel-medium{max-width:960px}
-
-  /* Продолжение XL-фикса выше (см. комментарий там) — тот же
-     #pickerOverlay/.comp-ban-chip, ещё один шаг роста на 1440p+. */
-  .picker-box{max-width:840px}
-  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(108px,1fr))}
-  .comp-ban-chip{width:46px;height:46px}
+     чипов. .ban-chip/.comp-ban-chip/.picker-box/.picker-grid/.panel-narrow/
+     .panel-medium раньше жили здесь как отдельные фиксированные ступени —
+     заменено на непрерывный clamp()-рост через --fluid-* (см. base.css
+     :root) прямо в base-правилах, эти строки больше не нужны нигде.
+     .ban-chip-name{font-size:...} тоже был плоским шагом — если понадобится
+     тоже сделать fluid, это отдельная переменная (сейчас не трогали,
+     не входило в жалобу про размер/масштаб иконок конкретно). */
 }
 
 /* ── MD: планшет горизонтально ── */
