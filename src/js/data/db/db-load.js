@@ -1,4 +1,3 @@
-// @hash 42ee8268 2026-07-04T23:29
 // ════ DATA — LOAD (Supabase) ════
 // MIGR-2: переезд на id-based каталог (hero_catalog/map_catalog) +
 // hero_counters на 3 scope (team добавлен — раньше team-контрпики жили
@@ -25,7 +24,7 @@ async function loadAllData(){
   try{
     await _loadCatalogs(); // hero_catalog/map_catalog — нужны ДО heroes/maps/tiers (id→name резолв)
     await Promise.all([
-      loadPortraits(), loadMapScreenshots(),
+      loadPortraits(), loadMapScreenshots(), loadWikiIcons(),
       loadHeroes(), loadMaps(), loadPlayers(),
       loadTiers(), loadHeroMapStrength(), loadHeroSynergy(), // loadTiers() — db-load-tiers.js
     ]);
