@@ -1,4 +1,3 @@
-// @hash e26f7faf 2026-07-06T05:21
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -129,7 +128,7 @@ async function handleSharedTierUrl(tokenOverride){
     // _loadCatalogs() (db-load.js) — нужен ДО _renderSharedTierView(), иначе
     // _heroCatalogByName/_mapCatalogByName пустые и фолбэк роли/типа не сработает
     // (публичная /tier/TOKEN страница никогда не проходит через loadAllData())
-    await Promise.all([loadPortraits(), loadMapScreenshots(), _loadCatalogs()]);
+    await Promise.all([loadPortraits(), loadMapScreenshots(), loadWikiIcons(), _loadCatalogs()]);
   } catch(e) {
     console.warn('handleSharedTierUrl: failed to load images/catalogs', e.message);
   }
