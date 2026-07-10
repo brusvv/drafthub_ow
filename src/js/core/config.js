@@ -1,4 +1,3 @@
-// @hash 8e9f7835 2026-07-03T06:55
 // ════ CONFIG ════
 
 // ── Базовый путь публикации (GitHub Pages, репозиторий в подпапке) ──
@@ -71,17 +70,41 @@ const NO_ATKDEF=['Control','Flashpoint','Push'];
 // [store] let mapPickerSelected → store.state
 // [store] let mapPickerTypeFilter → store.state
 
-// ════ WIKI ICONS (hardcoded URLs — no API needed) ════
-const BASE='https://static.wikia.nocookie.net/overwatch_gamepedia/images';
+// ════ WIKI ICONS ════
+// Раньше — чистый хардкод: URL с хеш-путём Wikia (c/c8/...) фиксировался
+// в коде и в теории мог протухнуть, если файл переименуют/удалят/перезальют
+// на вики под новым путём — hash-путь назначается при заливке файла и не
+// гарантированно стабилен навсегда (хотя для уже залитых файлов обычно не
+// меняется, если сам файл просто получает новую версию, а не новый title —
+// это подтверждено напрямую сверкой с https://overwatch.fandom.com/wiki/
+// Category:Role_icons: Role_Tank_Circle.svg как был на c/c8/, так и остался,
+// поменялся только ?cb= кэш-бастер, для /revision/latest не обязательный).
+// Раз риск в принципе есть — резолвим URL через официальный MediaWiki API
+// по СТАБИЛЬНОМУ имени файла (File:X.svg — человекочитаемый title, не
+// хеш-путь), анонимный CORS уже включён у MediaWiki через origin=*, прокси
+// не нужен. Хардкод остаётся как fallback (последний известный рабочий
+// URL) + кэш в localStorage — тот же паттерн что loadPortraits()/
+// loadMapScreenshots() уже используют для устойчивости к сетевым сбоям.
+const WIKI_API_BASE='https://overwatch.fandom.com/api.php';
+const BASE='https://static.wikia.nocookie.net/overwatch_gamepedia/images'; // только для фолбэк-URL ниже
 
-const WIKI_ROLE={
+const WIKI_ROLE_TITLE={
+  Tank:'Role_Tank_Circle.svg', Damage:'Role_Damage_Circle.svg',
+  Support:'Role_Support_Circle.svg', Flex:'Flex_Icon.svg',
+};
+const WIKI_ROLE_FALLBACK={
   Tank:       `${BASE}/c/c8/Role_Tank_Circle.svg/revision/latest`,
   Damage:     `${BASE}/8/80/Role_Damage_Circle.svg/revision/latest`,
   Support:    `${BASE}/9/93/Role_Support_Circle.svg/revision/latest`,
   Flex:       `${BASE}/d/da/Flex_Icon.svg/revision/latest`,
 };
 
-const WIKI_SUBROLE={
+const WIKI_SUBROLE_TITLE={
+  Tank:{ Initiator:'Sub-Role_Tank_Initiator_Circle.svg', Bruiser:'Sub-Role_Tank_Bruiser_Circle.svg', Stalwart:'Sub-Role_Tank_Stalwart_Circle.svg' },
+  Damage:{ Flanker:'Sub-Role_Damage_Flanker_Circle.svg', Sharpshooter:'Sub-Role_Damage_Sharpshooter_Circle.svg', Specialist:'Sub-Role_Damage_Specialist_Circle.svg', Recon:'Sub-Role_Damage_Recon_Circle.svg' },
+  Support:{ Medic:'Sub-Role_Support_Medic_Circle.svg', Tactician:'Sub-Role_Support_Tactician_Circle.svg', Survivor:'Sub-Role_Support_Survivor_Circle.svg' },
+};
+const WIKI_SUBROLE_FALLBACK={
   Tank:{
     Initiator: `${BASE}/4/47/Sub-Role_Tank_Initiator_Circle.svg/revision/latest`,
     Bruiser:   `${BASE}/a/a3/Sub-Role_Tank_Bruiser_Circle.svg/revision/latest`,
@@ -100,8 +123,11 @@ const WIKI_SUBROLE={
   },
 };
 
-// Map type icons
-const WIKI_MAPTYPE={
+const WIKI_MAPTYPE_TITLE={
+  Control:'Control.png', Escort:'Escort.png', Hybrid:'Hybrid.png',
+  Push:'Push.png', Flashpoint:'Flashpoint.png', Clash:'Clash.svg',
+};
+const WIKI_MAPTYPE_FALLBACK={
   Control:    `${BASE}/e/e5/Control.png/revision/latest`,
   Escort:     `${BASE}/d/d3/Escort.png/revision/latest`,
   Hybrid:     `${BASE}/e/ed/Hybrid.png/revision/latest`,
@@ -110,29 +136,63 @@ const WIKI_MAPTYPE={
   Clash:      `${BASE}/d/d1/Clash.svg/revision/latest`,
 };
 
+// title (без "File:") → резолвленный актуальный URL. Пусто до loadWikiIcons().
+let _wikiIconUrls = {};
+
+async function loadWikiIcons(){
+  const LS_KEY = 'draft_cache_wiki_icons';
+  const titles = [
+    ...Object.values(WIKI_ROLE_TITLE),
+    ...Object.values(WIKI_SUBROLE_TITLE).flatMap(g => Object.values(g)),
+    ...Object.values(WIKI_MAPTYPE_TITLE),
+  ];
+  const titleParam = titles.map(t => `File:${t}`).join('|');
+  const url = `${WIKI_API_BASE}?action=query&titles=${encodeURIComponent(titleParam)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+
+  const data = await _fetchWithRetry(url);
+  if(data?.query?.pages){
+    Object.values(data.query.pages).forEach(p => {
+      const imgUrl = p?.imageinfo?.[0]?.url;
+      if(!imgUrl || !p.title) return;
+      _wikiIconUrls[p.title.replace(/^File:/,'')] = imgUrl;
+    });
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(_wikiIconUrls)); }catch(_){}
+  } else {
+    try{
+      const cached = localStorage.getItem(LS_KEY);
+      if(cached) Object.assign(_wikiIconUrls, JSON.parse(cached));
+    }catch(_){}
+    if(!Object.keys(_wikiIconUrls).length){
+      console.warn('[DraftHub] Wiki icon API недоступен, используются захардкоженные фолбэк-URL');
+    }
+  }
+}
+
+function _iconUrl(title, fallback){ return _wikiIconUrls[title] || fallback; }
+
 function _roleColor(role){
   return role==='Tank'?'var(--tank)':role==='Damage'?'var(--damage)':role==='Support'?'var(--support)':'var(--accent)';
 }
 
 // <img> иконка роли
 function roleIcon(role,size=20){
-  const url=WIKI_ROLE[role];
-  if(!url)return'';
+  const title=WIKI_ROLE_TITLE[role]; if(!title)return'';
+  const url=_iconUrl(title, WIKI_ROLE_FALLBACK[role]);
   return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0" alt="${role}">`;
 }
 
 // <img> иконка подкласса
 function subroleIcon(role,subrole,size=16){
   if(!subrole||!role)return'';
-  const url=WIKI_SUBROLE[role]?.[subrole];
-  if(!url)return'';
+  const title=WIKI_SUBROLE_TITLE[role]?.[subrole]; if(!title)return'';
+  const url=_iconUrl(title, WIKI_SUBROLE_FALLBACK[role]?.[subrole]);
   return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0" alt="${subrole}">`;
 }
 
 // <img> иконка типа карты
 function mapTypeIcon(type,size=14){
-  const url=WIKI_MAPTYPE[type];
-  if(!url)return'';
+  const title=WIKI_MAPTYPE_TITLE[type]; if(!title)return'';
+  const url=_iconUrl(title, WIKI_MAPTYPE_FALLBACK[type]);
   return`<img src="${url}" width="${size}" height="${size}" style="object-fit:contain;flex-shrink:0;opacity:.85" alt="${type}">`;
 }
 
