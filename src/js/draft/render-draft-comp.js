@@ -1,4 +1,4 @@
-// @hash 9e23d5e4 2026-06-27T13:13
+// @hash b2557185 2026-07-09T11:39
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -207,12 +207,16 @@ function _renderDraftResult(){
 function _renderCompCard(c,rank,mapObj,side){
   const byRole={Tank:[],Damage:[],Support:[]};
   c.comp.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(n);});
+  // DESIGN-1: свой счётчик на карту (не сквозной по всем карточкам-рекомендациям) —
+  // каждая .comp-rec-card уже отдельная визуальная единица (как .h-card/.map-card),
+  // достаточно лёгкого рывка внутри своих ~5 героев, а не через весь список карточек.
+  let _cardIdx=0;
   return`<div class="comp-rec-card">
     <div class="comp-rec-rank">#${rank}</div>
     <div class="comp-rec-heroes">
       ${['Tank','Damage','Support'].flatMap(role=>byRole[role].map(n=>{
         const src=portrait(n);const str=mapObj?heroStrengthOnMap(n,mapObj,side):0;
-        return`<div class="comp-rec-hero" title="${n}${str?` — ${str}/10`:''}">
+        return`<div class="comp-rec-hero" style="--card-i:${Math.min(_cardIdx++,12)}" title="${n}${str?` — ${str}/10`:''}">
           ${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="comp-rec-ph">${n[0]}</div>`}
           <div class="comp-rec-role-line" style="background:${rc[role]}"></div>
           ${str>=7?`<div class="comp-rec-str">${str}</div>`:''}
