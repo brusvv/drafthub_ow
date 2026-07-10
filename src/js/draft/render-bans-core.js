@@ -1,4 +1,4 @@
-// @hash f0c031e3 2026-06-27T13:13
+// @hash 1b11323a 2026-07-09T11:39
 // ════════════════════════════════════════════════════════════
 // render-bans-core.js — ядро вкладки «Текущие баны»
 //
@@ -109,6 +109,11 @@ function _buildCurrentBanGroups(banned) {
   const byRole = { Tank: [], Damage: [], Support: [] };
   banned.forEach(h => { if (byRole[h.role]) byRole[h.role].push(h); });
 
+  // DESIGN-1: сквозной счётчик через все 3 роли, та же логика что в
+  // render-tiers-dnd.js/render-heroes.js — без этого fade-up "перезапускался"
+  // бы с 0 на каждой роли вместо одной волны.
+  let _cardIdx = 0;
+
   return ['Tank', 'Damage', 'Support']
     .filter(r => byRole[r].length)
     .map(r => `
@@ -120,7 +125,7 @@ function _buildCurrentBanGroups(banned) {
         <div class="ban-role-heroes">
           ${byRole[r].map(h => {
             const src = portrait(h.name);
-            return `<div class="ban-chip">
+            return `<div class="ban-chip" style="--card-i:${Math.min(_cardIdx++,12)}">
               ${src
                 ? `<img src="${src}" onerror="this.style.display='none'">`
                 : `<div class="ban-chip-ph">${h.name[0]}</div>`}
