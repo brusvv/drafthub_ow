@@ -1,4 +1,4 @@
-/* @hash 9baf92b0 2026-07-05T20:16 */
+/* @hash 6ae8a495 2026-07-09T11:39 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -23,6 +23,53 @@
   --text:#ececec;--text2:#bbb;--text3:#8f8f8f;
   --font:'Inter',sans-serif;--mono:'Space Mono',monospace;
   --accent:#F0A030;--radius:10px;
+
+  /* ── FLUID-АДАПТИВ ──
+     Раньше ширина/размер иконок росли СТУПЕНЯМИ на конкретных breakpoint'ах
+     (1200px, 1440px) — между ступенями ничего не менялось вообще, поэтому
+     "недостаточно растёт" на любой ширине НЕ РОВНО 1200/1440px (напр. 1250,
+     1300, 1600...). clamp(MIN, A·vw + B, MAX) — единственный способ дать
+     НЕПРЕРЫВНЫЙ рост: A·vw меняется с каждым пикселем ширины окна, MIN/MAX
+     просто не дают уйти в абсурд на очень узких/очень широких экранах.
+
+     Формула для каждой переменной подобрана под 2 опорные точки (viewport→
+     целевое значение) через m=(V2-V1)/(W2-W1), b=V1-m·W1 — не приблизительно
+     на глаз, а решение системы уравнений на конкретных числах ниже.
+     Меняется коэффициент только если понадобится другая калибровка —
+     переменная используется везде, менять физическое значение нужно ровно
+     в одном месте (см. само определение задачи от пользователя: "чтобы
+     обновить в одном файле, а он подтянулся в другие"). */
+
+  /* .ban-panel/#view-bans/picker-box — было: 680px||900px (XL/XXL ступени).
+     Теперь: 680px на 700px viewport (узкий планшет, ниже почти не имеет
+     смысла — сама .app уже на пределе) → 1120px на 1920px (полный HD). */
+  --fluid-panel-w: clamp(680px, 36.1vw + 428px, 1120px);
+
+  /* .panel-narrow (Настройки) — было 680px||820px. Тот же диапазон viewport,
+     чуть меньше рост (это более "формовая" узкая колонка, не список). */
+  --fluid-panel-narrow-w: clamp(680px, 21.3vw + 531px, 940px);
+
+  /* .panel-medium (Админ) — было 780px||960px. */
+  --fluid-panel-medium-w: clamp(780px, 24.6vw + 608px, 1080px);
+
+  /* Иконка героя в общем picker-попапе (.p-hero-img) и .tier-hero-pill —
+     было 88px||108px (XL/XXL). Теперь растёт от 700px до 1920px viewport. */
+  --fluid-icon-hero: clamp(84px, 3.9vw + 56px, 132px);
+
+  /* .ban-chip / .comp-ban-chip — было 28-36px||40-46px, унифицируем на
+     единый непрерывный масштаб (обе — небольшие круглые/квадратные
+     иконки-чипы одного порядка величины). */
+  --fluid-icon-chip: clamp(28px, 1.5vw + 18px, 46px);
+
+  /* Заголовок панели (.ban-panel-title и т.п.) — было флэт 16px, вообще
+     не менялся. Небольшой, но заметный рост на очень широких экранах. */
+  --fluid-fs-title: clamp(15px, 0.3vw + 13px, 19px);
+
+  /* .tier-hero-pill (Tier List, не путать с --fluid-icon-hero из picker-попапа
+     — это другое, меньшее семейство иконок) — было флэт 48px до 1440px,
+     потом скачок на 58px. MD/SM/XS-ступени (960/768/480px, 52/46/38px)
+     специально нелинейные — сохраняются как есть, не трогаем. */
+  --fluid-icon-tier-pill: clamp(48px, 1.31vw + 39px, 64px);
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:14px;line-height:1.5}
 .app{max-width:1040px;margin:0 auto;padding:2rem 1.25rem}
@@ -230,8 +277,8 @@ body.public-mode #headerTeamName_public { display: inline !important; }
    render/admin/render-admin-ui.js (Админ) — были захардкожены без единой
    точки адаптива, на 1440p+ давали много пустого пространства по бокам
    при том что .app сам растёт до 1360px. XXL-апгрейд — responsive.css. */
-.panel-narrow{max-width:680px}
-.panel-medium{max-width:780px}
+.panel-narrow{max-width:var(--fluid-panel-narrow-w)}
+.panel-medium{max-width:var(--fluid-panel-medium-w)}
 
 /* ── SEC-2: focus-visible ──
    Убирает браузерный дефолтный outline на обычный клик мышью (визуально
@@ -254,7 +301,7 @@ body.public-mode #headerTeamName_public { display: inline !important; }
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.h-card, .map-card, .player-card {
+.h-card, .map-card, .player-card, .tier-hero-pill, .ban-chip, .comp-rec-hero {
   animation: fade-up .16s ease both;
   animation-delay: calc(var(--card-i, 0) * 25ms);
 }
