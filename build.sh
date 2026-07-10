@@ -58,14 +58,21 @@ cat > "$OUT" <<'HEADER'
      BACK-3): CSP различает схемы, https:// НЕ покрывает wss:// автоматически,
      даже для того же хоста. Без явного wss:// Supabase Realtime (WebSocket)
      блокировался CSP на этапе connect, а не молча деградировал — ошибка
-     в консоли, но обычный пользователь её не видит и решает что фича не работает. -->
+     в консоли, но обычный пользователь её не видит и решает что фича не работает.
+     overwatch.fandom.com в connect-src (не img-src!) — MediaWiki API
+     (action=query&prop=imageinfo) резолвит АКТУАЛЬНЫЙ URL иконки роли/
+     подкласса/типа карты по стабильному имени файла вместо хардкода
+     хеш-пути Wikia (config.js loadWikiIcons() — тот же паттерн что
+     loadPortraits()/loadMapScreenshots()). Сама картинка при этом всё
+     ещё грузится со static.wikia.nocookie.net (img-src, уже разрешён) —
+     новый домен нужен только для запроса к api.php, не для самих svg/png. -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
   img-src 'self' data: https://static.wikia.nocookie.net https://overfast-api.tekrop.fr https://d15f34w2p8l1cc.cloudfront.net;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr https://cdn.jsdelivr.net;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://overfast-api.tekrop.fr https://cdn.jsdelivr.net https://overwatch.fandom.com;
   frame-src https://accounts.google.com;
   object-src 'none';
   base-uri 'self';
