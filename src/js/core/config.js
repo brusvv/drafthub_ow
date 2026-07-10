@@ -1,4 +1,3 @@
-// @hash 3e96c07d 2026-07-10T23:19
 // ════ CONFIG ════
 
 // ── Базовый путь публикации (GitHub Pages, репозиторий в подпапке) ──
@@ -94,11 +93,18 @@ const WIKI_ROLE_TITLE={
   Support:'Role_Support_Circle.svg', Flex:'Flex_Icon.svg',
 };
 const WIKI_ROLE_FALLBACK={
-  Tank:       `${BASE}/c/c8/Role_Tank_Circle.svg/revision/latest`,
-  Damage:     `${BASE}/8/80/Role_Damage_Circle.svg/revision/latest`,
-  Support:    `${BASE}/9/93/Role_Support_Circle.svg/revision/latest`,
-  Flex:       `${BASE}/d/da/Flex_Icon.svg/revision/latest`,
+  Tank:       `${BASE}/c/c8/Role_Tank_Circle.svg/revision/latest?cb=20250727105320`,
+  Damage:     `${BASE}/8/80/Role_Damage_Circle.svg/revision/latest?cb=20250727105011`,
+  Support:    `${BASE}/9/93/Role_Support_Circle.svg/revision/latest?cb=20250727105200`,
+  Flex:       `${BASE}/d/da/Flex_Icon.svg/revision/latest?cb=20260217121748`,
 };
+// ⚠️ Баг найден (пользователь прислал живые 404): голый /revision/latest БЕЗ
+// ?cb= у части файлов реально отдаёт 404 на CDN Wikia — похоже на закэшированный
+// негативный ответ, который ?cb= обходит. Без ?cb= сам fallback был сломан —
+// то есть если бы API-резолв (loadWikiIcons) когда-нибудь дал сбой, страховка
+// не страховала. cb-значения сверены напрямую с https://overwatch.fandom.com/
+// wiki/Category:Role_icons на 11.07. Они всё равно устареют рано или поздно —
+// это НЕ отменяет необходимость API-резолва, просто чинит текущий fallback.
 
 const WIKI_SUBROLE_TITLE={
   Tank:{ Initiator:'Sub-Role_Tank_Initiator_Circle.svg', Bruiser:'Sub-Role_Tank_Bruiser_Circle.svg', Stalwart:'Sub-Role_Tank_Stalwart_Circle.svg' },
@@ -107,20 +113,20 @@ const WIKI_SUBROLE_TITLE={
 };
 const WIKI_SUBROLE_FALLBACK={
   Tank:{
-    Initiator: `${BASE}/4/47/Sub-Role_Tank_Initiator_Circle.svg/revision/latest`,
-    Bruiser:   `${BASE}/a/a3/Sub-Role_Tank_Bruiser_Circle.svg/revision/latest`,
-    Stalwart:  `${BASE}/f/f5/Sub-Role_Tank_Stalwart_Circle.svg/revision/latest`,
+    Initiator: `${BASE}/4/47/Sub-Role_Tank_Initiator_Circle.svg/revision/latest?cb=20260217111933`,
+    Bruiser:   `${BASE}/a/a3/Sub-Role_Tank_Bruiser_Circle.svg/revision/latest?cb=20260217111942`,
+    Stalwart:  `${BASE}/f/f5/Sub-Role_Tank_Stalwart_Circle.svg/revision/latest?cb=20260217111133`,
   },
   Damage:{
-    Flanker:      `${BASE}/d/d2/Sub-Role_Damage_Flanker_Circle.svg/revision/latest`,
-    Sharpshooter: `${BASE}/5/58/Sub-Role_Damage_Sharpshooter_Circle.svg/revision/latest`,
-    Specialist:   `${BASE}/9/9b/Sub-Role_Damage_Specialist_Circle.svg/revision/latest`,
-    Recon:        `${BASE}/b/bc/Sub-Role_Damage_Recon_Circle.svg/revision/latest`,
+    Flanker:      `${BASE}/d/d2/Sub-Role_Damage_Flanker_Circle.svg/revision/latest?cb=20260217111339`,
+    Sharpshooter: `${BASE}/5/58/Sub-Role_Damage_Sharpshooter_Circle.svg/revision/latest?cb=20260217111441`,
+    Specialist:   `${BASE}/9/9b/Sub-Role_Damage_Specialist_Circle.svg/revision/latest?cb=20260217111547`,
+    Recon:        `${BASE}/b/bc/Sub-Role_Damage_Recon_Circle.svg/revision/latest?cb=20260217111636`,
   },
   Support:{
-    Medic:      `${BASE}/6/61/Sub-Role_Support_Medic_Circle.svg/revision/latest`,
-    Tactician:  `${BASE}/3/31/Sub-Role_Support_Tactician_Circle.svg/revision/latest`,
-    Survivor:   `${BASE}/2/22/Sub-Role_Support_Survivor_Circle.svg/revision/latest`,
+    Medic:      `${BASE}/6/61/Sub-Role_Support_Medic_Circle.svg/revision/latest?cb=20260217112027`,
+    Tactician:  `${BASE}/3/31/Sub-Role_Support_Tactician_Circle.svg/revision/latest?cb=20260217112420`,
+    Survivor:   `${BASE}/2/22/Sub-Role_Support_Survivor_Circle.svg/revision/latest?cb=20260217112020`,
   },
 };
 
