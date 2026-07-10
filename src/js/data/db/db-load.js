@@ -1,3 +1,4 @@
+// @hash 3d291278 2026-07-10T23:20
 // ════ DATA — LOAD (Supabase) ════
 // MIGR-2: переезд на id-based каталог (hero_catalog/map_catalog) +
 // hero_counters на 3 scope (team добавлен — раньше team-контрпики жили
