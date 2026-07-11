@@ -1,4 +1,3 @@
-// @hash f1574b91 2026-07-05T02:01
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
@@ -221,43 +220,92 @@ async function _batchUpsert(table, rows, conflict, chunkSize = 100) {
 }
 
 // ── Импорт героев ──
+// AUD-5 (11.07): было — писал name/role/subrole прямо в heroes (эти
+// колонки убраны в MIGR-1, ушли в hero_catalog). Теперь: name резолвится
+// в hero_id через _resolveHeroId (sheets-import-resolve.js, тот же global
+// scope что и Sheets-импорт — не пишем вторую версию резолвера). role/
+// subrole больше не читаем — это факт каталога, не команды, CSV не может
+// их менять (тот же принцип что и в sheets-import.js importHeroesFromSheets).
+// counters — отдельная таблица hero_counters (scope='team'), не heroes.counters.
 async function _importHeroes(teamId, rows) {
+  const unresolved = [];
   const mapped = rows
-    .filter(r => r.name && r.role)
-    .map(r => ({
-      team_id:  teamId,
-      name:     r.name,
-      role:     r.role,
-      subrole:  r.subrole || '',
-      priority: parseInt(r.priority) || 5,
-      banned:   (r.banned || '').toUpperCase() === 'TRUE',
-      notes:    r.notes || '',
-      counters: _parseCountersCsv(r.counters || ''),
-    }));
+    .filter(r => r.name)
+    .map(r => {
+      const heroId = _resolveHeroId(r.name);
+      if(!heroId){ unresolved.push(r.name); return null; }
+      return {
+        team_id:  teamId,
+        hero_id:  heroId,
+        priority: parseInt(r.priority) || 5,
+        banned:   (r.banned || '').toUpperCase() === 'TRUE',
+        notes:    r.notes || '',
+        _counters: _parseCountersCsv(r.counters || ''), // снимается перед upsert, см. ниже
+      };
+    })
+    .filter(Boolean);
   const skipped = rows.length - mapped.length;
-  const result  = await _batchUpsert('heroes', mapped, 'team_id,name');
+  if(unresolved.length) console.warn(`[admin CSV] Heroes: не найдены в каталоге — ${[...new Set(unresolved)].join(', ')}`);
+  if(!mapped.length) return { imported: 0, skipped, errors: [] };
+
+  const upsertRows = mapped.map(({ _counters, ...r }) => r);
+  const result = await _batchUpsert('heroes', upsertRows, 'team_id,hero_id');
+
+  // Контрпики — отдельно, после успешной записи героев (тот же принцип что
+  // _importTeamHeroCounters в sheets-import.js: delete по затронутым hero_id
+  // + bulk insert, не трогаем контрпики героев не из этого импорта).
+  const withCounters = mapped.filter(m => m._counters.length);
+  if(withCounters.length){
+    const heroIds = withCounters.map(m => m.hero_id);
+    await _sb.from('hero_counters').delete()
+      .eq('scope', 'team').eq('team_id', teamId).in('hero_id', heroIds);
+    const counterUnresolved = [];
+    const counterRows = [];
+    withCounters.forEach(m => {
+      m._counters.forEach(c => {
+        const counterId = _resolveHeroId(c.name);
+        if(!counterId){ counterUnresolved.push(c.name); return; }
+        if(counterId === m.hero_id) return; // CHECK(hero_id<>counter_hero_id)
+        counterRows.push({ scope: 'team', team_id: teamId, hero_id: m.hero_id, counter_hero_id: counterId, score: c.score });
+      });
+    });
+    if(counterUnresolved.length) console.warn(`[admin CSV] Heroes → counters: не найдены — ${[...new Set(counterUnresolved)].join(', ')}`);
+    if(counterRows.length){
+      const { error } = await _sb.from('hero_counters').insert(counterRows);
+      if(error) result.errors.push('counters: ' + error.message);
+    }
+  }
+
   return { ...result, skipped: result.skipped + skipped };
 }
 
 // ── Импорт карт ──
+// AUD-5 (11.07): было — писал name/type/in_pool прямо в maps (эти колонки
+// ушли в map_catalog в MIGR-1). name резолвится в map_id через _resolveMapId.
+// type/in_pool больше не читаем — факт каталога, не команды.
 async function _importMaps(teamId, rows) {
-  const validTypes = ['Hybrid','Escort','Control','Push','Flashpoint','Clash'];
+  const unresolved = [];
   const mapped = rows
-    .filter(r => r.name && r.type && validTypes.includes(r.type))
-    .map(r => ({
-      team_id:  teamId,
-      name:     r.name,
-      type:     r.type,
-      tier:     ['S','A','B','C','D'].includes(r.tier) ? r.tier : 'B',
-      priority: parseInt(r.priority) || 5,
-      atk:      Math.min(5, Math.max(1, parseInt(r.atk) || 3)),
-      def:      Math.min(5, Math.max(1, parseInt(r.def) || 3)),
-      dif:      Math.min(5, Math.max(1, parseInt(r.dif) || 3)),
-      notes:    r.notes || '',
-      in_pool:  (r.in_pool || 'TRUE').toUpperCase() !== 'FALSE',
-    }));
+    .filter(r => r.name)
+    .map(r => {
+      const mapId = _resolveMapId(r.name);
+      if(!mapId){ unresolved.push(r.name); return null; }
+      return {
+        team_id:  teamId,
+        map_id:   mapId,
+        tier:     ['S','A','B','C','D'].includes(r.tier) ? r.tier : 'B',
+        priority: parseInt(r.priority) || 5,
+        atk:      Math.min(5, Math.max(1, parseInt(r.atk) || 3)),
+        def:      Math.min(5, Math.max(1, parseInt(r.def) || 3)),
+        dif:      Math.min(5, Math.max(1, parseInt(r.dif) || 3)),
+        notes:    r.notes || '',
+      };
+    })
+    .filter(Boolean);
   const skipped = rows.length - mapped.length;
-  const result  = await _batchUpsert('maps', mapped, 'team_id,name');
+  if(unresolved.length) console.warn(`[admin CSV] Maps: не найдены в каталоге — ${[...new Set(unresolved)].join(', ')}`);
+  if(!mapped.length) return { imported: 0, skipped, errors: [] };
+  const result = await _batchUpsert('maps', mapped, 'team_id,map_id');
   return { ...result, skipped: result.skipped + skipped };
 }
 
@@ -282,18 +330,31 @@ async function _importPlayers(teamId, rows) {
 }
 
 // ── Импорт силы героев на картах ──
+// AUD-5 (11.07): было hero_name/map_name text — теперь резолвим в
+// hero_id/map_id. PK (team_id,hero_id,map_id) полный (не partial) —
+// обычный _batchUpsert с новым onConflict, обвязку не меняем.
 async function _importHeroMapStrength(teamId, rows) {
+  const unresolvedHeroes = [], unresolvedMaps = [];
   const mapped = rows
     .filter(r => r.hero_name && r.map_name && r.atk)
-    .map(r => ({
-      team_id:   teamId,
-      hero_name: r.hero_name,
-      map_name:  r.map_name,
-      atk: Math.min(10, Math.max(0, parseInt(r.atk) || 0)),
-      def: Math.min(10, Math.max(0, parseInt(r.def) || parseInt(r.atk) || 0)),
-    }));
+    .map(r => {
+      const heroId = _resolveHeroId(r.hero_name);
+      const mapId  = _resolveMapId(r.map_name);
+      if(!heroId) unresolvedHeroes.push(r.hero_name);
+      if(!mapId)  unresolvedMaps.push(r.map_name);
+      if(!heroId || !mapId) return null;
+      return {
+        team_id: teamId, hero_id: heroId, map_id: mapId,
+        atk: Math.min(10, Math.max(0, parseInt(r.atk) || 0)),
+        def: Math.min(10, Math.max(0, parseInt(r.def) || parseInt(r.atk) || 0)),
+      };
+    })
+    .filter(Boolean);
   const skipped = rows.length - mapped.length;
-  const result  = await _batchUpsert('hero_map_strength', mapped, 'team_id,hero_name,map_name');
+  if(unresolvedHeroes.length) console.warn(`[admin CSV] HeroMapStrength → герои: не найдены — ${[...new Set(unresolvedHeroes)].join(', ')}`);
+  if(unresolvedMaps.length) console.warn(`[admin CSV] HeroMapStrength → карты: не найдены — ${[...new Set(unresolvedMaps)].join(', ')}`);
+  if(!mapped.length) return { imported: 0, skipped, errors: [] };
+  const result = await _batchUpsert('hero_map_strength', mapped, 'team_id,hero_id,map_id');
   return { ...result, skipped: result.skipped + skipped };
 }
 
