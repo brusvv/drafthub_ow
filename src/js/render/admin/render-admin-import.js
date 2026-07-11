@@ -1,4 +1,4 @@
-// @hash 5a0824f8 2026-07-11T02:35
+// @hash fa0ea05f 2026-07-11T15:57
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
@@ -69,16 +69,20 @@ function _renderImportTab(el) {
 
 // ── Подсказки по формату CSV ──
 const _CSV_HINTS = {
-  heroes: `Обязательные колонки: <b>name, role</b> (Tank/Damage/Support)<br>
-    Опциональные: subrole, priority (1-10), banned (TRUE/FALSE), notes,
-    counters (<code>Hero:score,Hero:score</code>)`,
-  maps: `Обязательные: <b>name, type</b> (Hybrid/Escort/Control/Push/Flashpoint/Clash)<br>
-    Опциональные: tier (S/A/B/C/D), priority, atk, def, dif (1-5), notes, in_pool (TRUE/FALSE)`,
+  heroes: `Обязательная колонка: <b>name</b> (должно совпадать с именем в каталоге игры)<br>
+    Опциональные: priority (1-10), banned (TRUE/FALSE), notes,
+    counters (<code>Hero:score,Hero:score</code>)<br>
+    <span style="color:var(--text3)">role/subrole больше не читаются — это факт каталога, не команды</span>`,
+  maps: `Обязательная колонка: <b>name</b> (должно совпадать с именем в каталоге игры)<br>
+    Опциональные: tier (S/A/B/C/D), priority, atk, def, dif (1-5), notes<br>
+    <span style="color:var(--text3)">type/in_pool больше не читаются — это факт каталога, не команды</span>`,
   players: `Обязательные: <b>name, main_role</b><br>
     Опциональные: btag, off_role, rank_tank, rank_dmg, rank_sup, notes`,
   hero_map_strength: `Обязательные: <b>hero_name, map_name, atk</b> (0-10)<br>
-    Опциональные: def (0-10, если нет — равно atk)`,
-  hero_synergy: `Обязательные: <b>hero_name, synergy_hero, score</b> (1-10)`,
+    Опциональные: def (0-10, если нет — равно atk)<br>
+    <span style="color:var(--text3)">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
+  hero_synergy: `Обязательные: <b>hero_name, synergy_hero, score</b> (1-10)<br>
+    <span style="color:var(--text3)">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
   global_tiers: `Обязательные: <b>entity_type</b> (map/hero), <b>name, tier</b> (S/A/B/C/D)<br>
     Не требует команды — обновляет глобальный тир-лист`,
 };
@@ -360,17 +364,29 @@ async function _importHeroMapStrength(teamId, rows) {
 }
 
 // ── Импорт синергий ──
+// AUD-5 (11.07): было hero_name/synergy_hero text — теперь резолвим в
+// hero_id/synergy_hero_id. PK (team_id,hero_id,synergy_hero_id) полный.
 async function _importHeroSynergy(teamId, rows) {
+  const unresolved = [];
   const mapped = rows
     .filter(r => r.hero_name && r.synergy_hero && r.score)
-    .map(r => ({
-      team_id:      teamId,
-      hero_name:    r.hero_name,
-      synergy_hero: r.synergy_hero,
-      score: Math.min(10, Math.max(1, parseInt(r.score) || 5)),
-    }));
+    .map(r => {
+      const heroId    = _resolveHeroId(r.hero_name);
+      const synergyId = _resolveHeroId(r.synergy_hero);
+      if(!heroId)    unresolved.push(r.hero_name);
+      if(!synergyId) unresolved.push(r.synergy_hero);
+      if(!heroId || !synergyId) return null;
+      if(heroId === synergyId) return null; // CHECK(hero_id<>synergy_hero_id)
+      return {
+        team_id: teamId, hero_id: heroId, synergy_hero_id: synergyId,
+        score: Math.min(10, Math.max(1, parseInt(r.score) || 5)),
+      };
+    })
+    .filter(Boolean);
   const skipped = rows.length - mapped.length;
-  const result  = await _batchUpsert('hero_synergy', mapped, 'team_id,hero_name,synergy_hero');
+  if(unresolved.length) console.warn(`[admin CSV] HeroSynergy: не найдены — ${[...new Set(unresolved)].join(', ')}`);
+  if(!mapped.length) return { imported: 0, skipped, errors: [] };
+  const result = await _batchUpsert('hero_synergy', mapped, 'team_id,hero_id,synergy_hero_id');
   return { ...result, skipped: result.skipped + skipped };
 }
 
