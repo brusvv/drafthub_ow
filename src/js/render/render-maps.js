@@ -1,4 +1,4 @@
-// @hash 34ad31ff 2026-07-05T09:42
+// @hash 5c79c91e 2026-07-11T22:42
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -59,7 +59,7 @@ function renderMaps(){
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
-        <div class="map-card-type">${mapTypeIcon(m.type,12)}${mapFilter==='all'?`<span class="f-btn-text">${m.type}</span>`:''}</div>
+        ${mapFilter==='all'?`<div class="map-card-type">${mapTypeIcon(m.type,12)}<span class="f-btn-text">${m.type}</span></div>`:''}
         <div class="map-card-meta">
           <div class="tier-badge tier-${_effectiveMapTier(m)}">${_effectiveMapTier(m)}</div>
           <div class="ratings">
