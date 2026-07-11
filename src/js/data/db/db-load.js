@@ -1,4 +1,4 @@
-// @hash 3d291278 2026-07-10T23:20
+// @hash 60643e29 2026-07-11T22:32
 // ════ DATA — LOAD (Supabase) ════
 // MIGR-2: переезд на id-based каталог (hero_catalog/map_catalog) +
 // hero_counters на 3 scope (team добавлен — раньше team-контрпики жили
@@ -21,7 +21,21 @@
 // ════ LOAD ALL ════
 async function loadAllData(){
   if(!currentTeam()) return;
-  showLoading('mapGrid','card',8); showLoading('heroPool','hero',12); showLoading('playerGrid','player',5);
+  // Design Audit #3 (checklist п.3 "состояния, не только счастливый путь"):
+  // раньше skeleton был только у mapGrid/heroPool/playerGrid — Tier List/
+  // Драфт/Состав при первой загрузке команды просто оставались пустыми до
+  // прихода данных (или зависшими на старых данных предыдущей команды),
+  // без какого-либо визуального признака что что-то грузится. 'row' —
+  // существующий тип skeleton в _skeletonItem(), уже был в коде, просто
+  // не использовался нигде кроме дефолтного case — подходит для
+  // списковых/строчных раскладок (не карточная сетка).
+  showLoading('mapGrid',       'card',  8);
+  showLoading('heroPool',      'hero', 12);
+  showLoading('playerGrid',    'player',5);
+  showLoading('tierListMaps',  'card',  8);
+  showLoading('tierListHeroes','hero', 12);
+  showLoading('bansGrid',      'row',   6);
+  showLoading('rosterContent', 'row',   5);
   try{
     await _loadCatalogs(); // hero_catalog/map_catalog — нужны ДО heroes/maps/tiers (id→name резолв)
     await Promise.all([
@@ -34,7 +48,16 @@ async function loadAllData(){
     renderCurrentView();
     // Обновляем счётчики в навигации после загрузки всех данных
     if(typeof updateNavCounts === 'function') updateNavCounts();
-  }catch(e){ handleError(e); showError('mapGrid', 'Ошибка загрузки данных'); }
+  }catch(e){
+    handleError(e);
+    // Раньше showError() звали только для mapGrid — если Promise.all падал,
+    // heroPool/playerGrid (и теперь остальные) оставались с крутящимся
+    // skeleton НАВСЕГДА, без единого признака ошибки — тот самый разнобой
+    // "где-то есть feedback, где-то нет" из чеклиста Design Audit п.3.
+    const msg = 'Ошибка загрузки данных';
+    ['mapGrid','heroPool','playerGrid','tierListMaps','tierListHeroes','bansGrid','rosterContent']
+      .forEach(id => showError(id, msg));
+  }
 }
 
 const _teamId = () => currentTeam()?.id;
