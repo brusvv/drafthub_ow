@@ -88,6 +88,7 @@ HEADER
 # CSS — base первым, потом features, modals, draft, responsive последним
 CSS_FILES=(
   css/base/base.css
+  css/base/skeleton.css
   css/base/auth.css
   css/features/maps.css
   css/features/heroes.css
@@ -189,11 +190,13 @@ JS_MODULES=(
   js/render/render-players.js
   js/render/render-roster.js
   js/render/admin/render-admin-import.js
+  js/render/admin/render-admin-import-data.js
   js/render/admin/render-admin-ui.js
   js/render/render-nav.js
 
   # Draft: core первый (общие хелперы для competitive и tournament)
   js/draft/render-bans-core.js
+  js/draft/render-bans-tournament-state.js
   js/draft/render-bans-competitive.js
   js/draft/render-bans-tournament-draft.js
   js/draft/render-bans-tournament-herobans.js
