@@ -1,4 +1,3 @@
-/* @hash af958993 2026-06-26T23:58 */
 /* ── PLAYERS ── */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .player-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
@@ -8,9 +7,9 @@
 .player-card-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .player-av{width:38px;height:38px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text2);flex-shrink:0}
 .player-name{font-size:14px;font-weight:700}
-.player-btag{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.player-btag{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
 .player-card-roles{display:flex;gap:5px;padding:9px 14px;flex-wrap:wrap;align-items:center}
-.role-tag{display:inline-flex;align-items:center;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)}
+.role-tag{display:inline-flex;align-items:center;font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)}
 .role-tag.Tank{border-color:rgba(74,158,224,.35);color:var(--tank)}
 .role-tag.Damage{border-color:rgba(224,85,85,.35);color:var(--damage)}
 .role-tag.Support{border-color:rgba(43,189,142,.35);color:var(--support)}
@@ -99,7 +98,7 @@
   transition:border-color .15s;
 }
 .roster-role-selected:hover { border-color:var(--border3); }
-.roster-role-label   { font-family:var(--mono); font-size:9px; margin-left:2px; }
+.roster-role-label   { font-family:var(--mono); font-size:var(--fluid-fs-2xs); margin-left:2px; }
 
 /* Hero strip */
 .roster-hero-strip   { display:flex; gap:5px; flex:1; justify-content:center; }
@@ -135,7 +134,7 @@
 .roster-ban-body     { flex:1; min-width:0; }
 .roster-ban-name     { font-size:14px; font-weight:700; }
 .roster-ban-subrole  { display:flex; align-items:center; gap:4px; margin-top:2px; }
-.roster-ban-subrole-text { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.roster-ban-subrole-text { font-family:var(--mono); font-size:var(--fluid-fs-2xs); color:var(--text3); }
 .roster-ban-count    { font-family:var(--mono); font-size:10px; flex-shrink:0; }
 .roster-ban-arrow    {
   font-size:12px; color:var(--text3); flex-shrink:0;
@@ -144,7 +143,7 @@
 .roster-ban-detail   { padding:0 10px 10px; }
 .roster-ban-detail-inner  { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 .roster-ban-detail-label  {
-  font-family:var(--mono); font-size:9px; color:var(--text3);
+  font-family:var(--mono); font-size:var(--fluid-fs-2xs); color:var(--text3);
   margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;
 }
 .roster-ban-detail-empty  {
@@ -165,7 +164,7 @@
   background:var(--bg4); display:flex; align-items:center;
   justify-content:center; font-weight:800; font-size:11px;
 }
-.roster-victim-score  { font-family:var(--mono); font-size:9px; font-weight:700; }
+.roster-victim-score  { font-family:var(--mono); font-size:var(--fluid-fs-2xs); font-weight:700; }
 
 /* ── Map list ─────────────────────────────────────────────── */
 .roster-map-list     { display:flex; flex-direction:column; gap:5px; }
@@ -223,7 +222,7 @@
 .pd-role-tags     { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
 .pd-role-icon     { margin-left:12px; }
 .pd-role-block    { display:flex; flex-direction:column; align-items:center; gap:3px; }
-.pd-role-label    { font-family:var(--mono); font-size:9px; text-transform:uppercase; }
+.pd-role-label    { font-family:var(--mono); font-size:var(--fluid-fs-2xs); text-transform:uppercase; }
 
 /* Rank badges */
 .pd-ranks         { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
@@ -234,7 +233,7 @@
 /* ── Hero pool ───────────────────────────────────────────── */
 .pd-pool-legend      { color:var(--accent); font-size:8px; margin-left:6px; }
 .pd-pool-role-block  { margin-bottom:.75rem; }
-.pd-pool-role-label  { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
+.pd-pool-role-label  { font-family:var(--mono); font-size:var(--fluid-fs-2xs); text-transform:uppercase; letter-spacing:.1em; margin-bottom:5px; }
 .pd-pool-heroes      { display:flex; flex-wrap:wrap; gap:5px; }
 .pd-pool-chip        { display:flex; flex-direction:column; align-items:center; gap:2px; }
 .pd-pool-av          { width:44px; height:44px; border-radius:7px; object-fit:cover; border:2px solid var(--border); }
@@ -259,8 +258,8 @@
 .pd-map-dot-good   { background:var(--support); }
 .pd-map-dot-bad    { background:var(--damage); }
 .pd-map-name       { font-size:12px; font-weight:600; flex:1; }
-.pd-map-type       { font-family:var(--mono); font-size:9px; color:var(--text3); }
-.pd-map-score-bad  { font-family:var(--mono); font-size:9px; font-weight:700; color:var(--damage); }
+.pd-map-type       { font-family:var(--mono); font-size:var(--fluid-fs-2xs); color:var(--text3); }
+.pd-map-score-bad  { font-family:var(--mono); font-size:var(--fluid-fs-2xs); font-weight:700; color:var(--damage); }
 .pd-avoid-title    { margin-top:12px; border:none; padding:0 0 8px; }
 
 /* ── Misc ────────────────────────────────────────────────── */
