@@ -1,3 +1,4 @@
+// @hash 15b8809a 2026-07-12T05:00
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
