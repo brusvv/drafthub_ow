@@ -1,4 +1,3 @@
-// @hash 4c075438 2026-07-10T23:21
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -41,7 +40,7 @@ async function renderTierSharePanel(){
       <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
         <input type="checkbox" id="shareIsPublic" checked> Публичная
       </label>
-      <button class="btn btn-primary" style="font-size:11px"
+      <button class="btn btn-primary fs-11"
         onclick="_submitCreateShareLink()">Создать ссылку</button>
     </div>
     ${links.length ? `
@@ -61,12 +60,12 @@ async function renderTierSharePanel(){
                 <span style="font-weight:600">${l.label || _shareEntityLabel(l.entity_type)}</span>
                 ${setChip}
               </div>
-              <code style="font-family:var(--mono);font-size:9px;color:var(--text3);
+              <code style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);
                 display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 ${BASE_PATH}/tier/${l.token}
               </code>
             </div>
-            <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${l.views} просм.</span>
+            <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${l.views} просм.</span>
             <label style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer">
               <input type="checkbox" ${l.is_public?'checked':''}
                 onchange="toggleShareLinkPublic('${l.id}',this.checked)"> Публичная
@@ -77,7 +76,7 @@ async function renderTierSharePanel(){
               class="btn btn-danger btn-xs">✕</button>
           </div>`;
         }).join('')}
-      </div>` : '<div class="empty" style="font-size:11px">Нет активных ссылок</div>'}`;
+      </div>` : '<div class="empty fs-11">Нет активных ссылок</div>'}`;
 
   const tierEl = document.getElementById('view-tiers');
   if(tierEl) tierEl.appendChild(panel);
@@ -175,7 +174,7 @@ function _renderSharedTierView(data){
       return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-lbl" style="background:${ts[tier].bg};color:${ts[tier].c}">${tier}</div>
-        <div class="shared-hero-grid" style="flex:1">
+        <div class="shared-hero-grid flex-1">
           ${names.map(name => {
             const hidden = _sharedHeroRole!=='all' && roleByName[name]!==_sharedHeroRole;
             const src = portrait(name);
@@ -192,7 +191,7 @@ function _renderSharedTierView(data){
     return `
       <div class="tier-row" data-tier="${tier}" style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;padding-left:8px">
         <div class="tier-lbl" style="background:${ts[tier].bg};color:${ts[tier].c}">${tier}</div>
-        <div class="shared-map-grid" style="flex:1">
+        <div class="shared-map-grid flex-1">
           ${names.map(name => {
             const hidden = _sharedMapType!=='all' && typeByName[name] && typeByName[name]!==_sharedMapType;
             const src = mapImg(name);
@@ -219,7 +218,7 @@ function _renderSharedTierView(data){
     </div>` : '';
 
   const roleFiltersHtml = (showHeroes && _sharedTierTab==='heroes') ? `
-    <div class="filters" style="margin-bottom:12px">
+    <div class="filters mb-12">
       <button class="f-btn${_sharedHeroRole==='all'?' active':''}" onclick="_setSharedHeroRole('all')">Все</button>
       <button class="f-btn${_sharedHeroRole==='Tank'?' active':''}" onclick="_setSharedHeroRole('Tank')">Tank</button>
       <button class="f-btn${_sharedHeroRole==='Damage'?' active':''}" onclick="_setSharedHeroRole('Damage')">Damage</button>
@@ -227,7 +226,7 @@ function _renderSharedTierView(data){
     </div>` : '';
 
   const mapFiltersHtml = (showMaps && _sharedTierTab==='maps') ? `
-    <div class="filters" style="margin-bottom:12px">
+    <div class="filters mb-12">
       <button class="f-btn${_sharedMapType==='all'?' active':''}" onclick="_setSharedMapType('all')">Все</button>
       <button class="f-btn${_sharedMapType==='Control'?' active':''}" onclick="_setSharedMapType('Control')">Control</button>
       <button class="f-btn${_sharedMapType==='Flashpoint'?' active':''}" onclick="_setSharedMapType('Flashpoint')">Flashpoint</button>
