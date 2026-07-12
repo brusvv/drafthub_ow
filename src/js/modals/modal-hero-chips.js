@@ -1,4 +1,3 @@
-// @hash 06a89d59 2026-06-15T10:42
 // ════ MODAL — HERO CHIPS ════
 // Унифицированные чипы + попап оценки для контрпиков и синергий.
 // Используется обоими блоками heroCounterBlock / heroSynergyBlock.
@@ -32,9 +31,9 @@ function _renderScoreChipBlock(containerId, items, colorFn, chipClass, kind){
       const color=colorFn(item.score);
       return`<div class="sel-hero-chip ${chipClass}" style="border-left:2px solid ${color};cursor:pointer"
                   onclick="openScoreChipPopup('${kind}',${i},this)">
-        ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${item.name[0]}</div>`}
+        ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${item.name[0]}</div>`}
         <span>${item.name}</span>
-        <span style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};margin-left:2px">${item.score}</span>
+        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;color:${color};margin-left:2px">${item.score}</span>
         <span onclick="event.stopPropagation();removeScoreChip('${kind}',${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
       </div>`;
     }).join('')}
