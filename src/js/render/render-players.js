@@ -1,4 +1,3 @@
-// @hash d526ef1c 2026-07-05T02:40
 // ════════════════════════════════════════════════════════════
 // render-players.js — вкладка «Игроки»
 //
@@ -228,7 +227,7 @@ function _bansSection(recBans){
     const src   = portrait(b.name);
     const h     = heroMap[b.name] || {};
     const avg   = Math.round(b.score / b.count);
-    const color = avg >= 8 ? 'var(--damage)' : avg >= 6 ? 'var(--accent)' : 'var(--text3)';
+    const color = scoreColor(avg,{ midAt:6 });
     const high  = avg >= 8;
     const img   = src
       ? `<img src="${src}" class="pd-ban-av" onerror="this.style.display='none'">`
