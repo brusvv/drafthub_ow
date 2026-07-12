@@ -1,4 +1,3 @@
-// @hash 59eff4a2 2026-06-25T22:21
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-draft.js — турнирный драфт: пул карт + драфт карт
 //
@@ -100,7 +99,7 @@ function _renderTournPoolSetup() {
                   margin-bottom:8px;display:flex;align-items:center;gap:5px">
         ${mapTypeIcon(mode, 14)} ${mode}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+      <div class="chip-row-lg">${chips}</div>
     </div>`;
   }).join('');
 
@@ -190,7 +189,7 @@ function _renderTournMapDraft() {
         <div class="ban-panel-title">
           Драфт карт Bo${tDraft.format} — шаг ${si + 1}/${steps.length}
         </div>
-        <button class="btn" onclick="tDraft.phase='pool';renderBans()" style="font-size:10px">
+        <button class="btn fs-10" onclick="tDraft.phase='pool';renderBans()">
           ← Пул карт
         </button>
       </div>
@@ -288,7 +287,7 @@ function _renderTournMapDraftDone() {
         : ''}
       <span style="font-weight:700;flex:1">${pm.name}</span>
       ${mapTypeIcon(pm.mode || m?.type || '', 13)}
-      <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">
+      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
         ${pm.sideTeam ? `Сторона: команда ${pm.sideTeam}` : ''}
       </span>
     </div>`;
