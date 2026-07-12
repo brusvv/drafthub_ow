@@ -135,6 +135,7 @@ echo '<script>'                             >> "$OUT"
 JS_MODULES=(
   # Core: store первый (нужен всем), потом config (прокси)
   js/core/store.js
+  js/core/utils.js
   js/core/config.js
 
   # Auth: Supabase client → session → team → ui
