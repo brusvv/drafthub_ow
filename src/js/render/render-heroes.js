@@ -1,4 +1,3 @@
-// @hash 9ea15c54 2026-07-12T05:05
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -48,7 +47,7 @@ function renderHeroes(){
           const topC=(hero.counters||[]).slice().sort((a,b)=>b.score-a.score).slice(0,3);
           const counterChips=topC.map(c=>{
             const csrc=portrait(c.name);
-            const cc=c.score>=8?'var(--damage)':c.score>=5?'var(--accent)':'var(--text3)';
+            const cc=scoreColor(c.score);
             return`<div class="h-counter-icon">
               ${csrc?`<img src="${csrc}" alt="${c.name}" onerror="this.style.display='none'">`:`<div class="h-counter-icon-ph">${c.name[0]}</div>`}
               <div class="h-counter-score" style="color:${cc}">${c.score}</div>
@@ -88,8 +87,8 @@ function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#hero
 let _heroInfoExpanded=false;
 
 // ── Универсальный чип героя: портрет + скор + tooltip + клик → карточка ──
-const _synColor = s => s>=8?'var(--support)':s>=5?'var(--accent)':'var(--text3)';
-const _ctrColor = s => s>=8?'var(--damage)' :s>=5?'var(--accent)':'var(--text3)';
+const _synColor = s => scoreColor(s,{ high:'var(--support)' });
+const _ctrColor = s => scoreColor(s);
 
 function _heroScoreChip(name, score, colorFn, size=36){
   const src=portrait(name);
@@ -175,8 +174,6 @@ function _buildHeroInfoPopup(name){
     <div class="h-chip-row">
       ${roleIcon(role,16)}
       ${synByRole[role].sort((a,b)=>b.score-a.score).map(s=>{
-        const sp=portrait(s.name);
-        const color=s.score>=8?'var(--support)':s.score>=5?'var(--accent)':'var(--text3)';
         return _heroScoreChip(s.name,s.score,_synColor,40);
       }).join('')}
     </div>`).join('')||'<div class="empty">Нет данных</div>')
