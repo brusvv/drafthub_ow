@@ -1,4 +1,3 @@
-// @hash b2557185 2026-07-09T11:39
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -59,7 +58,7 @@ function _renderDraftPick(){
     <div class="ban-hero-selector" onclick="openDraftHeroPicker()">
       ${_buildDraftChips(draftState.ourHeroes,'Нажми чтобы выбрать...')}
     </div>
-    ${hasRoster?`<div style="margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--text3)">
+    ${hasRoster?`<div style="margin-top:8px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
       или <span class="link-btn" onclick="loadFromRoster()">Загрузить из состава</span>
     </div>`:''}
     <button class="btn btn-primary" onclick="draftState.phase='bans';renderDraftComp()" style="margin-top:16px;padding:8px 20px">
@@ -110,7 +109,7 @@ function _renderDraftBans(){
 function _renderBanSlots(key,label,color){
   const bans=draftState[key];
   return`<div>
-    <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:6px">${label}</div>
+    <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:6px">${label}</div>
     ${[0,1].map(i=>{
       const name=bans[i];
       const src=name?portrait(name):null;
@@ -168,21 +167,21 @@ function _renderDraftResult(){
     <div class="ban-panel-head">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="ban-panel-title">Рекомендации для пика</div>
-        <button class="btn" onclick="draftState.phase='bans';renderDraftComp()" style="font-size:10px">← Баны</button>
+        <button class="btn fs-10" onclick="draftState.phase='bans';renderDraftComp()">← Баны</button>
       </div>
       ${mapObj?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
         ${mapTypeIcon(mapObj.type,13)}<span style="font-size:13px;font-weight:600">${mapObj.name}</span>
         <span class="tier-badge tier-${mapObj.tier}">${mapObj.tier}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${draftState.side==='avg'?'обе стороны':draftState.side==='atk'?'атака':'защита'}</span>
+        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${draftState.side==='avg'?'обе стороны':draftState.side==='atk'?'атака':'защита'}</span>
       </div>`:''}
-      ${allBans.length?`<div style="margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--damage)">
+      ${allBans.length?`<div style="margin-top:6px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--damage)">
         🚫 Забанено: ${allBans.join(', ')}</div>`:''}
     </div>
-    <div class="ban-recs-grid" style="margin-bottom:12px">
+    <div class="ban-recs-grid mb-12">
       ${['Tank','Damage','Support'].map(role=>
         byRole[role]&&byRole[role].length
           ?`<div>
-              <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;display:flex;align-items:center;gap:3px">${roleIcon(role,12)} ${role}</div>
+              <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;display:flex;align-items:center;gap:3px">${roleIcon(role,12)} ${role}</div>
               ${byRole[role].map(x=>{const src=portrait(x.name);const h=heroMap[x.name]||{};
                 return`<div class="ban-rec-card" style="margin-bottom:5px">
                   <div class="ban-rec-portrait">${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="ban-rec-ph">${x.name[0]}</div>`}</div>
@@ -190,7 +189,7 @@ function _renderDraftResult(){
                     <div class="ban-rec-name">${x.name}</div>
                     <div class="ban-rec-bar-wrap"><div class="ban-rec-bar" style="width:${Math.min(100,Math.round(x.score/1.5))}%;background:${rc[role]}"></div></div>
                   </div>
-                  ${x.mapStr?`<span style="font-family:var(--mono);font-size:9px;color:var(--accent)">${x.mapStr}/10</span>`:''}
+                  ${x.mapStr?`<span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--accent)">${x.mapStr}/10</span>`:''}
                 </div>`;
               }).join('')}
             </div>`
@@ -198,7 +197,7 @@ function _renderDraftResult(){
       ).join('')}
     </div>
     ${compHtml}
-    <button class="btn" onclick="draftState={phase:'pick',ourHeroes:[],ourBans:[],enemyBans:[],selectedMap:null,side:'avg'};renderDraftComp()" style="margin-top:12px">
+    <button class="btn mt-12" onclick="draftState={phase:'pick',ourHeroes:[],ourBans:[],enemyBans:[],selectedMap:null,side:'avg'};renderDraftComp()">
       Новый драфт
     </button>
   </div>`;
@@ -223,7 +222,7 @@ function _renderCompCard(c,rank,mapObj,side){
         </div>`;
       })).join('')}
     </div>
-    <div style="font-family:var(--mono);font-size:9px;color:var(--text3)">Синергия: ${Math.round(compSynergyTotal(c.comp))} · Скор: ${c.score}</div>
+    <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">Синергия: ${Math.round(compSynergyTotal(c.comp))} · Скор: ${c.score}</div>
   </div>`;
 }
 
