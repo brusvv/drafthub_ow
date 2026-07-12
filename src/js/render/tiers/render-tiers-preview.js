@@ -1,4 +1,3 @@
-// @hash dfdba2ce 2026-07-04T23:29
 // ════ RENDER — TIERS: ПОПАПЫ КАРТОЧКИ КАРТЫ/ГЕРОЯ ════
 // Часть группы render-tiers-*.js (FILESPLIT-1, 03.07) — см. шапку
 // render-tiers.js за общим описанием разбивки.
@@ -34,9 +33,9 @@ function openTierMapPreview(name){
   const prefHtml=['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
     <div style="margin-bottom:6px">
       <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:${rc[r]};margin-bottom:4px">${r}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <div class="chip-row">
         ${byRole[r].map(n=>{const ps=portrait(n);return`<div style="display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:5px;background:var(--bg3)">
-          ${ps?`<img src="${ps}" style="width:18px;height:18px;border-radius:3px;object-fit:cover" onerror="this.style.display='none'">`:''}
+          ${ps?`<img src="${ps}" class="icon-sm" onerror="this.style.display='none'">`:''}
           <span style="font-size:11px;font-weight:600">${n}</span>
         </div>`;}).join('')}
       </div>
