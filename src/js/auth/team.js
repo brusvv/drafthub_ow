@@ -1,4 +1,3 @@
-// @hash 0056805c 2026-07-03T08:51
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -224,5 +223,6 @@ async function updateTeamSettings(name, description) {
   renderTeamSettingsPanel();
 }
 
-function renderTeamSettingsPanel(){ renderTeamSettings?.(); }
-function renderRolesAdminPanel(){ renderTeamSettings?.(); }
+function _renderTeamSettingsPanels(){ renderTeamSettings?.(); }
+const renderTeamSettingsPanel = _renderTeamSettingsPanels;
+const renderRolesAdminPanel = _renderTeamSettingsPanels;
