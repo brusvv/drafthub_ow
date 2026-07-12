@@ -1,4 +1,3 @@
-// @hash 66d361d3 2026-07-04T10:04
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
 // Тело под-таба «Импорт» внутри общей панели Google Sheets
 // (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
@@ -77,7 +76,7 @@ function _renderImportSection(){
       ${_importLastReport.imported.map(r => `<div style="color:var(--support)">✓ ${r.label}: ${r.count}${
         r.unresolved.length ? ` <span style="color:var(--accent)">(не найдено: ${r.unresolved.map(esc).join(', ')})</span>` : ''
       }</div>`).join('')}
-      ${_importLastReport.skipped.map(r => `<div style="color:var(--text3)">– ${r.label}: пусто, пропущено</div>`).join('')}
+      ${_importLastReport.skipped.map(r => `<div class="text-3">– ${r.label}: пусто, пропущено</div>`).join('')}
       ${_importLastReport.partial.map(r => `<div style="color:var(--accent)">⚠ ${r.label}: не найдено в каталоге — ${r.unresolved.map(esc).join(', ')}</div>`).join('')}
       ${_importLastReport.errors.map(r => `<div style="color:var(--damage)">✗ ${r.label}: ${esc(r.message)}</div>`).join('')}
     </div>` : '';
@@ -89,7 +88,7 @@ function _renderImportSection(){
     </p>
     ${checklistHtml}
     ${scopeHtml}
-    <button class="btn btn-primary" style="margin-top:12px" onclick="_submitImport()" id="importRunBtn">
+    <button class="btn btn-primary mt-12" onclick="_submitImport()" id="importRunBtn">
       Импортировать выбранное
     </button>
     ${reportHtml}`;
