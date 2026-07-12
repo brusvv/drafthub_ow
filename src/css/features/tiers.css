@@ -1,4 +1,3 @@
-/* @hash 0520ba70 2026-07-09T11:39 */
 /* ── TIER LIST ──
    .tier-row/.tier-lbl/.tier-maps/.tier-pill дублировались здесь и в блоке
    "TIER DRAG & DROP" ниже. Проверено построчно (cascade + box model, см.
@@ -14,7 +13,7 @@
 .ban-card-img-ph{width:100%;height:85px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--text3)}
 .ban-card-body{padding:7px 9px}
 .ban-card-name{font-size:12px;font-weight:700;color:var(--damage);margin-bottom:2px}
-.ban-card-role{font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:3px}
+.ban-card-role{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;color:var(--text3);display:flex;align-items:center;gap:3px}
 /* ── TIER TABS ── */
 .tier-tabs{display:flex;gap:4px;margin-bottom:1.25rem}
 .tier-tab{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s}
@@ -74,7 +73,7 @@
 /* ── COMP SLOTS ── */
 .comp-slots{display:flex;flex-direction:column;gap:8px}
 .comp-slot-row{display:flex;align-items:center;gap:8px}
-.comp-slot-role-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;width:52px;flex-shrink:0;font-weight:700}
+.comp-slot-role-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;width:52px;flex-shrink:0;font-weight:700}
 .tank-lbl{color:var(--tank)}
 .dmg-lbl{color:var(--damage)}
 .sup-lbl{color:var(--support)}
@@ -99,7 +98,7 @@
 .h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
 .h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
 .h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
-.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
+.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
 
 /* ════ TIER PREVIEW POPUP ════
    .tier-preview-overlay / .tier-preview-box / .tier-preview-banner
@@ -138,4 +137,4 @@
 
 /* ── TIER PREVIEW SECTIONS (heroes/bans) ── */
 .tier-preview-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.tier-preview-section-title{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:7px}
+.tier-preview-section-title{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:7px}
