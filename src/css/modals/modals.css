@@ -1,4 +1,3 @@
-/* @hash a9667b8e 2026-06-25T23:08 */
 /* ── MAP MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
 .modal-overlay.hidden{display:none}
@@ -7,7 +6,7 @@
 .modal-title{font-size:16px;font-weight:800;margin-bottom:1.25rem}
 .modal-footer{display:flex;gap:7px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
 .form-group{margin-bottom:.875rem}
-.form-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);display:block;margin-bottom:5px}
+.form-label{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text2);display:block;margin-bottom:5px}
 .form-input,.form-select,.form-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--font);font-size:13px;outline:none}
 .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(240,160,48,.12);outline:none}
 .form-select{appearance:none;cursor:pointer}
@@ -21,8 +20,8 @@
 .sel-hero-chip.Tank{border-left:2px solid var(--tank)}
 .sel-hero-chip.Damage{border-left:2px solid var(--damage)}
 .sel-hero-chip.Support{border-left:2px solid var(--support)}
-.sel-empty{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
-.sel-edit-hint{font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto}
+.sel-empty{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.sel-edit-hint{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);margin-left:auto}
  
 /* MISC */
 .loading-state{text-align:center;padding:3rem;color:var(--text3);font-family:var(--mono);font-size:11px}
@@ -48,7 +47,7 @@
 /* ── COMP SLOTS ── */
 .comp-slots{display:flex;flex-direction:column;gap:8px}
 .comp-slot-row{display:flex;align-items:center;gap:8px}
-.comp-slot-role-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;width:52px;flex-shrink:0;font-weight:700}
+.comp-slot-role-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;width:52px;flex-shrink:0;font-weight:700}
 .tank-lbl{color:var(--tank)}
 .dmg-lbl{color:var(--damage)}
 .sup-lbl{color:var(--support)}
@@ -73,7 +72,7 @@
 .h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
 .h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
 .h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
-.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
+.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
 
 /* ════ TIER PREVIEW POPUP ════
    .tier-preview-overlay / .tier-preview-box / .tier-preview-banner
