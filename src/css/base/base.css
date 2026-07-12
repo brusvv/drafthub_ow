@@ -132,6 +132,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .fs-2xs{font-size:var(--fluid-fs-2xs)}
 .fs-xs{font-size:var(--fluid-fs-xs)}
 .fs-sm{font-size:var(--fluid-fs-sm)}
+/* .fs-11/.fs-10 — намеренно ПЛОСКИЕ (не fluid), в отличие от .fs-2xs/xs/sm
+   выше. AUDIT-A2 (дедуп инлайн-стилей) сам заявлен "риск нулевой" — чистый
+   рефакторинг без изменения поведения; сделать их fluid было бы AUDIT-D1
+   под чужим номером, смешивать не стал. */
+.fs-11{font-size:11px}
+.fs-10{font-size:10px}
 .mono-hint{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
 .text-3{color:var(--text3)}
 .flex-1{flex:1}
