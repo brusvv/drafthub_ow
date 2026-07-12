@@ -1,4 +1,3 @@
-// @hash d9d614c8 2026-07-06T05:21
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -132,7 +131,7 @@ async function renderTeamSwitcher() {
   el.classList.remove('hidden');
   el.innerHTML = teams.map(t => `
     <div class="team-switcher-item${t.id===currentTeam()?.id?' active':''}" onclick="switchTeam('${t.id}')">
-      <span>${t.name}</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${t.role?.label||''}</span>
+      <span>${t.name}</span><span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${t.role?.label||''}</span>
     </div>`).join('');
 }
 
@@ -151,7 +150,7 @@ async function renderTeamSettings() {
           <input class="form-input" id="teamNameInput" value="${team?.name ?? ''}"
             placeholder="Название команды" style="flex:1;font-size:13px"
             onkeydown="if(event.key==='Enter')_submitRenameTeam()">
-          <button class="btn btn-primary" onclick="_submitRenameTeam()" style="font-size:11px">Сохранить</button>
+          <button class="btn btn-primary fs-11" onclick="_submitRenameTeam()">Сохранить</button>
         </div>
       </div>` : ''}
       <div class="settings-tabs" style="display:flex;gap:6px;margin-bottom:16px">
@@ -196,7 +195,7 @@ async function _renderMembersTab(el){
               ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
             </select>
             <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')" aria-label="Удалить участника ${esc(name)}">✕</button>
-          ` : `<span class="role-tag" style="font-size:10px">${roleLabel}</span>`}
+          ` : `<span class="role-tag fs-10">${roleLabel}</span>`}
         </div>`;
       }).join('')}
     </div>`;
@@ -212,9 +211,9 @@ async function _renderRolesTab(el){
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:13px;font-weight:700">${r.label}</span>
-              ${r.is_system?'<span class="role-tag" style="font-size:9px">встроенная</span>':''}
+              ${r.is_system?'<span class="role-tag" style="font-size:var(--fluid-fs-2xs)">встроенная</span>':''}
             </div>
-            ${!r.is_system?`<button class="btn btn-danger" style="font-size:9px;padding:3px 8px" onclick="deleteCustomRole('${r.id}')">Удалить</button>`:''}
+            ${!r.is_system?`<button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:3px 8px" onclick="deleteCustomRole('${r.id}')">Удалить</button>`:''}
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
             ${allPerms.map(p => `
@@ -227,7 +226,7 @@ async function _renderRolesTab(el){
           </div>
         </div>`).join('')}
     </div>
-    <button class="btn btn-primary" onclick="_showCreateRoleForm()" style="font-size:11px">+ Создать роль</button>
+    <button class="btn btn-primary fs-11" onclick="_showCreateRoleForm()">+ Создать роль</button>
     <div id="createRoleForm" style="display:none;margin-top:12px" class="role-card">
       <div class="form-group"><input class="form-input" id="newRoleLabel" placeholder="Название роли (напр. Аналитик)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
@@ -237,7 +236,7 @@ async function _renderRolesTab(el){
             ${p.label}
           </label>`).join('')}
       </div>
-      <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateRole()">Создать</button>
+      <button class="btn btn-primary fs-11" onclick="_submitCreateRole()">Создать</button>
     </div>`;
 }
 
@@ -279,16 +278,16 @@ async function _renderInvitesTab(el){
       <select class="form-select" id="inviteRoleSelect" style="width:160px;font-size:11px">
         ${roles.map(r=>`<option value="${r.id}">${r.label}</option>`).join('')}
       </select>
-      <button class="btn btn-primary" style="font-size:11px" onclick="_submitCreateInvite()">+ Создать инвайт</button>
+      <button class="btn btn-primary fs-11" onclick="_submitCreateInvite()">+ Создать инвайт</button>
     </div>
     ${invites.length ? `
       <div style="display:flex;flex-direction:column;gap:5px">
         ${invites.map(inv => `
           <div class="member-row" style="gap:6px;font-size:11px">
             <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${BASE_PATH}/join/${inv.token}</code>
-            <span style="color:var(--text3)">${inv.roles?.label||''}</span>
-            <span style="color:var(--text3)">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
-            <button class="btn btn-danger" style="font-size:9px;padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+esc(inv.roles.label):''}">✕</button>
+            <span class="text-3">${inv.roles?.label||''}</span>
+            <span class="text-3">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
+            <button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+esc(inv.roles.label):''}">✕</button>
           </div>`).join('')}
       </div>` : '<div class="empty">Нет активных инвайтов</div>'}`;
 }
