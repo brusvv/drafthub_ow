@@ -1,4 +1,3 @@
-// @hash 2e07bb20 2026-07-05T20:20
 // ════ ADMIN UI — навигация, команды, пользователи, глобальный тир-лист ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isAdmin, isSuperAdmin, currentTeam, currentUser),
@@ -63,7 +62,7 @@ async function _renderTeamsTab(el) {
         <tbody>
           ${teams.map(t => `<tr>
             <td style="font-weight:600">${t.name}</td>
-            <td><code style="font-size:10px">${t.slug}</code></td>
+            <td><code class="fs-10">${t.slug}</code></td>
             <td>${t.member_count}</td>
             <td style="font-size:10px;color:var(--text3)">${new Date(t.created_at).toLocaleDateString('ru')}</td>
           </tr>`).join('')}
@@ -91,7 +90,7 @@ async function _renderUsersTab(el) {
           <option value="admin">admin</option>
           <option value="superadmin">superadmin</option>
         </select>
-        <button class="btn btn-primary" onclick="_submitSetAppRole()" style="font-size:11px">Назначить</button>
+        <button class="btn btn-primary fs-11" onclick="_submitSetAppRole()">Назначить</button>
       </div>
       <table class="admin-table">
         <thead><tr><th>Email</th><th>App role</th><th>Зарегистрирован</th></tr></thead>
@@ -99,7 +98,7 @@ async function _renderUsersTab(el) {
           ${users.map(u => `<tr>
             <td>${u.email}</td>
             <td>${u.app_role
-              ? `<span class="role-tag" style="font-size:9px;background:rgba(99,179,237,.15);color:var(--accent)">${u.app_role}</span>`
+              ? `<span class="role-tag" style="font-size:var(--fluid-fs-2xs);background:rgba(99,179,237,.15);color:var(--accent)">${u.app_role}</span>`
               : '<span style="color:var(--text3);font-size:10px">—</span>'}</td>
             <td style="font-size:10px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('ru')}</td>
           </tr>`).join('')}
