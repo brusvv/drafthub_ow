@@ -1,3 +1,4 @@
+// @hash 409e0d72 2026-07-12T07:33
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
