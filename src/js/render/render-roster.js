@@ -1,4 +1,3 @@
-// @hash 3eeb7ae4 2026-06-14T08:30
 // ════════════════════════════════════════════════════════════
 // render-roster.js — вкладка «Состав»
 //
@@ -53,7 +52,7 @@ function renderRoster(){
       <div class="empty-icon">🎮</div>
       <div class="empty-title">Состав не собран</div>
       <div class="empty-desc">Добавь игроков для анализа банов и предпочтительных карт</div>
-      <button class="btn btn-primary" onclick="openRosterPlayerPicker()" style="margin-top:12px">+ Добавить игрока</button>
+      <button class="btn btn-primary mt-12" onclick="openRosterPlayerPicker()">+ Добавить игрока</button>
     </div>`;
     return;
   }
