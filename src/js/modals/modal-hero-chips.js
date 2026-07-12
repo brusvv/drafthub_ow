@@ -1,4 +1,3 @@
-// @hash f75ed65b 2026-07-12T05:02
 // ════ MODAL — HERO CHIPS ════
 // Унифицированные чипы + попап оценки для контрпиков и синергий.
 // Используется обоими блоками heroCounterBlock / heroSynergyBlock.
@@ -89,7 +88,7 @@ function openScoreChipPopup(kind,idx,chipEl){
     <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px">
       ${Array.from({length:10},(_,k)=>{
         const v=k+1;const filled=v<=item.score;
-        const color=v>=8?accent:v>=5?'var(--accent)':'var(--text3)';
+        const color=scoreColor(v,{ high:accent });
         return`<span onclick="setScoreChipValue(${idx},${v})" style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
       }).join('')}
       <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${accent};margin-left:6px">${item.score}</span>
