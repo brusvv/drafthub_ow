@@ -1,4 +1,3 @@
-// @hash 09cfea95 2026-06-14T08:30
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
@@ -62,12 +61,12 @@ function openCompMapPopup() {
     }).join('');
 
     return `<div style="margin-bottom:14px">
-      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
                   letter-spacing:.08em;color:var(--text3);margin-bottom:6px;
                   display:flex;align-items:center;gap:4px">
         ${mapTypeIcon(t, 12)} ${t}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">${chips}</div>
+      <div class="chip-row-lg">${chips}</div>
     </div>`;
   }).join('');
 
@@ -138,7 +137,7 @@ function _renderCompControls() {
     : '<span style="font-size:12px;color:var(--text3)">Нажми чтобы выбрать карту...</span>';
 
   return `
-    <div class="ban-draft-controls" style="margin-bottom:12px">
+    <div class="ban-draft-controls mb-12">
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Карта матча</div>
         <div class="ban-map-picker-btn" onclick="openCompMapPopup()"
@@ -199,19 +198,19 @@ function _renderCompBanGrid() {
     }).join('');
 
     return `<div>
-      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
                   letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;
                   display:flex;align-items:center;gap:4px">
         ${roleIcon(role, 11)} ${role}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
+      <div class="chip-row">${chips}</div>
     </div>`;
   }).join('');
 
   return `
     <div class="ban-draft-lbl" style="margin-bottom:8px">
       Наши приоритеты бана
-      <span style="opacity:.5;font-size:9px">
+      <span style="opacity:.5;font-size:var(--fluid-fs-2xs)">
         (выбери до 3 героев — 1-й приоритет самый важный)
       </span>
     </div>
