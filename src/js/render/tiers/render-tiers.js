@@ -1,4 +1,3 @@
-// @hash 364e2f6a 2026-07-04T23:29
 // ════ RENDER — TIERS: ОРКЕСТРАТОР + РЕЖИМ-СВИТЧЕР + УПРАВЛЕНИЕ СЕТАМИ ════
 // FILESPLIT-1 (03.07) — было 467 строк одним файлом. Разбито на 3:
 //   render-tiers.js         (этот файл) — точка входа renderTiers(),
@@ -62,7 +61,7 @@ function _renderTierModeSwitcher(){
   if(isPublicMode()) {
     return `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
-        <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
           letter-spacing:.1em;color:var(--text3)">🌐 Глобальный тир-лист</span>
         <span style="margin-left:auto">
           <button class="btn btn-sm" onclick="renderAuthUI('login')">Войти</button>
@@ -77,11 +76,11 @@ function _renderTierModeSwitcher(){
   ];
   return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
         letter-spacing:.1em;color:var(--text3)">Тир-лист:</span>
       ${modes.map(m => `
-        <button class="f-btn${tierViewMode===m.key?' active':''}"
-          onclick="switchTierMode('${m.key}')" style="font-size:11px">
+        <button class="f-btn${tierViewMode===m.key?' active':''} fs-11"
+          onclick="switchTierMode('${m.key}')">
           ${m.icon} ${m.label}
         </button>`).join('')}
       ${tierViewMode === 'personal'
@@ -117,9 +116,9 @@ function _renderTierSetSelector(){
               background:${s.id===activeTierSetId?'var(--bg3)':'transparent'};cursor:pointer"
               onclick="switchTierSet('${s.id}');_closeTierSetDropdown()">
               <span style="flex:1;font-size:12px">${s.name}</span>
-              ${s.is_default?'<span style="font-size:9px;color:var(--text3)">по умолчанию</span>':''}
+              ${s.is_default?'<span style="font-size:var(--fluid-fs-2xs);color:var(--text3)">по умолчанию</span>':''}
               <button class="btn" onclick="event.stopPropagation();_openTierSetMenu('${s.id}','${esc(s.name)}')"
-                style="font-size:9px;padding:1px 5px">⋯</button>
+                style="font-size:var(--fluid-fs-2xs);padding:1px 5px">⋯</button>
             </div>`).join('')}
           <div style="border-top:1px solid var(--border);margin:4px 0;padding-top:4px">
             <button class="btn btn-primary" onclick="_showCreateTierSetForm();_closeTierSetDropdown()"
