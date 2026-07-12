@@ -1,4 +1,3 @@
-// @hash 299eaa22 2026-07-12T04:58
 // ════════════════════════════════════════════════════════════
 // render-roster.js — вкладка «Состав»
 //
@@ -157,7 +156,7 @@ function _banDetail(banName){
         <span class="roster-victim-player">${pname}</span>
         <div class="roster-victim-heroes">${vics.map(v=>{
           const vsrc=portrait(v.hero);
-          const sc=v.score>=8?'var(--damage)':v.score>=5?'var(--accent)':'var(--text3)';
+          const sc=scoreColor(v.score);
           const bdr=v.isMain?'var(--accent)':'var(--border)';
           const img=vsrc
             ?`<img src="${vsrc}" class="roster-victim-av" style="border-color:${bdr}" onerror="this.style.display='none'">`
