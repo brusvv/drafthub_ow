@@ -1,4 +1,3 @@
-// @hash a2b33465 2026-07-05T03:00
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -235,7 +234,7 @@ function _skeletonItem(type) {
     case 'row':
       return `<div class="skeleton-row">
         <div class="skeleton-line sk-avatar-sm"></div>
-        <div class="skeleton-line sk-title" style="flex:1"></div>
+        <div class="skeleton-line sk-title flex-1"></div>
         <div class="skeleton-line sk-badge"></div>
       </div>`;
 
