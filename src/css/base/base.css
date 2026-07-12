@@ -1,4 +1,3 @@
-/* @hash 2d7207ab 2026-07-12T04:47 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -121,6 +120,21 @@
   --shadow-card: 0 1px 3px rgba(0,0,0,.3);
 }
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;font-size:14px;line-height:1.5}
+/* ── SITE SCROLLBARS ──
+   Единый тёмный скроллбар для всех прокручиваемых зон: вместо системной
+   светлой полосы в hero picker / драфте используем палитру сайта.
+   Firefox читает scrollbar-color/width, Chromium/Safari — ::-webkit-scrollbar.
+   Узкие горизонтальные nav/filters на телефонах ниже всё ещё скрывают
+   скроллбар локальными правилами responsive.css — это отдельный UX-паттерн. */
+*{scrollbar-width:thin;scrollbar-color:rgba(240,160,48,.55) rgba(255,255,255,.04)}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:rgba(255,255,255,.035);border-radius:999px}
+*::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,rgba(240,160,48,.85),rgba(240,160,48,.45));
+  border:2px solid var(--bg2);border-radius:999px
+}
+*::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#f5b040,rgba(240,160,48,.65))}
+*::-webkit-scrollbar-corner{background:transparent}
 .app{max-width:1040px;margin:0 auto;padding:2rem 1.25rem}
 
 /* ── AUDIT-A2 (11.07): утилитарные классы — 9 паттернов, каждый повторялся
