@@ -1,4 +1,3 @@
-// @hash fa0ea05f 2026-07-11T15:57
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
@@ -30,7 +29,7 @@ function _renderImportTab(el) {
 
       <div class="admin-csv-hint" id="adminCsvHint"></div>
 
-      <div style="margin-bottom:12px">
+      <div class="mb-12">
         <label class="admin-file-label">
           <input type="file" id="adminCsvFile" accept=".csv" onchange="_onCsvFileSelected(this)"
             style="display:none">
@@ -41,14 +40,14 @@ function _renderImportTab(el) {
         </label>
       </div>
 
-      <div id="adminCsvPreview" style="margin-bottom:12px"></div>
+      <div id="adminCsvPreview" class="mb-12"></div>
 
       <button class="btn btn-primary" id="adminImportBtn" onclick="_submitCsvImport()"
         style="display:none;font-size:12px">
         ▶ Импортировать
       </button>
 
-      <div id="adminImportLog" style="margin-top:12px"></div>
+      <div id="adminImportLog" class="mt-12"></div>
     </div>`;
 
   // Заполняем список команд
@@ -72,17 +71,17 @@ const _CSV_HINTS = {
   heroes: `Обязательная колонка: <b>name</b> (должно совпадать с именем в каталоге игры)<br>
     Опциональные: priority (1-10), banned (TRUE/FALSE), notes,
     counters (<code>Hero:score,Hero:score</code>)<br>
-    <span style="color:var(--text3)">role/subrole больше не читаются — это факт каталога, не команды</span>`,
+    <span class="text-3">role/subrole больше не читаются — это факт каталога, не команды</span>`,
   maps: `Обязательная колонка: <b>name</b> (должно совпадать с именем в каталоге игры)<br>
     Опциональные: tier (S/A/B/C/D), priority, atk, def, dif (1-5), notes<br>
-    <span style="color:var(--text3)">type/in_pool больше не читаются — это факт каталога, не команды</span>`,
+    <span class="text-3">type/in_pool больше не читаются — это факт каталога, не команды</span>`,
   players: `Обязательные: <b>name, main_role</b><br>
     Опциональные: btag, off_role, rank_tank, rank_dmg, rank_sup, notes`,
   hero_map_strength: `Обязательные: <b>hero_name, map_name, atk</b> (0-10)<br>
     Опциональные: def (0-10, если нет — равно atk)<br>
-    <span style="color:var(--text3)">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
+    <span class="text-3">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
   hero_synergy: `Обязательные: <b>hero_name, synergy_hero, score</b> (1-10)<br>
-    <span style="color:var(--text3)">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
+    <span class="text-3">имена резолвятся в каталог — опечатка = строка пропущена, не ошибка</span>`,
   global_tiers: `Обязательные: <b>entity_type</b> (map/hero), <b>name, tier</b> (S/A/B/C/D)<br>
     Не требует команды — обновляет глобальный тир-лист`,
 };
@@ -189,7 +188,7 @@ async function _submitCsvImport() {
         <div class="admin-log-ok">✓ Импортировано: <b>${imported}</b></div>
         ${skipped  ? `<div class="admin-log-warn">⚠ Пропущено: ${skipped}</div>` : ''}
         ${errors.length ? `<div class="admin-log-err">✗ Ошибок: ${errors.length}<br>
-          <code style="font-size:9px">${errors.slice(0,5).join('<br>')}</code></div>` : ''}
+          <code style="font-size:var(--fluid-fs-2xs)">${errors.slice(0,5).join('<br>')}</code></div>` : ''}
       </div>`;
     toast(`Импорт завершён: ${imported} строк`, 'ok');
   } catch(e) {
