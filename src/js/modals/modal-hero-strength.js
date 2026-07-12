@@ -1,3 +1,4 @@
+// @hash edd1642f 2026-07-12T07:14
 // ════ MODAL — HERO MAP STRENGTH ════
 // Оценка силы героя на картах: редактор (mapStrPickerOverlay) + превью в модалке.
 // Данные: heroStrengthEdits = [{map, type, atk, def}] — инициализируется в modal-hero.js (openHeroModal)
