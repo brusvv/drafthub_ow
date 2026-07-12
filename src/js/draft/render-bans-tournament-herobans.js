@@ -1,4 +1,3 @@
-// @hash 7555a05e 2026-06-14T08:30
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-herobans.js — турнирный драфт: баны героев
 //
@@ -61,7 +60,7 @@ function _renderTournHeroBans() {
       ${_renderCurrentMapHeroBan()}
       ${allDone ? _renderTournFinalRecs() : ''}
 
-      <button class="btn" onclick="resetTournDraft()" style="margin-top:12px">Сбросить всё</button>
+      <button class="btn mt-12" onclick="resetTournDraft()">Сбросить всё</button>
     </div>`;
 }
 
@@ -89,7 +88,7 @@ function _renderCurrentMapHeroBan() {
                           border:1px solid rgba(224,85,85,.3)">
         ${bsrc ? `<img src="${bsrc}" style="width:24px;height:24px;border-radius:4px;object-fit:cover">` : ''}
         <span style="font-size:12px;font-weight:700;color:var(--damage)">${ban}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:${color}">Команда ${team}</span>
+        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:${color}">Команда ${team}</span>
       </div>`;
     }
     if (hb.step === (team === 'A' ? 0 : 1)) {
@@ -128,12 +127,12 @@ function _renderCurrentMapHeroBan() {
         }).join('');
 
         return `<div style="${roleDisabled ? 'opacity:.3;pointer-events:none' : ''}">
-          <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;
+          <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
                       letter-spacing:.08em;color:${rc[role]};margin-bottom:5px;
                       display:flex;align-items:center;gap:3px">
             ${roleIcon(role, 11)} ${role}${roleDisabled ? ' (заблокирована)' : ''}
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>
+          <div class="chip-row">${chips}</div>
         </div>`;
       }).join('')
     : `<div style="font-family:var(--mono);font-size:11px;color:var(--support);margin-bottom:12px">
@@ -160,7 +159,7 @@ function _renderCurrentMapHeroBan() {
         ? `<img src="${src}" style="width:120px;height:70px;object-fit:cover;border-radius:8px;flex-shrink:0"
                 onerror="this.style.display='none'">`
         : ''}
-      <div style="flex:1">
+      <div class="flex-1">
         <div style="font-size:15px;font-weight:700;margin-bottom:6px">${hb.mapName}</div>
         <div style="display:flex;flex-direction:column;gap:4px">
           ${banStatus('A')}
@@ -242,10 +241,10 @@ function _renderTournFinalRecs() {
                         border-radius:7px;background:var(--bg2);border:1px solid var(--border)">
       ${mapTypeIcon(hb.mode, 12)}
       <span style="font-size:12px;font-weight:600;flex:1">${hb.mapName}</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--tank)">A:</span>
+      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--tank)">A:</span>
       ${srcA ? `<img src="${srcA}" style="width:20px;height:20px;border-radius:3px;object-fit:cover">` : ''}
       <span style="font-size:11px;color:var(--damage)">${hb.banA || '—'}</span>
-      <span style="font-family:var(--mono);font-size:9px;color:var(--damage);margin-left:6px">B:</span>
+      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--damage);margin-left:6px">B:</span>
       ${srcB ? `<img src="${srcB}" style="width:20px;height:20px;border-radius:3px;object-fit:cover">` : ''}
       <span style="font-size:11px;color:var(--damage)">${hb.banB || '—'}</span>
     </div>`;
