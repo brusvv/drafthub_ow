@@ -205,7 +205,7 @@ function _buildHeroInfoPopup(name){
   const body=`
     <div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start">
       ${src?`<img src="${src}" style="width:96px;height:96px;object-fit:cover;border-radius:12px;flex-shrink:0;border:2px solid ${rc[hero.role]||'var(--border2)'}" onerror="this.style.display='none'">`:''}
-      <div style="flex:1">
+      <div class="flex-1">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
           <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">${hero.name}</div>
           <button class="tier-preview-close" onclick="closeTierPreview()" style="flex-shrink:0;margin-top:2px">×</button>
