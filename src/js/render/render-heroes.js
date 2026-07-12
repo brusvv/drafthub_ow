@@ -1,4 +1,3 @@
-// @hash 00bea014 2026-07-12T04:33
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -152,7 +151,7 @@ function _buildHeroInfoPopup(name){
   // Две колонки: Силён слева, Слаб справа
   const _col=(label,color,rows)=>rows.length?`
     <div style="flex:1;min-width:0">
-      <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${label}</div>
+      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${label}</div>
       <div style="display:flex;flex-direction:column;gap:4px">${rows.map(e=>_mapRow(e,_heroInfoExpanded)).join('')}</div>
     </div>`:'';
 
