@@ -199,7 +199,7 @@ function buildCompDisplay(comp){
   return['Tank','Damage','Support'].filter(r=>byRole[r].length).map(r=>`
     <div style="margin-bottom:8px">
       <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${rc[r]};margin-bottom:5px;font-weight:700">${r}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <div class="chip-row-lg">
         ${byRole[r].map(c=>{const ps=portrait(c.hero);return`<div class="comp-card ${r}">
           ${ps?`<img src="${ps}" class="comp-av" onerror="this.outerHTML='<div class=comp-av-ph>${c.hero[0]}</div>'">`:`<div class="comp-av-ph">${c.hero[0]}</div>`}
           <div class="comp-name">${c.hero}</div>
