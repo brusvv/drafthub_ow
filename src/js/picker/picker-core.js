@@ -1,4 +1,3 @@
-// @hash 1ee4aa58 2026-06-28T16:42
 // ════ PICKER — CORE ════
 
 // ════════════════════════════════════════════════════════════
@@ -139,7 +138,7 @@ function renderSelPreview(){
       const h=heroMap[name]||{};const src=portrait(name);
       return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
         <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
         </span>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
@@ -156,7 +155,7 @@ function renderRolePoolPreviews(){
       const src=portrait(name);
       return`<div class="sel-hero-chip ${role}" title="${esc(name)}">
         <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
         </span>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
