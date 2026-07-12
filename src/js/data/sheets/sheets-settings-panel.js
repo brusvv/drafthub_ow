@@ -1,4 +1,3 @@
-// @hash d9a9c86c 2026-06-30T11:25
 // ════ GOOGLE SHEETS — SHELL ПАНЕЛИ В НАСТРОЙКАХ (SETTINGS-1) ════
 // Вкладка Настройки → «Google Sheets» (auth/ui.js, _renderSettingsTabContent,
 // ключ 'sheets') показывает один контейнер #sheetsExportPanel, который
@@ -49,10 +48,10 @@ async function renderGoogleSheetsPanel(){
     <div class="role-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="font-size:13px;font-weight:700">Google Sheets</div>
-        <button class="btn" style="font-size:10px" onclick="disconnectGoogleSheets()">Отключить Google</button>
+        <button class="btn fs-10" onclick="disconnectGoogleSheets()">Отключить Google</button>
       </div>
 
-      <div class="form-group" style="margin-bottom:12px">
+      <div class="form-group mb-12">
         <label class="form-label">Google Sheet ID</label>
         <input class="form-input" id="sheetsConfigId" placeholder="1aBcD..." value="${config?.sheet_id||''}"
                onchange="_saveSheetsConfigId(this.value)">
