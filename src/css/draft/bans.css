@@ -1,4 +1,3 @@
-/* @hash 07b46f5a 2026-07-09T11:39 */
 /* ── HERO PICKER MODAL ── */
 .picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1rem}
 .picker-overlay.hidden{display:none}
@@ -12,10 +11,10 @@
 .p-hero{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .1s;background:var(--bg3);position:relative}
 .p-hero:hover{border-color:var(--border2)}
 .p-hero.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.p-hero.selected::after{content:'✓';position:absolute;top:4px;right:4px;background:var(--accent);color:#000;font-size:9px;font-weight:800;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
+.p-hero.selected::after{content:'✓';position:absolute;top:4px;right:4px;background:var(--accent);color:#000;font-size:var(--fluid-fs-2xs);font-weight:800;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
 .p-hero-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg4)}
 .p-hero-img-ph{width:100%;aspect-ratio:1;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
-.p-hero-name{font-size:9px;font-weight:600;text-align:center;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-hero-name{font-size:var(--fluid-fs-2xs);font-weight:600;text-align:center;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .picker-footer{padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;flex-shrink:0}
  
 /* ── COUNTER GRID (heroes grouped by role) ── */
@@ -61,7 +60,7 @@
 
 .ban-draft-controls{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
 .ban-draft-ctrl{display:flex;flex-direction:column;gap:6px;min-width:160px}
-.ban-draft-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.ban-draft-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
 
 .ban-hero-selector{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:40px;transition:border-color .15s}
 .ban-hero-selector:hover{border-color:var(--border3)}
@@ -78,7 +77,7 @@
 .ban-recs-empty{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:2rem 0}
 .ban-recs-header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .ban-recs-title{font-size:13px;font-weight:700}
-.ban-recs-algo-hint{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.ban-recs-algo-hint{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
 
 .ban-recs-grid{display:flex;flex-direction:column;gap:6px}
 
@@ -90,12 +89,12 @@
 .ban-rec-ph{width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
 .ban-rec-body{flex:1;min-width:0}
 .ban-rec-name{font-size:14px;font-weight:700;margin-bottom:2px}
-.ban-rec-sub{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:5px}
+.ban-rec-sub{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);margin-bottom:5px}
 .ban-rec-bar-wrap{height:3px;background:var(--bg5);border-radius:2px;margin-bottom:6px;overflow:hidden}
 .ban-rec-bar{height:100%;border-radius:2px;transition:width .3s ease}
 .ban-rec-tags{display:flex;flex-wrap:wrap;gap:4px}
-.ban-rec-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid transparent;line-height:1.5}
-.ban-rec-urgency{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;flex-shrink:0;margin-top:4px}
+.ban-rec-tag{font-family:var(--mono);font-size:var(--fluid-fs-2xs);padding:2px 7px;border-radius:4px;border:1px solid transparent;line-height:1.5}
+.ban-rec-urgency{font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;letter-spacing:.08em;flex-shrink:0;margin-top:4px}
 
 /* ── BAN MODE SWITCHER ── */
 .ban-mode-switcher{display:flex;gap:4px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:3px}
