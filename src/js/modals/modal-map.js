@@ -1,4 +1,3 @@
-// @hash da2d97af 2026-07-03T07:54
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
@@ -54,10 +53,10 @@ function renderMapAutoPreferred(map){
     if(!arr.length)return'';
     return`<div style="margin-bottom:6px">
       <div style="font-family:var(--mono);font-size:8px;text-transform:uppercase;color:${color};margin-bottom:4px">${label}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">
+      <div class="chip-row">
         ${arr.map(x=>{const src=portrait(x.name);return`<div class="sel-hero-chip ${x.role}">
-          ${src?`<img src="${src}" style="width:18px;height:18px;border-radius:3px;object-fit:cover">`:`<div class="sel-hero-chip-ph">${x.name[0]}</div>`}
-          ${x.name}<span style="font-family:var(--mono);font-size:9px;color:${color};margin-left:2px">${x.score}</span>
+          ${src?`<img src="${src}" class="icon-sm">`:`<div class="sel-hero-chip-ph">${x.name[0]}</div>`}
+          ${x.name}<span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:${color};margin-left:2px">${x.score}</span>
         </div>`;}).join('')}
       </div>
     </div>`;
