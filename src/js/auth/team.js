@@ -1,4 +1,3 @@
-// @hash 73f465a4 2026-07-12T07:11
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
@@ -186,7 +185,7 @@ async function createInvite({ roleId, maxUses = null, expiresInDays = 7 }) {
 
   // RPC возвращает токен напрямую как text
   const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}${BASE_PATH}/join/${token}`;
+  const link = buildAppUrl(`/join/${token}`);
   try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch { toast(link, 'ok'); }
   return link;
