@@ -63,7 +63,7 @@ async function renderTierSharePanel(){
               </div>
               <code style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);
                 display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                ${BASE_PATH}/tier/${l.token}
+                ${appPath(`/tier/${l.token}`)}
               </code>
             </div>
             <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${l.views} просм.</span>
@@ -86,7 +86,7 @@ async function renderTierSharePanel(){
 function _shareEntityLabel(t){ return t==='map'?'Карты':t==='hero'?'Герои':'Карты и герои'; }
 
 async function copyShareLink(token){
-  const link = `${window.location.origin}${BASE_PATH}/tier/${token}`;
+  const link = buildAppUrl(`/tier/${token}`);
   try{ await navigator.clipboard.writeText(link); toast('Скопировано ✓','ok'); }
   catch{ toast(link,'ok'); }
 }
