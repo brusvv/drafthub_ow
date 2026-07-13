@@ -1,4 +1,3 @@
-// @hash 7f2a06e6 2026-07-12T07:16
 // ════════════════════════════════════════════════════════════
 // render-players.js — вкладка «Игроки»
 //
@@ -54,11 +53,11 @@ function renderPlayers(){
   detail.classList.remove('show'); detail.innerHTML = '';
 
   if(!players.length){
-    grid.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">👥</div>
-      <div class="empty-title">Состав пуст</div>
-      <div class="empty-desc">Добавь игроков чтобы анализировать баны, карты и состав</div>
-    </div>`;
+    grid.innerHTML = renderEmptyState({
+      icon: '👥',
+      title: 'Состав пуст',
+      desc: 'Добавь игроков чтобы анализировать баны, карты и состав',
+    });
     return;
   }
 
