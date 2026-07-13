@@ -1,3 +1,4 @@
+// @hash 01805c58 2026-07-13T12:42
 // ════ ADMIN IMPORT DATA — CSV import handlers ════
 // Зависимости: auth.js (_sb), sheets-import-resolve.js (_resolveHeroId/_resolveMapId),
 //              db-load-tiers.js (_resolveTierListId), session.js (isSuperAdmin).
