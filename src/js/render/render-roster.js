@@ -1,4 +1,3 @@
-// @hash db04f424 2026-07-12T07:17
 // ════════════════════════════════════════════════════════════
 // render-roster.js — вкладка «Состав»
 //
@@ -49,12 +48,12 @@ function computeRosterRecs(){ return computeRosterRecs_scoring(rosterPlayers,get
 function renderRoster(){
   const el=document.getElementById('rosterContent'); if(!el)return;
   if(!rosterPlayers.length){
-    el.innerHTML=`<div class="empty-state">
-      <div class="empty-icon">🎮</div>
-      <div class="empty-title">Состав не собран</div>
-      <div class="empty-desc">Добавь игроков для анализа банов и предпочтительных карт</div>
-      <button class="btn btn-primary mt-12" onclick="openRosterPlayerPicker()">+ Добавить игрока</button>
-    </div>`;
+    el.innerHTML=renderEmptyState({
+      icon: '🎮',
+      title: 'Состав не собран',
+      desc: 'Добавь игроков для анализа банов и предпочтительных карт',
+      action: '<button class="btn btn-primary mt-12" onclick="openRosterPlayerPicker()">+ Добавить игрока</button>',
+    });
     return;
   }
   const recs=computeRosterRecs();
