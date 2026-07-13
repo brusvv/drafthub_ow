@@ -1,4 +1,3 @@
-// @hash 10d10b56 2026-07-12T07:21
 // ════ ADMIN IMPORT DATA — CSV import handlers ════
 // Зависимости: auth.js (_sb), sheets-import-resolve.js (_resolveHeroId/_resolveMapId),
 //              db-load-tiers.js (_resolveTierListId), session.js (isSuperAdmin).
@@ -44,7 +43,7 @@ async function _importHeroes(teamId, rows) {
       return {
         team_id:  teamId,
         hero_id:  heroId,
-        priority: parseInt(r.priority) || 5,
+        priority: clampInt(r.priority, 1, 10, 5),
         banned:   (r.banned || '').toUpperCase() === 'TRUE',
         notes:    r.notes || '',
         _counters: _parseCountersCsv(r.counters || ''), // снимается перед upsert, см. ниже
@@ -101,10 +100,10 @@ async function _importMaps(teamId, rows) {
         team_id:  teamId,
         map_id:   mapId,
         tier:     ['S','A','B','C','D'].includes(r.tier) ? r.tier : 'B',
-        priority: parseInt(r.priority) || 5,
-        atk:      Math.min(5, Math.max(1, parseInt(r.atk) || 3)),
-        def:      Math.min(5, Math.max(1, parseInt(r.def) || 3)),
-        dif:      Math.min(5, Math.max(1, parseInt(r.dif) || 3)),
+        priority: clampInt(r.priority, 1, 10, 5),
+        atk:      clampInt(r.atk, 1, 5, 3),
+        def:      clampInt(r.def, 1, 5, 3),
+        dif:      clampInt(r.dif, 1, 5, 3),
         notes:    r.notes || '',
       };
     })
@@ -152,8 +151,8 @@ async function _importHeroMapStrength(teamId, rows) {
       if(!heroId || !mapId) return null;
       return {
         team_id: teamId, hero_id: heroId, map_id: mapId,
-        atk: Math.min(10, Math.max(0, parseInt(r.atk) || 0)),
-        def: Math.min(10, Math.max(0, parseInt(r.def) || parseInt(r.atk) || 0)),
+        atk: clampInt(r.atk, 0, 10, 0),
+        def: clampInt(r.def, 0, 10, clampInt(r.atk, 0, 10, 0)),
       };
     })
     .filter(Boolean);
@@ -181,7 +180,7 @@ async function _importHeroSynergy(teamId, rows) {
       if(heroId === synergyId) return null; // CHECK(hero_id<>synergy_hero_id)
       return {
         team_id: teamId, hero_id: heroId, synergy_hero_id: synergyId,
-        score: Math.min(10, Math.max(1, parseInt(r.score) || 5)),
+        score: clampInt(r.score, 1, 10, 5),
       };
     })
     .filter(Boolean);
