@@ -1,4 +1,4 @@
-// @hash 282efd9c 2026-07-12T04:57
+// @hash b985b31d 2026-07-13T12:46
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
