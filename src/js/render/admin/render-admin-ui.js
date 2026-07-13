@@ -1,3 +1,4 @@
+// @hash 8a9ec520 2026-07-13T12:18
 // ════ ADMIN UI — навигация, команды, пользователи, глобальный тир-лист ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isAdmin, isSuperAdmin, currentTeam, currentUser),
