@@ -1,3 +1,4 @@
+// @hash 4dec7ab9 2026-07-13T12:31
 // ════ AUTH — TEAM & ROLES ════
 // Управление командами, участниками, ролями, инвайтами.
 // Новая схема: user_roles, roles, role_permissions, permissions
