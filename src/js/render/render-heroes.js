@@ -1,4 +1,3 @@
-// @hash 70191636 2026-07-12T07:15
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -74,11 +73,11 @@ function renderHeroes(){
       </div>
       ${subroleGroups}
     </div>`;
-  }).join('')||`<div class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-title">Ничего не найдено</div>
-      <div class="empty-desc">Попробуй сбросить фильтр по роли</div>
-    </div>`;
+  }).join('')||renderEmptyState({
+      icon: '🔍',
+      title: 'Ничего не найдено',
+      desc: 'Попробуй сбросить фильтр по роли',
+    });
 }
 
 function filterHeroes(role,btn){heroFilter=role;document.querySelectorAll('#heroFilters .f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHeroes()}
