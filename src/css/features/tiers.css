@@ -1,4 +1,3 @@
-/* @hash 8620d343 2026-07-12T04:50 */
 /* ── TIER LIST ──
    .tier-row/.tier-lbl/.tier-maps/.tier-pill дублировались здесь и в блоке
    "TIER DRAG & DROP" ниже. Проверено построчно (cascade + box model, см.
@@ -139,3 +138,26 @@
 /* ── TIER PREVIEW SECTIONS (heroes/bans) ── */
 .tier-preview-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .tier-preview-section-title{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:7px}
+
+/* ── TIER SHARE PANEL ── */
+.tier-share-panel{margin-top:16px;max-width:580px}
+.tier-share-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tier-share-title{font-size:13px;font-weight:700}
+.tier-share-set{font-size:10px;color:var(--text3);margin-top:2px}
+.tier-share-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer}
+.tier-share-close:hover{color:var(--text)}
+.tier-share-desc{font-size:11px;color:var(--text3);margin-bottom:12px}
+.tier-share-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tier-share-type{width:130px;font-size:11px}
+.tier-share-label-input{flex:1;min-width:140px;font-size:11px}
+.tier-share-check,.tier-share-public{display:flex;align-items:center;cursor:pointer}
+.tier-share-check{gap:5px;font-size:11px}
+.tier-share-public{gap:4px;font-size:10px}
+.tier-share-links{display:flex;flex-direction:column;gap:5px}
+.tier-share-set-chip{font-family:var(--mono);font-size:8px;color:var(--accent);background:rgba(99,179,237,.1);padding:1px 5px;border-radius:4px;white-space:nowrap}
+.tier-share-row{gap:8px;font-size:11px}
+.tier-share-row-main{flex:1;min-width:0}
+.tier-share-row-title{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tier-share-row-label{font-weight:600}
+.tier-share-url{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tier-share-views{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
