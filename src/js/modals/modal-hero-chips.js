@@ -1,4 +1,3 @@
-// @hash b13b54b8 2026-07-12T07:13
 // ════ MODAL — HERO CHIPS ════
 // Унифицированные чипы + попап оценки для контрпиков и синергий.
 // Используется обоими блоками heroCounterBlock / heroSynergyBlock.
@@ -87,12 +86,12 @@ function openScoreChipPopup(kind,idx,chipEl){
   popup.innerHTML=`
     <div style="font-size:12px;font-weight:700;margin-bottom:8px">${item.name}</div>
     <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px">
-      ${Array.from({length:10},(_,k)=>{
-        const v=k+1;const filled=v<=item.score;
-        const color=scoreColor(v,{ high:accent });
-        return`<span onclick="setScoreChipValue(${idx},${v})" style="cursor:pointer;font-size:16px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
-      }).join('')}
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${accent};margin-left:6px">${item.score}</span>
+      ${renderScoreDots({
+        value: item.score,
+        high: accent,
+        size: 16,
+        onValue: v => `setScoreChipValue(${idx},${v})`,
+      })}
     </div>
     <button class="btn" style="width:100%;font-size:10px" onclick="_closeScoreChipPopup()">Готово</button>`;
   document.body.appendChild(popup);
