@@ -1,4 +1,3 @@
-// @hash 086ff978 2026-07-05T20:16
 // ════ DATA — WRITE (Supabase) ════
 // Общие хелперы (_requireWrite, _resolveIds) + players + tiers + share-links.
 // Героев и карты см. db-write-heroes.js / db-write-maps.js (вынесены отсюда —
@@ -290,7 +289,7 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
   if(error){ handleError(error, 'Ошибка создания ссылки'); return null; }
 
   const token = typeof data === 'string' ? data : data?.token;
-  const link = `${window.location.origin}${BASE_PATH}/tier/${token}`;
+  const link = buildAppUrl(`/tier/${token}`);
   try{ await navigator.clipboard.writeText(link); toast('Ссылка скопирована ✓', 'ok'); }
   catch{ toast(link, 'ok'); }
   return link;
