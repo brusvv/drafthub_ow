@@ -1,4 +1,3 @@
-// @hash 191ef403 2026-07-12T04:59
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -49,6 +48,27 @@ function pluralRu(count, forms) {
 }
 function heroesCountLabel(count) {
   return `${count} ${pluralRu(count, { one: 'герой', few: 'героя', many: 'героев', other: 'героя' })}`;
+}
+
+function renderEmptyState({ icon = '∅', title = 'Нет данных', desc = '', action = '', compact = false } = {}) {
+  const descHtml = desc ? `
+    <div class="empty-desc">${desc}</div>` : '';
+  const actionHtml = action ? `
+    ${action}` : '';
+  return `<div class="empty-state${compact ? ' empty-state-compact' : ''}">
+    <div class="empty-icon">${icon}</div>
+    <div class="empty-title">${title}</div>${descHtml}${actionHtml}
+  </div>`;
+}
+
+function renderScoreDots({ value = 0, onValue, high = 'var(--damage)', size = 15 } = {}) {
+  return Array.from({ length: 10 }, (_, k) => {
+    const v = k + 1;
+    const filled = v <= value;
+    const color = scoreColor(v, { high });
+    const click = typeof onValue === 'function' ? onValue(v) : '';
+    return `<span onclick="${click}" style="cursor:pointer;font-size:${size}px;color:${filled ? color : 'var(--border2)'};line-height:1">◆</span>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════
