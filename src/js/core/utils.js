@@ -1,4 +1,3 @@
-// @hash 8ecb9fac 2026-07-12T07:02
 // ════ CORE UTILS ════
 // Чистые хелперы без состояния. Держим здесь повторяемые функции, которые
 // не относятся к store/config и должны быть доступны всем модулям после core.
@@ -15,4 +14,25 @@ function scoreColor(value, {
   midAt = 5
 } = {}){
   return value >= highAt ? high : value >= midAt ? mid : low;
+}
+
+function appPath(path = ''){
+  const suffix = String(path || '');
+  if(!suffix || suffix === '/') return BASE_PATH + '/';
+  return BASE_PATH + (suffix.startsWith('/') ? suffix : '/' + suffix);
+}
+
+function buildAppUrl(path = ''){
+  return window.location.origin + appPath(path);
+}
+
+function formatShortLabel(value, max = 9){
+  const text = String(value ?? '');
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
+
+function clampInt(value, min, max, fallback = min){
+  const parsed = parseInt(value, 10);
+  const n = Number.isFinite(parsed) ? parsed : fallback;
+  return Math.min(max, Math.max(min, n));
 }
