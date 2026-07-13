@@ -1,4 +1,3 @@
-// @hash b3116e2f 2026-07-12T07:31
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-draft.js — турнирный драфт: пул карт + драфт карт
 //
@@ -167,7 +166,7 @@ function _renderTournProgressBar(steps, si) {
     const col      = s.t === 'ban' ? 'var(--damage)' : s.t === 'pick' ? 'var(--support)' : 'var(--text3)';
     const label    = s.t === 'ban' ? 'БАН' : s.t === 'pick' ? 'ПИК' : 'СТР';
     const valText  = s.done && s.value
-      ? (s.value.length > 9 ? s.value.slice(0, 9) + '…' : s.value)
+      ? formatShortLabel(s.value, 9)
       : '';
 
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;
