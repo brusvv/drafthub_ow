@@ -1,4 +1,3 @@
-// @hash 96b9bd05 2026-07-13T12:29
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
