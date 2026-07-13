@@ -1,4 +1,3 @@
-// @hash 15b8809a 2026-07-12T05:00
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -285,7 +284,7 @@ async function _renderInvitesTab(el){
       <div style="display:flex;flex-direction:column;gap:5px">
         ${invites.map(inv => `
           <div class="member-row" style="gap:6px;font-size:11px">
-            <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${BASE_PATH}/join/${inv.token}</code>
+            <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${appPath(`/join/${inv.token}`)}</code>
             <span class="text-3">${inv.roles?.label||''}</span>
             <span class="text-3">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
             <button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+esc(inv.roles.label):''}">✕</button>
