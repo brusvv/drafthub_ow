@@ -1,4 +1,3 @@
-// @hash edd1642f 2026-07-12T07:14
 // ════ MODAL — HERO MAP STRENGTH ════
 // Оценка силы героя на картах: редактор (mapStrPickerOverlay) + превью в модалке.
 // Данные: heroStrengthEdits = [{map, type, atk, def}] — инициализируется в modal-hero.js (openHeroModal)
@@ -122,11 +121,10 @@ const _ICON_STR_SM = `<svg width="11" height="11" viewBox="0 0 24 24" fill="curr
 
 function _strengthPopupRow(mapName, field, val, label, iconHtml){
   const dots = Array.from({length:10}, (_,k) => {
-    const v = k+1; const filled = v <= val;
-    const color = scoreColor(v);
-    return`<span onclick="setStrengthDot('${esc(mapName)}','${field}',${v})"
-      style="cursor:pointer;font-size:15px;color:${filled?color:'var(--border2)'};line-height:1">◆</span>`;
-  }).join('');
+  const dots = renderScoreDots({
+    value: val,
+    onValue: v => `setStrengthDot('${esc(mapName)}','${field}',${v})`,
+  });
   return`<div class="map-str-score-row">
     <span class="map-str-score-label" style="display:flex;align-items:center;gap:3px">${iconHtml}</span>
     <div class="map-str-dots">${dots}</div>
