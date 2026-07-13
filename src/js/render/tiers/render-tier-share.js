@@ -1,4 +1,3 @@
-// @hash b985b31d 2026-07-13T12:46
 // ════ TIER SHARE — публичные ссылки и просмотр без авторизации ════
 // Зависимости: render-tiers.js (tierViewMode, tierSets, activeTierSetId),
 //              db-write.js (loadShareLinks, createShareLink)
@@ -15,59 +14,53 @@ async function renderTierSharePanel(){
   const setLabel   = activeSet ? `«${activeSet.name}»` : 'текущего тир-листа';
 
   const panel = document.createElement('div');
-  panel.id = 'tierSharePanel';
-  panel.className = 'role-card';
-  panel.style.cssText = 'margin-top:16px;max-width:580px';
+  panel.className = 'role-card tier-share-panel';
   panel.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div class="tier-share-head">
       <div>
-        <div style="font-size:13px;font-weight:700">Поделиться тир-листом</div>
-        ${activeSet ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">Сет: ${activeSet.name}</div>` : ''}
+        <div class="tier-share-title">Поделиться тир-листом</div>
+        ${activeSet ? `<div class="tier-share-set">Сет: ${activeSet.name}</div>` : ''}
       </div>
       <button onclick="document.getElementById('tierSharePanel').remove()" aria-label="Закрыть панель"
-        style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer">×</button>
+        class="tier-share-close">×</button>
     </div>
-    <p style="font-size:11px;color:var(--text3);margin-bottom:12px">
+    <p class="tier-share-desc">
       Ссылка позволяет другим видеть ${setLabel} — редактировать они не смогут.
     </p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-      <select class="form-select" id="shareEntityType" style="width:130px;font-size:11px">
+    <div class="tier-share-form">
+      <select class="form-select tier-share-type" id="shareEntityType">
         <option value="both">Карты и герои</option>
         <option value="map">Только карты</option>
         <option value="hero">Только герои</option>
       </select>
-      <input class="form-input" id="shareLinkLabel" placeholder="Название (опционально)"
-        style="flex:1;min-width:140px;font-size:11px">
-      <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+      <input class="form-input tier-share-label-input" id="shareLinkLabel" placeholder="Название (опционально)">
+      <label class="tier-share-check">
         <input type="checkbox" id="shareIsPublic" checked> Публичная
       </label>
       <button class="btn btn-primary fs-11"
         onclick="_submitCreateShareLink()">Создать ссылку</button>
     </div>
     ${links.length ? `
-      <div style="display:flex;flex-direction:column;gap:5px">
+      <div class="tier-share-links">
         ${links.map(l => {
           // Фаза 6: показываем имя сета к которому привязана ссылка
           const linkSet  = tierSets.find(s => s.id === l.tier_set_id);
           const setChip  = linkSet
-            ? `<span style="font-family:var(--mono);font-size:8px;color:var(--accent);
-                background:rgba(99,179,237,.1);padding:1px 5px;border-radius:4px;white-space:nowrap">
-                📋 ${linkSet.name}</span>`
+            ? `<span class="tier-share-set-chip">📋 ${linkSet.name}</span>`
             : '';
           return `
-          <div class="member-row" style="gap:8px;font-size:11px">
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-                <span style="font-weight:600">${l.label || _shareEntityLabel(l.entity_type)}</span>
+          <div class="member-row tier-share-row">
+            <div class="tier-share-row-main">
+              <div class="tier-share-row-title">
+                <span class="tier-share-row-label">${l.label || _shareEntityLabel(l.entity_type)}</span>
                 ${setChip}
               </div>
-              <code style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);
-                display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <code class="tier-share-url">
                 ${appPath(`/tier/${l.token}`)}
               </code>
             </div>
-            <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${l.views} просм.</span>
-            <label style="display:flex;align-items:center;gap:4px;font-size:10px;cursor:pointer">
+            <span class="tier-share-views">${l.views} просм.</span>
+            <label class="tier-share-public">
               <input type="checkbox" ${l.is_public?'checked':''}
                 onchange="toggleShareLinkPublic('${l.id}',this.checked)"> Публичная
             </label>
