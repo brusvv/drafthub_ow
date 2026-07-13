@@ -1,3 +1,4 @@
+// @hash f958f046 2026-07-13T12:36
 // ════ DATA — WRITE (Supabase) ════
 // Общие хелперы (_requireWrite, _resolveIds) + players + tiers + share-links.
 // Героев и карты см. db-write-heroes.js / db-write-maps.js (вынесены отсюда —
