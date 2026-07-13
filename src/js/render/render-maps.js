@@ -1,4 +1,3 @@
-// @hash 21074e2f 2026-07-12T05:05
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -47,11 +46,14 @@ function renderMaps(){
     const n=filtered.length;
     countEl.textContent=`${n} карт${n===1?'а':n>=2&&n<=4?'ы':''}`;
   }
-  if(!filtered.length){grid.innerHTML=`<div class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-title">Ничего не найдено</div>
-      <div class="empty-desc">Попробуй сбросить фильтр по типу или пулу карт</div>
-    </div>`;return}
+  if(!filtered.length){
+    grid.innerHTML = renderEmptyState({
+      icon: '🔍',
+      title: 'Ничего не найдено',
+      desc: 'Попробуй сбросить фильтр по типу или пулу карт',
+    });
+    return;
+  }
   grid.innerHTML=filtered.map((m,idx)=>{
     const src=mapImg(m.name);
     const noAD=NO_ATKDEF.includes(m.type);
