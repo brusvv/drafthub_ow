@@ -54,7 +54,7 @@ async function initSession() {
 
   // Сначала проверяем публичную share-ссылку — она может быть открыта
   // человеком без аккаунта вообще (если is_public=true)
-  const isSharedTierUrl = window.location.pathname.startsWith(BASE_PATH + '/tier/');
+  const isSharedTierUrl = window.location.pathname.startsWith(appPath('/tier/'));
   if(isSharedTierUrl){
     const handled = await handleSharedTierUrl();
     if(handled) return;   // страница уже отрендерена как read-only
@@ -81,7 +81,7 @@ async function _onSignIn(joinToken) {
       if(error) throw error;
       if(data?.ok) {
         toast(`Добавлен в команду как ${data.role} ✓`, 'ok');
-        history.replaceState({}, '', BASE_PATH + '/');
+        history.replaceState({}, '', appPath('/'));
       } else {
         toast(data?.error === 'invalid_or_expired' ? 'Инвайт недействителен или истёк' : 'Ошибка инвайта', 'err');
       }
@@ -222,7 +222,7 @@ function _resetTeamSpecificState() {
 async function signInWithProvider(provider) {
   const { error } = await _sb.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.origin + BASE_PATH + '/', scopes: provider === 'discord' ? 'identify email guilds' : undefined },
+    options: { redirectTo: buildAppUrl('/'), scopes: provider === 'discord' ? 'identify email guilds' : undefined },
   });
   if(error) toast('Ошибка входа: ' + error.message, 'err');
 }
@@ -233,7 +233,7 @@ async function signInWithEmail(email, password) {
 }
 
 async function signUpWithEmail(email, password) {
-  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin + BASE_PATH + '/' } });
+  const { error } = await _sb.auth.signUp({ email, password, options:{ emailRedirectTo: buildAppUrl('/') } });
   if(error) toast('Ошибка регистрации: ' + error.message, 'err');
   else toast('Письмо с подтверждением отправлено', 'ok');
 }
