@@ -1,4 +1,3 @@
-// @hash 99ab242c 2026-07-05T11:48
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
@@ -48,7 +47,7 @@ function showView(v, btn, opts = {}) {
   }
 
   if (opts.pushState !== false && VIEW_PATHS[v]) {
-    const path = BASE_PATH + VIEW_PATHS[v];
+    const path = appPath(VIEW_PATHS[v]);
     if (window.location.pathname !== path) history.pushState({ view: v }, '', path);
   }
 
