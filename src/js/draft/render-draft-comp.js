@@ -1,4 +1,4 @@
-// @hash 4c4d40be 2026-07-12T04:56
+// @hash 1d57c088 2026-07-14T04:01
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -60,7 +60,7 @@ function _renderDraftPick(){
       ${_buildDraftChips(draftState.ourHeroes,'Нажми чтобы выбрать...')}
     </div>
     ${hasRoster?`<div style="margin-top:8px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
-      или <span class="link-btn" onclick="loadFromRoster()">Загрузить из состава</span>
+      или <button type="button" class="link-btn btn-reset" onclick="loadFromRoster()">Загрузить из состава</button>
     </div>`:''}
     <button class="btn btn-primary" onclick="draftState.phase='bans';renderDraftComp()" style="margin-top:16px;padding:8px 20px">
       Перейти к банам →
