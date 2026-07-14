@@ -1,4 +1,4 @@
-// @hash 1d535860 2026-07-12T05:01
+// @hash a1b99051 2026-07-14T21:09
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
@@ -133,7 +133,7 @@ function _renderCompControls() {
           ${src ? `<img src="${src}" style="width:48px;height:28px;object-fit:cover;border-radius:4px"
                         onerror="this.style.display='none'">` : ''}
           <span style="font-size:13px;font-weight:600;flex:1">${compBanMap}</span>
-          ${m ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${m.type}</span>` : ''}`;
+          ${m ? `<span class="mono-hint-lg">${m.type}</span>` : ''}`;
       })()
     : '<span style="font-size:12px;color:var(--text3)">Нажми чтобы выбрать карту...</span>';
 
@@ -209,9 +209,9 @@ function _renderCompBanGrid() {
   }).join('');
 
   return `
-    <div class="ban-draft-lbl" style="margin-bottom:8px">
+    <div class="ban-draft-lbl mb-8">
       Наши приоритеты бана
-      <span style="opacity:.5;font-size:var(--fluid-fs-2xs)">
+      <span class="draft-dim fs-2xs">
         (выбери до 3 героев — 1-й приоритет самый важный)
       </span>
     </div>
