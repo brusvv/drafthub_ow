@@ -1,4 +1,4 @@
-// @hash f958f046 2026-07-13T12:36
+// @hash e875fa9e 2026-07-14T15:14
 // ════ DATA — WRITE (Supabase) ════
 // Общие хелперы (_requireWrite, _resolveIds) + players + tiers + share-links.
 // Героев и карты см. db-write-heroes.js / db-write-maps.js (вынесены отсюда —
@@ -299,11 +299,11 @@ async function createShareLink({ entityType = 'both', label = '', isPublic = tru
 async function toggleShareLinkPublic(linkId, isPublic){
   await _sb.from('tier_share_links').update({ is_public: isPublic }).eq('id', linkId);
   toast(isPublic ? 'Ссылка стала публичной' : 'Ссылка скрыта', 'ok');
-  renderTierSharePanel?.();
+  _refreshTierSharePanel?.();
 }
 
 async function deleteShareLink(linkId){
   await _sb.from('tier_share_links').delete().eq('id', linkId);
   toast('Ссылка удалена', 'ok');
-  renderTierSharePanel?.();
+  _refreshTierSharePanel?.();
 }
