@@ -182,3 +182,50 @@
 /* ── BAN-REC PORTRAIT — imgH helper classes ── */
 .ban-rec-portrait-img{width:100%;height:100%;object-fit:cover;display:block;border-radius:7px}
 .ban-rec-portrait-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3);border-radius:7px;background:var(--bg4)}
+
+/* ════ AUDIT-D3 (12.07→13.07) — inline styles повторявшиеся ДОСЛОВНО как
+   минимум в 2 из 4 draft-панелей (render-bans-tournament-herobans.js,
+   render-draft-comp.js, render-bans-tournament-draft.js,
+   render-bans-competitive.js) — извлечены сюда, т.к. bans.css уже
+   загружается на всех вкладках драфта. Однократные inline-паттерны
+   намеренно НЕ трогали (см. AUDIT-A2: "не единичные — не дубли"). ════ */
+
+/* Крупная кнопка запуска действия ("Начать драфт карт"/"Начать бан героев"/
+   "Показать состав") — .btn.btn-primary база чуть теснее чем нужно тут. */
+.btn-lg{padding:8px 20px}
+
+/* Вторичный (вложенный) заголовок секции внутри .ban-panel-head — база
+   (bans.css выше) даёт margin-bottom:1.25rem для ПЕРВОГО заголовка панели;
+   этот модификатор — для заголовка, который появляется НЕ первым в панели
+   (например "Топ-3 состава" после уже отрисованного основного блока). */
+.ban-panel-head-sub{margin:16px 0 8px}
+.ban-panel-head-sub .ban-panel-title{font-size:14px}
+
+/* Изображения-превью — размеры реально повторяются 1:1 в разных файлах. */
+.draft-thumb-xs{width:20px;height:20px;border-radius:3px;object-fit:cover}
+.draft-thumb-sm{width:24px;height:24px;border-radius:4px;object-fit:cover}
+
+/* Приглушённый элемент (недоступная опция, ещё не выбрано) */
+.draft-dim{opacity:.5}
+
+/* Мелкий текст с акцентом "внимание"/предупреждение (счётчик оставшихся
+   банов на нуле и т.п.) — 11px уже переведён на fluid-шкалу (AUDIT-D1). */
+.draft-warn-sm{font-size:var(--fluid-fs-sm);color:var(--damage)}
+
+/* mono-подпись 10px (соседний паттерн с уже существующим .mono-hint из
+   base.css, который использует --fluid-fs-2xs — этот чуть крупнее,
+   --fluid-fs-xs, отдельный класс а не редефайн .mono-hint чтобы не задеть
+   остальные места приложения где .mono-hint уже применён). */
+.mono-hint-lg{font-family:var(--mono);font-size:var(--fluid-fs-xs);color:var(--text3)}
+
+/* Строка чипов с переносом — тот же принцип что .chip-row из base.css
+   (AUDIT-A2), другой gap/margin — не универсальный, только для драфт-панелей. */
+.draft-chip-row{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+
+/* Точечные одноразовые отступы, встретившиеся в 2 разных файлах — не
+   универсальные .mb-N/.ml-N (те уже есть в base.css для 12px), эти два
+   конкретных значения не были покрыты. */
+.ml-8{margin-left:8px}
+.mb-8{margin-bottom:8px}
+.mb-5{margin-bottom:5px}
+.fs-13{font-size:13px}
