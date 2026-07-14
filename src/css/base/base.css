@@ -1,4 +1,4 @@
-/* @hash 215fd42f 2026-07-12T07:29 */
+/* @hash fede4fe4 2026-07-14T04:01 */
 /* ════ BASE RESET & CSS VARIABLES ════
    --tank/--damage/--support = role colors
    --bg … --bg5 = background shades (darkest → lightest)
@@ -286,6 +286,18 @@ body.public-mode #headerTeamName_public { display: inline !important; }
    isAdmin()/isSuperAdmin() — по умолчанию скрыта, в т.ч. в public-mode,
    где _renderHeader() вообще не вызывается. */
 .admin-only { display: none; }
+
+/* AUDIT-A3: reset для <button>, заменяющих кликабельные <div>/<span> —
+   элемент сам задаёт display/border/background/padding через свой класс
+   (.sel-heroes/.comp-slot/.dot-rating-dot и т.п.), этот класс только гасит
+   UA-стили кнопки (рамку, фон, паддинг браузера по умолчанию), чтобы
+   визуально ничего не изменилось при смене тега — фокус/скринридер теперь
+   работают "из коробки", тач-таргет не меняется. */
+.btn-reset{
+  border:none;background:none;padding:0;margin:0;
+  font:inherit;color:inherit;text-align:inherit;
+  -webkit-appearance:none;appearance:none;
+}
 /* БАГ (найден): JS раньше делал el.style.display='' чтобы "показать" —
    но '' лишь снимает inline-стиль, оставляя это правило (display:none)
    в силе. Явный модификатор для показа вместо борьбы с display напрямую;
