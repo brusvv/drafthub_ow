@@ -1,4 +1,4 @@
-// @hash 0a4551eb 2026-07-14T15:03
+// @hash 05039a5d 2026-07-14T21:09
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -39,7 +39,7 @@ function _renderDraftPick(){
     <div class="ban-draft-controls">
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Карта матча</div>
-        <select class="form-select" id="draftMapSel" onchange="draftState.selectedMap=this.value;renderDraftComp()" style="font-size:13px">
+        <select class="form-select fs-13" id="draftMapSel" onchange="draftState.selectedMap=this.value;renderDraftComp()">
           <option value="">— не выбрана —</option>
           ${maps.sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
             `<option value="${esc(m.name)}"${draftState.selectedMap===m.name?' selected':''}>${m.name} (${m.type})</option>`
@@ -48,7 +48,7 @@ function _renderDraftPick(){
       </div>
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Сторона</div>
-        <select class="form-select" id="draftSideSel" onchange="draftState.side=this.value;renderDraftComp()" style="font-size:13px">
+        <select class="form-select fs-13" id="draftSideSel" onchange="draftState.side=this.value;renderDraftComp()">
           <option value="avg"${draftState.side==='avg'?' selected':''}>Не важно</option>
           <option value="atk"${draftState.side==='atk'?' selected':''}>Атака</option>
           <option value="def"${draftState.side==='def'?' selected':''}>Защита</option>
@@ -98,10 +98,10 @@ function _renderDraftBans(){
       ${_renderBanSlots('ourBans','Наши баны','var(--tank)')}
       ${_renderBanSlots('enemyBans','Баны врагов','var(--damage)')}
     </div>
-    ${allBanned.length?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:12px">
+    ${allBanned.length?`<div class="mono-hint-lg mb-12">
       Забанено: ${allBanned.map(n=>`<span style="color:var(--damage)">${n}</span>`).join(', ')}
     </div>`:''}
-    <button class="btn btn-primary" onclick="draftState.phase='result';renderDraftComp()" style="padding:8px 20px">
+    <button class="btn btn-primary btn-lg" onclick="draftState.phase='result';renderDraftComp()">
       Показать рекомендации →
     </button>
   </div>`;
@@ -121,7 +121,7 @@ function _renderBanSlots(key,label,color){
              <span style="font-size:12px;font-weight:600">${name}</span>
              <span onclick="event.stopPropagation();removeDraftBan('${key}',${i})"
                style="margin-left:auto;cursor:pointer;color:var(--text3)">×</span>`
-          :`<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">+ Бан ${i+1}</span>`
+          :`<span class="mono-hint-lg">+ Бан ${i+1}</span>`
         }
       </div>`;
     }).join('')}
@@ -154,9 +154,9 @@ function _renderDraftResult(){
   if(rp.length>=2){
     const comps=recommendCompositions(rp,getHeroes,mapObj,draftState.side,allBans,[],3);
     compHtml=comps.length
-      ?`<div class="ban-panel-head" style="margin:16px 0 8px"><div class="ban-panel-title" style="font-size:14px">Топ-3 состава</div></div>
+      ?`<div class="ban-panel-head ban-panel-head-sub"><div class="ban-panel-title">Топ-3 состава</div></div>
          ${comps.map((c,i)=>_renderCompCard(c,i+1,mapObj,draftState.side)).join('')}`
-      :`<div class="ban-panel-head" style="margin:16px 0 8px"><div class="ban-draft-lbl">Недостаточно данных для полных составов</div></div>`;
+      :`<div class="ban-panel-head ban-panel-head-sub"><div class="ban-draft-lbl">Недостаточно данных для полных составов</div></div>`;
   }
 
   // Рекомендации по ролям (всегда)
@@ -173,7 +173,7 @@ function _renderDraftResult(){
       ${mapObj?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
         ${mapTypeIcon(mapObj.type,13)}<span style="font-size:13px;font-weight:600">${mapObj.name}</span>
         <span class="tier-badge tier-${mapObj.tier}">${mapObj.tier}</span>
-        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${draftState.side==='avg'?'обе стороны':draftState.side==='atk'?'атака':'защита'}</span>
+        <span class="mono-hint">${draftState.side==='avg'?'обе стороны':draftState.side==='atk'?'атака':'защита'}</span>
       </div>`:''}
       ${allBans.length?`<div style="margin-top:6px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--damage)">
         🚫 Забанено: ${allBans.join(', ')}</div>`:''}
@@ -223,7 +223,7 @@ function _renderCompCard(c,rank,mapObj,side){
         </div>`;
       })).join('')}
     </div>
-    <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">Синергия: ${Math.round(compSynergyTotal(c.comp))} · Скор: ${c.score}</div>
+    <div class="mono-hint">Синергия: ${Math.round(compSynergyTotal(c.comp))} · Скор: ${c.score}</div>
   </div>`;
 }
 
