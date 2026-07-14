@@ -1,4 +1,4 @@
-// @hash 346e1868 2026-07-13T12:32
+// @hash 93a14767 2026-07-14T04:01
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -43,7 +43,7 @@ function _renderLoginForm() {
         <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Войти</button>
       </form>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">
-        Нет аккаунта? <span class="link-btn" onclick="renderAuthUI('register')">Зарегистрироваться</span>
+        Нет аккаунта? <button type="button" class="link-btn btn-reset" onclick="renderAuthUI('register')">Зарегистрироваться</button>
       </div>
     </div>
   </div>`;
@@ -62,7 +62,7 @@ function _renderRegisterForm() {
         <button type="submit" class="btn btn-primary" style="width:100%;padding:10px">Создать аккаунт</button>
       </form>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">
-        Уже есть аккаунт? <span class="link-btn" onclick="renderAuthUI('login')">Войти</span>
+        Уже есть аккаунт? <button type="button" class="link-btn btn-reset" onclick="renderAuthUI('login')">Войти</button>
       </div>
     </div>
   </div>`;
