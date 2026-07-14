@@ -1,4 +1,4 @@
-// @hash e9481889 2026-07-13T12:38
+// @hash f836f546 2026-07-14T21:09
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-draft.js — турнирный драфт: пул карт + драфт карт
 //
@@ -87,10 +87,10 @@ function _renderTournPoolSetup() {
       <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:16px">
         ${modeBlocks}
       </div>
-      <button class="btn btn-primary" onclick="startTournMapDraft()" style="padding:8px 20px">
+      <button class="btn btn-primary btn-lg" onclick="startTournMapDraft()">
         Начать драфт карт →
       </button>
-      <button class="btn" onclick="resetTournDraft()" style="margin-left:8px">Сбросить</button>
+      <button class="btn ml-8" onclick="resetTournDraft()">Сбросить</button>
     </div>`;
 }
 
@@ -249,7 +249,7 @@ function _renderTournMapDraftDone() {
         : ''}
       <span style="font-weight:700;flex:1">${pm.name}</span>
       ${mapTypeIcon(pm.mode || m?.type || '', 13)}
-      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
+      <span class="mono-hint">
         ${pm.sideTeam ? `Сторона: команда ${pm.sideTeam}` : ''}
       </span>
     </div>`;
@@ -261,10 +261,10 @@ function _renderTournMapDraftDone() {
         <div class="ban-panel-title">Карты выбраны</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">${mapRows}</div>
-      <button class="btn btn-primary" onclick="startTournHeroBans()" style="padding:8px 20px">
+      <button class="btn btn-primary btn-lg" onclick="startTournHeroBans()">
         Перейти к банам героев →
       </button>
-      <button class="btn" onclick="tDraft.phase='pool';renderBans()" style="margin-left:8px">
+      <button class="btn ml-8" onclick="tDraft.phase='pool';renderBans()">
         ← Пул карт
       </button>
       <button class="btn" onclick="resetTournDraft()" style="margin-left:6px">Сбросить</button>
