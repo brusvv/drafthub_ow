@@ -1,4 +1,4 @@
-// @hash 9ab66e75 2026-07-12T04:57
+// @hash b11efdbd 2026-07-15T06:29
 // ════ RENDER — TIERS: ОРКЕСТРАТОР + РЕЖИМ-СВИТЧЕР + УПРАВЛЕНИЕ СЕТАМИ ════
 // FILESPLIT-1 (03.07) — было 467 строк одним файлом. Разбито на 3:
 //   render-tiers.js         (этот файл) — точка входа renderTiers(),
@@ -20,6 +20,12 @@ Object.defineProperties(window, {
   tierHeroRoleFilter:{ get(){ return store.get('tierHeroRoleFilter'); },set(v){ store.set('tierHeroRoleFilter',v); },configurable:true },
   dragItem: { get(){ return store.get('dragItem'); }, set(v){ store.set('dragItem',v); }, configurable:true },
   dragType: { get(){ return store.get('dragType'); }, set(v){ store.set('dragType',v); }, configurable:true },
+  // AUDIT-A5 (15.07) — были module-level `let` в db-load-tiers.js,
+  // мигрированы сюда (та же логика, что и tierOrderMaps выше): читались
+  // в 12/9 файлах через общий script-scope, теперь явный источник правды.
+  tierViewMode:    { get(){ return store.get('tierViewMode'); },    set(v){ store.set('tierViewMode',v); },    configurable:true },
+  tierSets:        { get(){ return store.get('tierSets'); },        set(v){ store.set('tierSets',v); },        configurable:true },
+  activeTierSetId: { get(){ return store.get('activeTierSetId'); }, set(v){ store.set('activeTierSetId',v); }, configurable:true },
 });
 
 function switchTierTab(tab,btn){
