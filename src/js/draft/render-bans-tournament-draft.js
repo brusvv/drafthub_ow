@@ -1,4 +1,3 @@
-// @hash f836f546 2026-07-14T21:09
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-draft.js — турнирный драфт: пул карт + драфт карт
 //
@@ -47,12 +46,12 @@ function _renderTournPoolSetup() {
     const chips = avail.map(m => {
       const sel = selected.includes(m.name);
       const src = mapImg(m.name);
-      return `<div class="tourn-map-chip${sel ? ' sel' : ''}"
+      return `<button type="button" class="tourn-map-chip btn-reset${sel ? ' sel' : ''}"
                    onclick="toggleTournPoolMap('${esc(mode)}','${esc(m.name)}')">
         ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
         <span>${m.name}</span>
         ${sel ? '<div class="tourn-map-check">✓</div>' : ''}
-      </div>`;
+      </button>`;
     }).join('');
 
     return `<div>
@@ -87,10 +86,10 @@ function _renderTournPoolSetup() {
       <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:16px">
         ${modeBlocks}
       </div>
-      <button class="btn btn-primary btn-lg" onclick="startTournMapDraft()">
+      <button class="btn btn-primary" onclick="startTournMapDraft()" style="padding:8px 20px">
         Начать драфт карт →
       </button>
-      <button class="btn ml-8" onclick="resetTournDraft()">Сбросить</button>
+      <button class="btn" onclick="resetTournDraft()" style="margin-left:8px">Сбросить</button>
     </div>`;
 }
 
@@ -215,10 +214,10 @@ function _renderTournCurrentStep(step, steps, si) {
     : `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
          ${remainingPool.map(n => {
            const src = mapImg(n);
-           return `<div class="tourn-map-chip" onclick="tournDraftAction('${esc(n)}')">
+           return `<button type="button" class="tourn-map-chip btn-reset" onclick="tournDraftAction('${esc(n)}')">
              ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
              <span>${n}</span>
-           </div>`;
+           </button>`;
          }).join('')}
        </div>`;
 
@@ -249,7 +248,7 @@ function _renderTournMapDraftDone() {
         : ''}
       <span style="font-weight:700;flex:1">${pm.name}</span>
       ${mapTypeIcon(pm.mode || m?.type || '', 13)}
-      <span class="mono-hint">
+      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
         ${pm.sideTeam ? `Сторона: команда ${pm.sideTeam}` : ''}
       </span>
     </div>`;
@@ -261,10 +260,10 @@ function _renderTournMapDraftDone() {
         <div class="ban-panel-title">Карты выбраны</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">${mapRows}</div>
-      <button class="btn btn-primary btn-lg" onclick="startTournHeroBans()">
+      <button class="btn btn-primary" onclick="startTournHeroBans()" style="padding:8px 20px">
         Перейти к банам героев →
       </button>
-      <button class="btn ml-8" onclick="tDraft.phase='pool';renderBans()">
+      <button class="btn" onclick="tDraft.phase='pool';renderBans()" style="margin-left:8px">
         ← Пул карт
       </button>
       <button class="btn" onclick="resetTournDraft()" style="margin-left:6px">Сбросить</button>
