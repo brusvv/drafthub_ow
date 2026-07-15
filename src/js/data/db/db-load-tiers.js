@@ -1,4 +1,4 @@
-// @hash 91d266b4 2026-07-05T22:43
+// @hash 444d56d3 2026-07-15T06:29
 // ════ DATA — LOAD TIERS (Supabase) ════
 // Вынесено из db-load.js (FILESPLIT-1, 03.07 — файл разросся до 418 строк,
 // тир-часть больше половины и логически самодостаточна: свой набор
@@ -68,7 +68,10 @@ let _globalTierListId = null;
 let _teamTierListId   = null;
 // personal — это и есть activeTierSetId ниже, отдельной переменной не нужно.
 
-let tierViewMode = 'team'; // 'global' | 'team' | 'personal'
+// tierViewMode — НЕ объявлена здесь: проксирована в store через
+// Object.defineProperties(window, ...) в render-tiers.js (см. AUDIT-A5,
+// CHANGELOG.md) — как и tierOrderMaps/tierOrderHeroes выше по этой же
+// логике. Присвоения ниже (_applyTierMode) уходят через сеттер в store.
 
 async function loadTiers(){
   await Promise.all([
@@ -193,8 +196,8 @@ async function loadPersonalDefaultMapTiers(){
 
 // ════ PERSONAL TIER LISTS (были personal_tier_sets, теперь строки
 // tier_lists со scope='personal') ════
-let tierSets        = [];   // [{id, name, is_default}]
-let activeTierSetId = null; // uuid | null — он же tier_lists.id
+// tierSets/activeTierSetId — та же история что tierViewMode выше: не
+// объявлены здесь, проксированы в store в render-tiers.js (AUDIT-A5).
 
 async function loadTierSets(){
   if(!currentUser()) return;
