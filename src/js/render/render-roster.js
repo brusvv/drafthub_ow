@@ -1,4 +1,3 @@
-// @hash 607481e6 2026-07-13T12:25
 // ════════════════════════════════════════════════════════════
 // render-roster.js — вкладка «Состав»
 //
@@ -96,16 +95,16 @@ function _playerRow(p){
   ].slice(0,5):p.mainHeroes.slice(0,5);
 
   const rolePicker=sel&&!isOpen
-    ?`<div class="roster-role-selected" data-pname="${esc(p.name)}" onclick="clearRosterRole(this.dataset.pname)" title="Сменить роль">
+    ?`<button type="button" class="roster-role-selected btn-reset" data-pname="${esc(p.name)}" onclick="clearRosterRole(this.dataset.pname)" title="Сменить роль">
         ${roleIcon(sel,18)}<span class="roster-role-label" style="color:${rc[sel]||'var(--text)'}">${sel}</span>
-      </div>`
+      </button>`
     :`<div class="roster-role-picker">${availRoles.map(r=>`
-        <div class="roster-role-btn${sel===r?' active':''}"
+        <button type="button" class="roster-role-btn btn-reset${sel===r?' active':''}"
              style="opacity:${!sel||sel===r?1:0.45}"
              data-pname="${esc(p.name)}" data-role="${r}"
              onclick="setRosterRole(this.dataset.pname,this.dataset.role)" title="${r}">
           ${roleIcon(r,18)}
-        </div>`).join('')}</div>`;
+        </button>`).join('')}</div>`;
 
   const heroChips=displayH.map(n=>{
     const src=portrait(n);
@@ -135,12 +134,12 @@ function _banRow(b){
     ?`<div class="roster-ban-subrole">${roleIcon(h.role,12)}<span class="roster-ban-subrole-text">${h.subrole||h.role}</span></div>`:'';
   const detail=isOpen?_banDetail(b.name):'';
   return`<div class="roster-ban-card" style="border-color:${bdr}">
-    <div class="roster-ban-header" data-bname="${esc(b.name)}" onclick="toggleBanDetail(this.dataset.bname)">
+    <button type="button" class="roster-ban-header btn-reset" data-bname="${esc(b.name)}" onclick="toggleBanDetail(this.dataset.bname)">
       ${portrait_el}
       <div class="roster-ban-body"><div class="roster-ban-name">${b.name}</div>${sub}</div>
       <span class="roster-ban-count" style="color:${color}">${heroesCountLabel(b.count)}</span>
       <span class="roster-ban-arrow" style="transform:rotate(${isOpen?90:0}deg)">›</span>
-    </div>
+    </button>
     ${detail?`<div class="roster-ban-detail">${detail}</div>`:''}
   </div>`;
 }
@@ -195,11 +194,11 @@ function openRosterPlayerPicker(){
         <div class="roster-picker-title">Выбери игрока</div>
         <div class="roster-picker-list">
           ${avail.map(p=>`
-            <div class="roster-picker-item" data-pname="${esc(p.name)}" onclick="addRosterPlayer(this.dataset.pname)">
+            <button type="button" class="roster-picker-item btn-reset" data-pname="${esc(p.name)}" onclick="addRosterPlayer(this.dataset.pname)">
               <div class="roster-picker-av">${p.name[0].toUpperCase()}</div>
               <span class="roster-picker-name">${p.name}</span>
               ${p.mainRole?`<span class="role-tag ${p.mainRole}">${p.mainRole}</span>`:''}
-            </div>`).join('')}
+            </button>`).join('')}
         </div>
       </div>
     </div>`);
