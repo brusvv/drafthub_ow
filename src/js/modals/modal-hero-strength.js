@@ -1,4 +1,4 @@
-// @hash 17480375 2026-07-13T20:44
+// @hash 12b9bd22 2026-07-14T20:41
 // ════ MODAL — HERO MAP STRENGTH ════
 // Оценка силы героя на картах: редактор (mapStrPickerOverlay) + превью в модалке.
 // Данные: heroStrengthEdits = [{map, type, atk, def}] — инициализируется в modal-hero.js (openHeroModal)
@@ -93,8 +93,7 @@ function _mapStrengthChip(e){
   const label  = noAD ? `${e.atk||0}` : `${e.atk||0}/${e.def||0}`;
   const isOpen = _strengthActivePopup === e.map;
   return `<div class="map-str-chip${hasData?' has-data':''}${isOpen?' is-open':''}"
-               data-map="${esc(e.map)}"
-               onclick="toggleStrengthPopup('${esc(e.map)}')">
+               data-map="${escAttr(e.map)}">
     ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
     <div class="map-str-chip-name">${e.map}</div>
     ${hasData ? `<div class="map-str-chip-score">${label}</div>` : ''}
@@ -150,7 +149,7 @@ function _renderStrengthPopup(){
         _strengthPopupRow(e.map,'def',e.def,'DEF',_ICON_DEF_SM)
     }
     <button class="btn" style="margin-top:8px;width:100%"
-            onclick="toggleStrengthPopup('${esc(e.map)}')">Готово</button>
+            data-strength-action="close">Готово</button>
   `;
 
   // backdrop-filter на .picker-overlay создаёт stacking context —
@@ -163,47 +162,21 @@ function _renderStrengthPopup(){
   // Экранируем спецсимволы CSS-селектора: " и ' (King's Row и т.п.)
   const _sel=e.map.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/'/g,"\\'");
   const chipEl=document.querySelector(`.map-str-chip[data-map="${_sel}"]`);
-  const popupW=240;
+  const popupW=240, popupH=170;
 
-  if(chipEl){
-    const chipRect  = chipEl.getBoundingClientRect();
-    const boxRect   = box.getBoundingClientRect();
-    // Скроллится picker-grid-wrap, не picker-box
-    const scrollEl  = document.querySelector('#mapStrPickerOverlay .picker-grid-wrap');
-    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+  // Расчёт позиции вынесен в render-utils.js (AUDIT-A4) — тот же helper
+  // использует modal-hero-chips.js в 'fixed'-режиме. Здесь — 'absolute',
+  // т.к. popup лежит внутри .picker-box, а скроллится вложенный
+  // .picker-grid-wrap (не сам box).
+  const scrollEl = document.querySelector('#mapStrPickerOverlay .picker-grid-wrap');
+  const pos = chipEl
+    ? computePopupAnchorPosition({anchorEl:chipEl,popupW,popupH,mode:'absolute',containerEl:box,scrollEl})
+    : null;
 
-    // left в координатах box
-    const popupW2 = popupW;
-    let left = chipRect.left - boxRect.left;
-    left = Math.min(Math.max(8, left), boxRect.width - popupW2 - 8);
-
-    const popupH = 170;
-
-    // Место снизу до края видимой области scrollEl в viewport
-    const scrollBottom = scrollEl
-      ? Math.min(scrollEl.getBoundingClientRect().bottom, window.innerHeight)
-      : window.innerHeight;
-    const spaceBelow = scrollBottom - chipRect.bottom - 8;
-
-    // top в координатах box (position:absolute)
-    // scrollEl начинается на scrollEl.getBoundingClientRect().top - boxRect.top от начала box
-    const scrollOffsetInBox = scrollEl
-      ? scrollEl.getBoundingClientRect().top - boxRect.top
-      : 0;
-    const chipBottomInBox = chipRect.bottom - boxRect.top + scrollOffsetInBox + scrollTop
-                          - scrollOffsetInBox; // упрощается:
-    // Итого: chip bottom в абс. координатах box = chipRect.bottom - boxRect.top + scrollTop
-    // (scrollTop добавляет сдвиг из-за прокрутки внутри scrollEl)
-    const absBottom = chipRect.bottom - boxRect.top + scrollTop;
-    const absTop    = chipRect.top    - boxRect.top + scrollTop;
-
-    const top = spaceBelow >= popupH
-      ? absBottom + 6          // открыть вниз
-      : absTop - popupH - 6;  // открыть вверх
-
-    popup.style.cssText=`position:absolute;z-index:100;top:${Math.max(8,top)}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
+  if(pos){
+    popup.style.cssText=`position:absolute;z-index:100;top:${pos.top}px;left:${pos.left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   }else{
-    // Фоллбек — центр box
+    // Фоллбек — центр box (chipEl не найден)
     popup.style.cssText=`position:absolute;z-index:100;top:50%;left:50%;transform:translate(-50%,-50%);width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   }
   box.appendChild(popup);
@@ -242,4 +215,13 @@ function renderStrengthPreview(){
 document.addEventListener('DOMContentLoaded', () => {
   const ov = document.getElementById('mapStrPickerOverlay');
   if(ov) ov.addEventListener('click', e => { if(e.target === ov) closeMapStrPicker(); });
+});
+
+// Единый делегированный обработчик — раньше чип и кнопка "Готово" висели
+// как inline onclick="..." в разметке (см. историю в CHANGELOG.md).
+document.addEventListener('click', e => {
+  const closeBtn = e.target.closest('[data-strength-action="close"]');
+  if(closeBtn){ toggleStrengthPopup(_strengthActivePopup); return; }
+  const chip = e.target.closest('.map-str-chip[data-map]');
+  if(chip){ toggleStrengthPopup(chip.dataset.map); return; }
 });
