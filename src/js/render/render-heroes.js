@@ -1,4 +1,3 @@
-// @hash 6195e1dc 2026-07-13T12:21
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -54,7 +53,7 @@ function renderHeroes(){
               <div class="h-counter-score" style="color:${cc}">${c.score}</div>
             </div>`;
           }).join('');
-          return`<div class="h-card ${hero.banned?'banned':''}" style="--card-i:${Math.min(_cardIdx++,12)}" onclick="openHeroInfoPopup('${esc(hero.name)}')">
+          return`<button type="button" class="h-card btn-reset ${hero.banned?'banned':''}" style="--card-i:${Math.min(_cardIdx++,12)}" onclick="openHeroInfoPopup('${esc(hero.name)}')">
             <div class="h-card-accent" style="background:${rc[hero.role]}"></div>
             ${src?`<img src="${src}" class="h-card-img" alt="${hero.name}" onerror="this.outerHTML='<div class=h-card-img-ph>${hero.name[0]}</div>'">`:`<div class="h-card-img-ph">${hero.name[0]}</div>`}
             ${hero.banned?'<div class="banned-tag">БАН</div>':''}
@@ -62,7 +61,7 @@ function renderHeroes(){
               <div class="h-card-name">${hero.name}</div>
               ${topC.length?`<div class="h-counter-list">${counterChips}</div>`:''}
             </div>
-          </div>`;
+          </button>`;
         }).join('')}</div>
       </div>`).join('');
 
@@ -98,11 +97,11 @@ function _heroScoreChip(name, score, colorFn, size=36){
   const img=src
     ?`<img src="${src}" style="width:${size}px;height:${size}px;border-radius:${r}px;object-fit:cover;border:2px solid ${color};display:block" onerror="this.style.display='none'">`
     :`<div style="width:${size}px;height:${size}px;border-radius:${r}px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.3)}px;font-weight:800;color:var(--text3);border:2px solid ${color}">${name[0]}</div>`;
-  return`<div title="${esc(name)}" style="position:relative;cursor:pointer;flex-shrink:0"
+  return`<button type="button" class="btn-reset" title="${esc(name)}" style="position:relative;cursor:pointer;flex-shrink:0"
               onclick="event.stopPropagation();closeTierPreview();openHeroInfoPopup('${esc(name)}')">
     ${img}
     <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${score}</div>
-  </div>`;
+  </button>`;
 }
 
 function openHeroInfoPopup(name){
