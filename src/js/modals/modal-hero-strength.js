@@ -1,4 +1,4 @@
-// @hash 12b9bd22 2026-07-14T20:41
+// @hash 81c51b3b 2026-07-15T04:45
 // ════ MODAL — HERO MAP STRENGTH ════
 // Оценка силы героя на картах: редактор (mapStrPickerOverlay) + превью в модалке.
 // Данные: heroStrengthEdits = [{map, type, atk, def}] — инициализируется в modal-hero.js (openHeroModal)
@@ -92,12 +92,12 @@ function _mapStrengthChip(e){
   const hasData= e.atk>0 || (!noAD && e.def>0);
   const label  = noAD ? `${e.atk||0}` : `${e.atk||0}/${e.def||0}`;
   const isOpen = _strengthActivePopup === e.map;
-  return `<div class="map-str-chip${hasData?' has-data':''}${isOpen?' is-open':''}"
+  return `<button type="button" class="map-str-chip btn-reset${hasData?' has-data':''}${isOpen?' is-open':''}"
                data-map="${escAttr(e.map)}">
     ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
     <div class="map-str-chip-name">${e.map}</div>
     ${hasData ? `<div class="map-str-chip-score">${label}</div>` : ''}
-  </div>`;
+  </button>`;
 }
 
 function toggleStrengthPopup(mapName){
@@ -202,10 +202,10 @@ function renderStrengthPreview(){
     const noAD = NO_ATKDEF.includes(e.type);
     const label = noAD ? `${e.atk}` : `${e.atk}/${e.def}`;
     const color = scoreColor(e.atk);
-    return `<div class="hs-map-chip rated" onclick="openMapStrPicker()" style="cursor:pointer">
+    return `<button type="button" class="hs-map-chip rated btn-reset" onclick="openMapStrPicker()" style="cursor:pointer">
       <span class="hs-map-name">${e.map}</span>
       <span class="hs-map-score" style="color:${color}">${label}</span>
-    </div>`;
+    </button>`;
   }).join('');
   updateMapStrCount();
 }
