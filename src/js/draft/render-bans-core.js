@@ -1,4 +1,3 @@
-// @hash 1b11323a 2026-07-09T11:39
 // ════════════════════════════════════════════════════════════
 // render-bans-core.js — ядро вкладки «Текущие баны»
 //
@@ -151,8 +150,8 @@ function _buildHeroChips() {
         ? `<img src="${src}" onerror="this.style.display='none'">`
         : `<div class="ban-draft-chip-ph">${n[0]}</div>`}
       <span>${n}</span>
-      <span class="ban-draft-chip-remove"
-            onclick="event.stopPropagation();removeBanDraftHero('${esc(n)}')">×</span>
+      <button type="button" class="ban-draft-chip-remove btn-reset"
+            onclick="event.stopPropagation();removeBanDraftHero('${esc(n)}')">×</button>
     </div>`;
   }).join('');
 }
