@@ -1,4 +1,3 @@
-// @hash 6e3ecdbf 2026-07-13T12:22
 // ════ MAPS ════
 let mapPoolFilter='active'; // 'active' | 'all'
 
@@ -58,7 +57,7 @@ function renderMaps(){
   grid.innerHTML=filtered.map((m,idx)=>{
     const src=mapImg(m.name);
     const noAD=NO_ATKDEF.includes(m.type);
-    return`<div class="map-card" style="--card-i:${Math.min(idx,12)}" onclick="showMapDetail('${esc(m.name)}')">
+    return`<button type="button" class="map-card btn-reset" style="--card-i:${Math.min(idx,12)}" onclick="showMapDetail('${esc(m.name)}')">
       ${src?`<img src="${src}" class="map-card-img" alt="${m.name}" onerror="this.outerHTML='<div class=map-card-img-ph>${m.type}</div>'">`:`<div class="map-card-img-ph">${m.type}</div>`}
       <div class="map-card-body">
         <div class="map-card-name">${m.name}</div>
@@ -74,7 +73,7 @@ function renderMaps(){
           </div>
         </div>
       </div>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
