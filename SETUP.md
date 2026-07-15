@@ -18,11 +18,15 @@
 ### 1.2 Применить миграции
 SQL Editor → New query → запусти **по очереди**:
 ```
-supabase/001_initial_schema.sql
-supabase/002_rls.sql
-supabase/003_custom_roles.sql
-supabase/004_update_data_policies.sql
-supabase/005_personal_tiers.sql
+supabase/001_tables.sql
+supabase/002_functions.sql
+supabase/003_rls.sql
+supabase/006_hero_counters.sql
+supabase/007_catalog_tables.sql
+supabase/008_catalog_rls.sql
+supabase/009_catalog_seed.sql
+supabase/010_catalog_team_seed_triggers.sql
+supabase/011_rpc.sql
 ```
 
 ### 1.3 Скопировать ключи
@@ -43,10 +47,20 @@ Credentials → OAuth 2.0 Client ID → redirect URI `https://[проект].sup
 OAuth2 → Redirects → `https://[проект].supabase.co/auth/v1/callback`
 
 ### 1.5 Назначить суперадмина (для глобального тир-листа)
+Роль читается из `app_metadata.app_role` (см. `is_superadmin()` в `002_functions.sql`), а не из отдельного булевого флага.
+
 Authentication → Users → выбери себя → Edit → `app_metadata`:
 ```json
-{ "is_superadmin": true }
+{ "app_role": "superadmin" }
 ```
+
+Либо через SQL Editor:
+```sql
+UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || '{"app_role":"superadmin"}'
+WHERE email = 'your@email.com';
+```
+
+Дальше новых superadmin/admin можно назначать через RPC `set_user_app_role` (вкладка «Админ» в приложении) — Dashboard/SQL нужен только для самого первого.
 
 ---
 
@@ -99,9 +113,8 @@ open dist/index.html
 ## Первый запуск
 
 1. Открой сайт → зарегистрируйся (email или Google/Discord)
-2. Создай команду → автоматически становишься admin
-3. Настройки → Sync → заполнит стартовыми героями и картами
-4. Настройки → Инвайты → создай ссылку для игроков/тренеров
+2. Создай команду → автоматически становишься manager, ростер команды сразу заполняется всеми героями/картами из каталога (`create_team` RPC делает bulk-seed, см. `011_rpc.sql`)
+3. Настройки → Инвайты → создай ссылку для игроков/тренеров
 
 ---
 
