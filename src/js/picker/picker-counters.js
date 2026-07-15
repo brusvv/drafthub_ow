@@ -1,4 +1,3 @@
-// @hash baf2b842 2026-06-15T10:49
 // ════ PICKER — COUNTERS & MAP PICKER ════
 //
 // Попап оценки (10-точечная шкала) для выбранных контрпиков
@@ -41,11 +40,11 @@ function renderCounterPickerGrid(){
   document.getElementById('counterPickerGrid').innerHTML=filtered.map(h=>{
     const src=portrait(h.name);
     const entry=counterPickerSelected.find(c=>c.name===h.name);
-    return`<div class="p-hero${entry?' selected':''}" onclick="toggleCounterHero('${esc(h.name)}')">
+    return`<button type="button" class="p-hero btn-reset${entry?' selected':''}" onclick="toggleCounterHero('${esc(h.name)}')">
       ${src?`<img src="${src}" class="p-hero-img" alt="${h.name}" onerror="this.outerHTML='<div class=p-hero-img-ph>${h.name[0]}</div>'">`:`<div class="p-hero-img-ph">${h.name[0]}</div>`}
       <div class="p-hero-name">${h.name}</div>
       ${entry?`<div style="position:absolute;bottom:2px;right:3px;font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:700">${entry.score}</div>`:''}
-    </div>`;
+    </button>`;
   }).join('');
 }
 
