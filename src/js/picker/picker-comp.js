@@ -1,15 +1,12 @@
-// @hash 577f60ae 2026-07-15T02:30
+// @hash fa48fd8d 2026-07-15T06:43
 // ════ PICKER — COMP SLOTS ════
 // LEQ-2: window.confirmPicker override заменён на registerPickerHandler('comp_slot', ...)
 
-let compSlots=[
-  {hero:null,role:'Tank'},
-  {hero:null,role:'Damage'},
-  {hero:null,role:'Damage'},
-  {hero:null,role:'Support'},
-  {hero:null,role:'Support'}
-];
-let activeSlotIdx=null;
+// compSlots/activeSlotIdx — НЕ объявлены здесь: проксированы в store через
+// Object.defineProperties(window, ...) в config.js (AUDIT-A5, CHANGELOG.md).
+// Дефолт (5 пустых слотов Tank/Damage×2/Support×2) живёт в store.js
+// INITIAL_STATE — initCompSlots() ниже пересобирает тот же дефолт заново,
+// не полагается на значение из store при первом заходе.
 
 function initCompSlots(map){
   compSlots=[
