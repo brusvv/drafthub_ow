@@ -1,4 +1,3 @@
-// @hash c60833cf 2026-07-12T04:58
 // ════ PICKER — COMP SLOTS ════
 // LEQ-2: window.confirmPicker override заменён на registerPickerHandler('comp_slot', ...)
 
@@ -66,10 +65,10 @@ function renderCompSlotPickerGrid(role){
   document.getElementById('pickerCount').textContent=selected?'1 выбрано':'0 выбрано';
   document.getElementById('pickerGrid').innerHTML=filtered.map(h=>{
     const src=portrait(h.name);const isSel=h.name===selected;
-    return`<div class="p-hero${isSel?' selected':''}" onclick="selectCompSlotHero('${esc(h.name)}')">
+    return`<button type="button" class="p-hero btn-reset${isSel?' selected':''}" onclick="selectCompSlotHero('${esc(h.name)}')">
       ${src?`<img src="${src}" class="p-hero-img" alt="${h.name}" onerror="this.outerHTML='<div class=p-hero-img-ph>${h.name[0]}</div>'">`:`<div class="p-hero-img-ph">${h.name[0]}</div>`}
       <div class="p-hero-name">${h.name}</div>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
