@@ -1,4 +1,3 @@
-// @hash 1e35fce9 2026-07-12T05:03
 // ════ PICKER — CORE ════
 
 // ════════════════════════════════════════════════════════════
@@ -97,10 +96,10 @@ function renderPickerGrid(){
   document.getElementById('pickerGrid').innerHTML=filtered.map(h=>{
     const src=portrait(h.name);
     const isSel=sel.includes(h.name);
-    return`<div class="p-hero${isSel?' selected':''}" onclick="togglePickerHero('${esc(h.name)}')">
+    return`<button type="button" class="p-hero btn-reset${isSel?' selected':''}" onclick="togglePickerHero('${esc(h.name)}')">
       ${src?`<img src="${src}" class="p-hero-img" alt="${h.name}" onerror="this.outerHTML='<div class=p-hero-img-ph>${h.name[0]}</div>'">`:`<div class="p-hero-img-ph">${h.name[0]}</div>`}
       <div class="p-hero-name">${h.name}</div>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
@@ -138,9 +137,9 @@ function renderSelPreview(){
     el.innerHTML=sel.map(name=>{
       const h=heroMap[name]||{};const src=portrait(name);
       return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
-        <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+        <button type="button" class="btn-reset" onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
           ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
-        </span>
+        </button>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
   });
@@ -155,9 +154,9 @@ function renderRolePoolPreviews(){
     el.innerHTML=sel.map(name=>{
       const src=portrait(name);
       return`<div class="sel-hero-chip ${role}" title="${esc(name)}">
-        <span onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+        <button type="button" class="btn-reset" onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
           ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
-        </span>
+        </button>
         ${name}</div>`;
     }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
   });
