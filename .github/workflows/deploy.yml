@@ -65,6 +65,26 @@ jobs:
           test -f dist/index.html || { echo "❌ dist/index.html не найден"; exit 1; }
           echo "✓ $(wc -l < dist/index.html) строк"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Проверить синтаксис встроенного JS
+        run: |
+          # build.sh пишет весь app-бандл в один инлайн <script>...</script>
+          # (см. build.sh: `echo '<script>'` … `cat >> "$OUT" <<'FOOTER' ... </script>`).
+          # test -f выше ловит только "файла нет", не битый JS внутри —
+          # так прошёл баг с `??=` + постфиксным `++` в одном выражении.
+          # Извлекаем именно этот блок по точным строкам-маркерам (а не первому
+          # попавшемуся <script>, их в файле три — CDN-теги supabase-js и
+          # Google Identity Services идут с атрибутами на той же строке и без
+          # тела, их awk-паттерн не подхватит) и прогоняем через node --check.
+          awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' dist/index.html > /tmp/dist-inline.js
+          test -s /tmp/dist-inline.js || { echo "❌ инлайн <script> не найден или пуст — проверь маркеры в build.sh"; exit 1; }
+          node --check /tmp/dist-inline.js
+          echo "✓ инлайн JS синтаксически валиден ($(wc -l < /tmp/dist-inline.js) строк)"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
