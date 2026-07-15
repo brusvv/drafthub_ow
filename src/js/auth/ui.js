@@ -1,4 +1,3 @@
-// @hash 93a14767 2026-07-14T04:01
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -131,9 +130,9 @@ async function renderTeamSwitcher() {
   }
   el.classList.remove('hidden');
   el.innerHTML = teams.map(t => `
-    <div class="team-switcher-item${t.id===currentTeam()?.id?' active':''}" onclick="switchTeam('${t.id}')">
+    <button type="button" class="team-switcher-item btn-reset${t.id===currentTeam()?.id?' active':''}" onclick="switchTeam('${t.id}')">
       <span>${t.name}</span><span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">${t.role?.label||''}</span>
-    </div>`).join('');
+    </button>`).join('');
 }
 
 // ════ ПАНЕЛЬ НАСТРОЕК — участники + роли + инвайты ════
