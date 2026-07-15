@@ -1,4 +1,3 @@
-// @hash a1b99051 2026-07-14T21:09
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
@@ -40,7 +39,7 @@ function openCompMapPopup() {
     const chips = ms.map(m => {
       const src = mapImg(m.name);
       const sel = compBanMap === m.name;
-      return `<div
+      return `<button type="button" class="btn-reset"
           onclick="compBanMap='${esc(m.name)}';closeCompMapPopup();renderBans();"
           style="cursor:pointer;border-radius:8px;overflow:hidden;
                  border:2px solid ${sel ? 'var(--support)' : 'var(--border)'};
@@ -58,7 +57,7 @@ function openCompMapPopup() {
                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           ${m.name}
         </div>
-      </div>`;
+      </button>`;
     }).join('');
 
     return `<div style="margin-bottom:14px">
@@ -133,7 +132,7 @@ function _renderCompControls() {
           ${src ? `<img src="${src}" style="width:48px;height:28px;object-fit:cover;border-radius:4px"
                         onerror="this.style.display='none'">` : ''}
           <span style="font-size:13px;font-weight:600;flex:1">${compBanMap}</span>
-          ${m ? `<span class="mono-hint-lg">${m.type}</span>` : ''}`;
+          ${m ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${m.type}</span>` : ''}`;
       })()
     : '<span style="font-size:12px;color:var(--text3)">Нажми чтобы выбрать карту...</span>';
 
@@ -141,15 +140,15 @@ function _renderCompControls() {
     <div class="ban-draft-controls mb-12">
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Карта матча</div>
-        <div class="ban-map-picker-btn" onclick="openCompMapPopup()"
+        <button type="button" class="ban-map-picker-btn btn-reset" onclick="openCompMapPopup()"
              style="display:flex;align-items:center;gap:8px;background:var(--bg3);
                     border:1px solid var(--border2);border-radius:8px;padding:7px 12px;
-                    cursor:pointer;min-height:38px;transition:border-color .15s"
+                    cursor:pointer;min-height:38px;transition:border-color .15s;width:100%"
              onmouseover="this.style.borderColor='var(--border3)'"
              onmouseout="this.style.borderColor='var(--border2)'">
           ${mapBtn}
           <span style="color:var(--text3);font-size:12px;margin-left:auto">▾</span>
-        </div>
+        </button>
       </div>
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Наши герои</div>
@@ -183,7 +182,7 @@ function _renderCompBanGrid() {
         ? `border-color:${prioColors[priority] || 'var(--border)'};background:var(--bg3)`
         : '';
 
-      return `<div class="comp-ban-chip ${priority ? 'active' : ''}"
+      return `<button type="button" class="comp-ban-chip btn-reset ${priority ? 'active' : ''}"
                    style="${activeStyle}"
                    data-name="${h.name}"
                    onclick="toggleCompBan(this.dataset.name)"
@@ -195,7 +194,7 @@ function _renderCompBanGrid() {
           ? `<div class="comp-ban-priority"
                   style="background:${prioColors[priority] || 'var(--text3)'}">P${priority}</div>`
           : ''}
-      </div>`;
+      </button>`;
     }).join('');
 
     return `<div>
@@ -209,9 +208,9 @@ function _renderCompBanGrid() {
   }).join('');
 
   return `
-    <div class="ban-draft-lbl mb-8">
+    <div class="ban-draft-lbl" style="margin-bottom:8px">
       Наши приоритеты бана
-      <span class="draft-dim fs-2xs">
+      <span style="opacity:.5;font-size:var(--fluid-fs-2xs)">
         (выбери до 3 героев — 1-й приоритет самый важный)
       </span>
     </div>
