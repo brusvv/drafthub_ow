@@ -1,4 +1,4 @@
-// @hash 02ce0025 2026-07-10T23:26
+// @hash ef4054ec 2026-07-15T06:43
 // ════ CONFIG ════
 
 // ── Базовый путь публикации (GitHub Pages, репозиторий в подпапке) ──
@@ -46,6 +46,11 @@ Object.defineProperties(window, {
   mapPickerTypeFilter:{ get(){ return store.get('mapPickerTypeFilter'); },set(v){ store.set('mapPickerTypeFilter',v); },configurable:true },
   counterPickerRoleFilter:{ get(){ return store.get('counterPickerRoleFilter'); }, set(v){ store.set('counterPickerRoleFilter',v); }, configurable:true },
   counterPickerSelected:  { get(){ return store.get('counterPickerSelected'); },   set(v){ store.set('counterPickerSelected',v); },   configurable:true },
+  // AUDIT-A5 (15.07) — были module-level `let` в picker-comp.js, ключи в
+  // store.js INITIAL_STATE уже существовали, но без прокси (мёртвый
+  // задел). Проксировано здесь же, рядом с остальным picker-стейтом.
+  compSlots:     { get(){ return store.get('compSlots'); },     set(v){ store.set('compSlots',v); },     configurable:true },
+  activeSlotIdx: { get(){ return store.get('activeSlotIdx'); }, set(v){ store.set('activeSlotIdx',v); }, configurable:true },
 });
 // ────────────────────────────────────────────────────────────
 
