@@ -181,6 +181,9 @@ JS_MODULES=(
 
   # Render: utils первый (showLoading, showError, esc)
   js/render/render-utils.js
+  js/render/modal-focus.js
+  js/render/notifications.js
+  js/render/skeleton-loaders.js
   js/render/render-maps.js
   js/render/render-heroes.js
   js/render/tiers/render-tiers.js
