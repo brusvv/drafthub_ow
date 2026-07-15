@@ -1,4 +1,4 @@
-// @hash 8ca40151 2026-07-14T21:14
+// @hash 89d0eadf 2026-07-15T04:45
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -114,7 +114,7 @@ function _renderBanSlots(key,label,color){
     ${[0,1].map(i=>{
       const name=bans[i];
       const src=name?portrait(name):null;
-      return`<div class="draft-ban-slot${name?' filled':''} mb-5"
+      return`<button type="button" class="draft-ban-slot${name?' filled':''} mb-5 btn-reset"
         onclick="openDraftBanPicker('${key}',${i})">
         ${name
           ?`${src?`<img src="${src}" class="draft-thumb-sm">`:''}
@@ -122,8 +122,7 @@ function _renderBanSlots(key,label,color){
              <span onclick="event.stopPropagation();removeDraftBan('${key}',${i})"
                style="margin-left:auto;cursor:pointer;color:var(--text3)">×</span>`
           :`<span class="mono-hint-lg">+ Бан ${i+1}</span>`
-        }
-      </div>`;
+        }</button>`;
     }).join('')}
   </div>`;
 }
