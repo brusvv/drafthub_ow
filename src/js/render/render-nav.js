@@ -1,4 +1,3 @@
-// @hash 444f5a0a 2026-07-13T12:44
 // ════ NAV ════
 // toast(), esc(), showError(), handleError() — в render-utils.js
 // toastT proxy — тоже в render-utils.js (нужен там для toast)
@@ -92,10 +91,10 @@ function renderAppModeSwitcher() {
         title="Режим: ${current.label} (клик — переключить)">${current.icon}</button>
       <div id="appModePopup" class="mode-popup hidden">
         ${_APP_MODES.map(m => `
-          <div class="mode-popup-item${m.key === tierViewMode ? ' active' : ''}" onclick="_pickAppMode('${m.key}')">
+          <button type="button" class="mode-popup-item btn-reset${m.key === tierViewMode ? ' active' : ''}" onclick="_pickAppMode('${m.key}')">
             <span class="mode-pill" style="background:${m.color};width:22px;height:22px;font-size:11px">${m.icon}</span>
             <span>${m.label}</span>
-          </div>`).join('')}
+          </button>`).join('')}
       </div>
     </div>`;
 }
