@@ -1,4 +1,3 @@
-// @hash 8b6e9e2f 2026-07-13T12:23
 // ════════════════════════════════════════════════════════════
 // render-players.js — вкладка «Игроки»
 //
@@ -79,7 +78,7 @@ function renderPlayers(){
         : `<div class="mini-av-ph">${n[0]}</div>`;
     }).join('');
 
-    return `<div class="player-card" style="--card-i:${Math.min(idx,12)}" data-name="${esc(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
+    return `<button type="button" class="player-card btn-reset" style="--card-i:${Math.min(idx,12)}" data-name="${esc(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
       <div class="player-card-top">
         <div class="player-av">${p.name[0].toUpperCase()}</div>
         <div><div class="player-name">${p.name}</div><div class="player-btag">${p.btag||'—'}</div></div>
@@ -89,7 +88,7 @@ function renderPlayers(){
         ${heroes}
         ${!mainH.length ? '<span class="player-no-heroes">Герои не указаны</span>' : ''}
       </div>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
