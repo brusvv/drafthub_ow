@@ -1,28 +1,23 @@
-// @hash 4b02d393 2026-07-14T20:41
 // ════════════════════════════════════════════════════════════
-// render-utils.js — общие утилиты рендера
+// render-utils.js — общие визуальные хелперы рендера
+// AUDIT-A4/watch-list (14.07): файл разбит на 4 — этот файл
+// оставлен под чисто визуальные хелперы без побочных подписок на
+// document/window. Остальное переехало в:
+//   modal-focus.js      — modalStack/closeTopModal, Escape/Tab, focus-trap
+//   notifications.js    — toast/showError/handleError
+//   skeleton-loaders.js — showLoading/_skeletonItem
 //
 // • renderCurrentView()   — перерисовать активную вкладку
 // • dots5()               — 5-точечный индикатор рейтинга
 // • pluralRu()            — русское склонение числительных
 // • heroesCountLabel()    — «3 героя», «7 героев»
-// • modalStack            — стек открытых попапов
-// • closeTopModal()       — Escape → закрыть верхний попап
-// • showLoading()         — skeleton-loader для загрузки данных
-// • toast()               — всплывающее уведомление
-// • showError()           — ошибка в контейнере
+// • renderEmptyState()    — общий пустой блок (нет данных)
+// • renderScoreDots()     — 10-точечный интерактивный рейтинг
 // • esc()                 — экранирование ' для inline onclick="..."
 // • escAttr()             — экранирование &/" для data-* HTML-атрибутов
 // • computePopupAnchorPosition() — позиция popup рядом с anchor-элементом
 //                           (viewport fixed ИЛИ absolute внутри скролл-контейнера)
-// • handleError()         — единый обработчик ошибок Supabase
 // ════════════════════════════════════════════════════════════
-
-// ── Store proxy для toast-таймера ───────────────────────────
-// toastT живёт здесь, а не в render-nav, потому что toast() тоже здесь.
-Object.defineProperties(window, {
-  toastT: { get(){ return store.get('toastT'); }, set(v){ store.set('toastT',v); }, configurable:true },
-});
 
 // ── Точка перерисовки активной вкладки ──────────────────────
 function renderCurrentView() {
@@ -73,137 +68,6 @@ function renderScoreDots({ value = 0, onValue, high = 'var(--damage)', size = 15
     const click = typeof onValue === 'function' ? onValue(v) : '';
     return `<span onclick="${click}" style="cursor:pointer;font-size:${size}px;color:${filled ? color : 'var(--border2)'};line-height:1">◆</span>`;
   }).join('');
-}
-
-// ════════════════════════════════════════════════════════════
-// ESCAPE → закрывает самый верхний открытый попап
-// Попапы регистрируются через modalStack.push/pop.
-// Любой код, открывающий оверлей, должен вызвать
-//   modalStack.push({ close: fn })
-// и убрать его при закрытии через modalStack.pop() или
-// modalStack.remove(ref).
-// ════════════════════════════════════════════════════════════
-const modalStack = (() => {
-  const stack = [];
-  return {
-    push(entry)  { stack.push(entry); },
-    pop()        { return stack.pop(); },
-    peek()       { return stack[stack.length - 1]; },
-    remove(entry){ const i = stack.indexOf(entry); if (i >= 0) stack.splice(i, 1); },
-    get size()   { return stack.length; },
-  };
-})();
-
-function closeTopModal() {
-  if (modalStack.size > 0) {
-    const top = modalStack.pop();
-    if (top && typeof top.close === 'function') { top.close(); return; }
-  }
-
-  // Лёгкие дропдауны — проверяем первыми (открываются поверх всего)
-  const dropdowns = ['appModePopup', 'teamSwitcherPopup'];
-  for (const id of dropdowns) {
-    const el = document.getElementById(id);
-    if (el && !el.classList.contains('hidden')) {
-      el.classList.add('hidden');
-      return;
-    }
-  }
-
-  const knownIds = [
-    'compMapPopup',
-    'rosterPickerBg',
-    'mapStrPickerOverlay',
-    'pickerOverlay',
-    'counterPickerOverlay',
-    'mapModal',
-    'playerModal',
-    'heroModal',
-    'tierPreviewOverlay',
-  ];
-  for (const id of knownIds) {
-    const el = document.getElementById(id);
-    if (el && !el.classList.contains('hidden') && el.style.display !== 'none') {
-      if (id === 'compMapPopup')         { el.remove(); return; }
-      if (id === 'rosterPickerBg')       { el.remove(); return; }
-      if (id === 'mapStrPickerOverlay')   { if (typeof closeMapStrPicker  === 'function') { closeMapStrPicker();  return; } }
-      if (id === 'pickerOverlay')        { if (typeof closePicker         === 'function') { closePicker();        return; } }
-      if (id === 'tierPreviewOverlay')   { if (typeof closeTierPreview    === 'function') { closeTierPreview();   return; } }
-      if (id === 'counterPickerOverlay') { if (typeof closeCounterPicker  === 'function') { closeCounterPicker(); return; } }
-      el.classList.add('hidden');
-      return;
-    }
-  }
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { e.preventDefault(); closeTopModal(); }
-});
-
-// ════ ФОКУС-МЕНЕДЖМЕНТ МОДАЛОК (Design Audit #1, пункт 6) ════
-// До этого фикса: ни одна модалка не ловила Tab — клавиатурный пользователь
-// уводился фокусом в фон под открытой модалкой. Централизовано здесь (не
-// в каждом open*Modal() по отдельности — их много и разбросаны по файлам,
-// единой точки открытия нет) через MutationObserver на класс .hidden у
-// .modal-overlay/.picker-overlay — работает для любой такой модалки без
-// правок в остальных файлах.
-// ⚠️ Не покрывает compMapPopup/rosterPickerBg (см. knownIds выше) — они
-// создаются через insertAdjacentHTML и удаляются через .remove(), не
-// toggle класса .hidden, другой паттерн. Отдельная задача, не в этом фиксе.
-function _focusableIn(container){
-  return Array.from(container.querySelectorAll(
-    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-  )).filter(el => el.offsetParent !== null);
-}
-
-let _focusBeforeModal = null;
-
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Tab') return;
-  const modal = document.querySelector('.modal-overlay:not(.hidden), .picker-overlay:not(.hidden)');
-  if (!modal) return;
-  const list = _focusableIn(modal);
-  if (!list.length) return;
-  const first = list[0], last = list[list.length - 1];
-  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-});
-
-new MutationObserver(muts => {
-  muts.forEach(m => {
-    const el = m.target;
-    if (!el.classList || !(el.classList.contains('modal-overlay') || el.classList.contains('picker-overlay'))) return;
-    if (!el.classList.contains('hidden')) {
-      // Модалка только что открылась — запоминаем откуда пришли, фокусируем первое поле
-      _focusBeforeModal = document.activeElement;
-      const list = _focusableIn(el);
-      if (list.length) list[0].focus();
-    } else if (_focusBeforeModal) {
-      // Закрылась — возвращаем фокус туда, откуда открыли (кнопка "+ Герой" и т.д.)
-      _focusBeforeModal.focus();
-      _focusBeforeModal = null;
-    }
-  });
-}).observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
-
-// ════════════════════════════════════════════════════════════
-// УВЕДОМЛЕНИЯ И ОШИБКИ
-// ════════════════════════════════════════════════════════════
-
-// Всплывающее уведомление (type: 'ok' | 'err')
-function toast(msg, type = 'ok') {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = 'toast show ' + type;
-  clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-// Ошибка внутри контейнера (заменяет его содержимое)
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = `<div class="error-state">⚠ ${msg}</div>`;
 }
 
 // Экранирование одинарных кавычек для inline-обработчиков onclick="..."
@@ -268,68 +132,4 @@ function computePopupAnchorPosition({ anchorEl, popupW, popupH, mode = 'fixed', 
     : absTop - popupH - 6;
 
   return { position: 'absolute', top: Math.max(8, top), left };
-}
-
-// Единый обработчик ошибок Supabase/JS.
-// Supabase иногда кладёт сообщение в разные места — проверяем все.
-// Использование: catch(e){ handleError(e); return; }
-// С кастомным префиксом:  handleError(e, 'Не удалось сохранить карту')
-function handleError(e, context = '') {
-  const msg = e?.message
-    || e?.result?.error?.message
-    || e?.error?.message
-    || e?.details
-    || 'Неизвестная ошибка';
-  const label = context ? `${context}: ${msg}` : `Ошибка: ${msg}`;
-  toast(label, 'err');
-  console.error(context || 'handleError', e);
-  return msg;
-}
-
-// ════════════════════════════════════════════════════════════
-// SKELETON LOADERS
-// ════════════════════════════════════════════════════════════
-
-function showLoading(containerId, type = 'card', count = 6) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML = Array.from({ length: count }, () => _skeletonItem(type)).join('');
-}
-
-function _skeletonItem(type) {
-  switch (type) {
-    case 'player':
-      return `<div class="skeleton-player">
-        <div class="skeleton-line sk-avatar"></div>
-        <div class="skeleton-body">
-          <div class="skeleton-line sk-title"></div>
-          <div class="skeleton-line sk-sub"></div>
-          <div class="sk-heroes">
-            ${Array.from({ length: 4 }, () => '<div class="skeleton-line sk-hero-icon"></div>').join('')}
-          </div>
-        </div>
-      </div>`;
-
-    case 'hero':
-      return `<div class="skeleton-hero-card">
-        <div class="skeleton-line sk-hero-portrait"></div>
-        <div class="skeleton-line sk-title" style="margin-top:8px"></div>
-        <div class="skeleton-line sk-sub" style="margin-top:4px"></div>
-      </div>`;
-
-    case 'row':
-      return `<div class="skeleton-row">
-        <div class="skeleton-line sk-avatar-sm"></div>
-        <div class="skeleton-line sk-title flex-1"></div>
-        <div class="skeleton-line sk-badge"></div>
-      </div>`;
-
-    case 'card':
-    default:
-      return `<div class="skeleton-card">
-        <div class="skeleton-line sk-banner"></div>
-        <div class="skeleton-line sk-title" style="margin-top:10px"></div>
-        <div class="skeleton-line sk-sub" style="margin-top:6px"></div>
-      </div>`;
-  }
 }
