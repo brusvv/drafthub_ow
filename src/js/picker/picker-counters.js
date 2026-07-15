@@ -1,4 +1,4 @@
-// @hash b36be69c 2026-07-15T02:29
+// @hash 096d0bd8 2026-07-15T05:57
 // ════ PICKER — COUNTERS & MAP PICKER ════
 //
 // Попап оценки (10-точечная шкала) для выбранных контрпиков
@@ -7,8 +7,13 @@
 // openScoreChipPopup('counter', idx, chipEl) в modal-hero-chips.js.
 
 // ── Counter picker ──
-let counterPickerRoleFilter='all';
-let counterPickerSelected=[];
+// counterPickerRoleFilter/counterPickerSelected — НЕ объявлены здесь через
+// let: они уже проксированы в store через Object.defineProperties(window,
+// ...) в config.js (см. AUDIT-A5, CHANGELOG.md). Локальный `let` с тем же
+// именем перекрывал прокси во всём общем script-scope (bundle не ES-модули)
+// — реальные чтения/записи здесь молча уходили в отдельную теневую
+// переменную, а store.state.counterPickerSelected навсегда оставался
+// пустым `[]`. Прокси-геттер/сеттер из config.js теперь достижим.
 
 function openCounterPicker(){
   counterPickerRoleFilter='all';
