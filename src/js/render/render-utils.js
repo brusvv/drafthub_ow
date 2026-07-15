@@ -1,4 +1,4 @@
-// @hash 5c45a2b0 2026-07-13T12:26
+// @hash 4b02d393 2026-07-14T20:41
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие утилиты рендера
 //
@@ -11,7 +11,10 @@
 // • showLoading()         — skeleton-loader для загрузки данных
 // • toast()               — всплывающее уведомление
 // • showError()           — ошибка в контейнере
-// • esc()                 — экранирование строк в HTML-атрибутах
+// • esc()                 — экранирование ' для inline onclick="..."
+// • escAttr()             — экранирование &/" для data-* HTML-атрибутов
+// • computePopupAnchorPosition() — позиция popup рядом с anchor-элементом
+//                           (viewport fixed ИЛИ absolute внутри скролл-контейнера)
 // • handleError()         — единый обработчик ошибок Supabase
 // ════════════════════════════════════════════════════════════
 
@@ -205,6 +208,67 @@ function showError(id, msg) {
 
 // Экранирование одинарных кавычек для inline-обработчиков onclick="..."
 function esc(s) { return (s || '').replace(/'/g, "\\'"); }
+
+// Экранирование для значений data-* атрибутов (в отличие от esc() выше —
+// та экранирует ' под JS-строку внутри onclick, эта — под HTML-атрибут,
+// чтобы dataset.xxx при чтении возвращал исходную строку без искажений).
+function escAttr(s) { return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+
+// ════════════════════════════════════════════════════════════
+// AUDIT-A4 — общий расчёт позиции popup рядом с anchor-элементом.
+// Раньше modal-hero-chips.js и modal-hero-strength.js независимо считали
+// одно и то же (viewport bounds / anchor rect), см. CHANGELOG.md.
+//
+// Два режима:
+//  - 'fixed'    — popup лежит в document.body, position:fixed, координаты
+//                 относительно viewport (modal-hero-chips.js: попап поверх
+//                 модалки, без внутреннего скролла контейнера)
+//  - 'absolute' — popup внутри containerEl (у которого уже стоит
+//                 position:relative), position:absolute, координаты
+//                 относительно containerEl + поправка на скролл во
+//                 вложенном scrollEl (modal-hero-strength.js: popup внутри
+//                 .picker-box, которая скроллится через .picker-grid-wrap)
+//
+// Возвращает { position, top, left } — caller собирает cssText сам
+// (ширина/фон/тень и т.п. у каждого popup свои).
+// ════════════════════════════════════════════════════════════
+function computePopupAnchorPosition({ anchorEl, popupW, popupH, mode = 'fixed', containerEl = null, scrollEl = null }) {
+  if (!anchorEl) return null;
+  const rect = anchorEl.getBoundingClientRect();
+
+  if (mode === 'fixed') {
+    const left = rect.right + popupW > window.innerWidth
+      ? Math.max(8, rect.right - popupW)
+      : rect.left;
+    const spaceBelow = window.innerHeight - (rect.bottom + 8);
+    const top = spaceBelow < popupH
+      ? Math.max(8, rect.top - popupH - 6)
+      : rect.bottom + 6;
+    return { position: 'fixed', top, left };
+  }
+
+  // mode === 'absolute'
+  if (!containerEl) return null;
+  const boxRect = containerEl.getBoundingClientRect();
+  const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+
+  let left = rect.left - boxRect.left;
+  left = Math.min(Math.max(8, left), boxRect.width - popupW - 8);
+
+  const scrollBottom = scrollEl
+    ? Math.min(scrollEl.getBoundingClientRect().bottom, window.innerHeight)
+    : window.innerHeight;
+  const spaceBelow = scrollBottom - rect.bottom - 8;
+
+  const absBottom = rect.bottom - boxRect.top + scrollTop;
+  const absTop    = rect.top    - boxRect.top + scrollTop;
+
+  const top = spaceBelow >= popupH
+    ? absBottom + 6
+    : absTop - popupH - 6;
+
+  return { position: 'absolute', top: Math.max(8, top), left };
+}
 
 // Единый обработчик ошибок Supabase/JS.
 // Supabase иногда кладёт сообщение в разные места — проверяем все.
