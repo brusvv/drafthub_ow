@@ -1,3 +1,4 @@
+// @hash 577f60ae 2026-07-15T02:30
 // ════ PICKER — COMP SLOTS ════
 // LEQ-2: window.confirmPicker override заменён на registerPickerHandler('comp_slot', ...)
 
