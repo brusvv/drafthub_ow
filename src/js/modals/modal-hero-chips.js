@@ -1,4 +1,4 @@
-// @hash d275d646 2026-07-13T12:40
+// @hash 8c412ac6 2026-07-14T20:41
 // ════ MODAL — HERO CHIPS ════
 // Унифицированные чипы + попап оценки для контрпиков и синергий.
 // Используется обоими блоками heroCounterBlock / heroSynergyBlock.
@@ -31,11 +31,11 @@ function _renderScoreChipBlock(containerId, items, colorFn, chipClass, kind){
       const src=portrait(item.name);
       const color=colorFn(item.score);
       return`<div class="sel-hero-chip ${chipClass}" style="border-left:2px solid ${color};cursor:pointer"
-                  onclick="openScoreChipPopup('${kind}',${i},this)">
+                  data-chip-action="open" data-chip-kind="${kind}" data-chip-idx="${i}">
         ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${item.name[0]}</div>`}
         <span>${item.name}</span>
         <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;color:${color};margin-left:2px">${item.score}</span>
-        <span onclick="event.stopPropagation();removeScoreChip('${kind}',${i})" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
+        <span data-chip-action="remove" data-chip-kind="${kind}" data-chip-idx="${i}" style="cursor:pointer;color:var(--text3);margin-left:4px;font-size:11px">×</span>
       </div>`;
     }).join('')}
   </div>`;
@@ -76,14 +76,12 @@ function openScoreChipPopup(kind,idx,chipEl){
   popup.id='scoreChipPopup';
 
   // position:fixed относительно чипа — попап появляется рядом с конкретным чипом,
-  // а не в центре модалки
-  const rect=chipEl.getBoundingClientRect();
-  const popupW=230;
-  const left=rect.right+popupW>window.innerWidth?Math.max(8,rect.right-popupW):rect.left;
-  const spaceBelow=window.innerHeight-(rect.bottom+8);
-  const top=spaceBelow<120?Math.max(8,rect.top-130):rect.bottom+6;
+  // а не в центре модалки. Расчёт вынесен в render-utils.js (AUDIT-A4) — тот же
+  // helper использует modal-hero-strength.js в 'absolute'-режиме.
+  const popupW=230, popupH=130;
+  const pos=computePopupAnchorPosition({anchorEl:chipEl,popupW,popupH,mode:'fixed'});
 
-  popup.style.cssText=`position:fixed;z-index:9999;top:${top}px;left:${left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
+  popup.style.cssText=`position:${pos.position};z-index:9999;top:${pos.top}px;left:${pos.left}px;width:${popupW}px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.7)`;
   popup.innerHTML=`
     <div style="font-size:12px;font-weight:700;margin-bottom:8px">${item.name}</div>
     <div style="display:flex;gap:3px;align-items:center;margin-bottom:8px">
@@ -94,9 +92,12 @@ function openScoreChipPopup(kind,idx,chipEl){
         onValue: v => `setScoreChipValue(${idx},${v})`,
       })}
     </div>
-    <button class="btn" style="width:100%;font-size:10px" onclick="_closeScoreChipPopup()">Готово</button>`;
+    <button class="btn" style="width:100%;font-size:10px" data-chip-action="close-popup">Готово</button>`;
   document.body.appendChild(popup);
-  popup.addEventListener('click',e=>e.stopPropagation());
+  popup.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(e.target.closest('[data-chip-action="close-popup"]'))_closeScoreChipPopup();
+  });
 }
 
 function setScoreChipValue(idx,val){
@@ -121,7 +122,20 @@ function _closeScoreChipPopup(){
   _scoreChipPopupState=null;
 }
 
+// Единый делегированный обработчик — раньше open/remove висели как inline
+// onclick="..." прямо в разметке чипов (см. историю в CHANGELOG.md), теперь
+// вся маршрутизация здесь по data-chip-action/data-chip-kind/data-chip-idx.
 document.addEventListener('click',e=>{
+  const removeEl=e.target.closest('[data-chip-action="remove"]');
+  if(removeEl){
+    removeScoreChip(removeEl.dataset.chipKind,Number(removeEl.dataset.chipIdx));
+    return;
+  }
+  const openEl=e.target.closest('[data-chip-action="open"]');
+  if(openEl){
+    openScoreChipPopup(openEl.dataset.chipKind,Number(openEl.dataset.chipIdx),openEl);
+    return;
+  }
   if(!e.target.closest('.ctr-chip')&&!e.target.closest('.syn-chip')&&!e.target.closest('#scoreChipPopup'))
     _closeScoreChipPopup();
 });
