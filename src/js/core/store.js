@@ -1,4 +1,4 @@
-// @hash a84a1388 2026-06-14T08:30
+// @hash 1686f1fc 2026-07-15T06:29
 // ════════════════════════════════════════════════════════════
 // store.js — центральное хранилище состояния Draft Hub
 //
@@ -95,6 +95,14 @@ const INITIAL_STATE = {
   tierOrderHeroes:  { S: [], A: [], B: [], C: [], D: [] },
   tierMapTypeFilter:  'all',
   tierHeroRoleFilter: 'all',
+  // AUDIT-A5 (15.07): раньше module-level `let` в db-load-tiers.js,
+  // читались/писались в 12 (tierViewMode) / 9 (activeTierSetId) файлах
+  // через общий script-scope. Не в PERSIST_KEYS — то же поведение что и
+  // раньше (сброс на дефолт при reload, режим/сет переопределяются
+  // заново через loadTiers()/loadTierSets() при старте).
+  tierViewMode:     'team',  // 'global' | 'team' | 'personal'
+  tierSets:         [],      // личные тир-сеты [{id, name, is_default}]
+  activeTierSetId:  null,    // uuid | null — он же tier_lists.id
 
   // ── Drag & drop ──
   dragItem: null,
