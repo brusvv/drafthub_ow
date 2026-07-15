@@ -1,4 +1,3 @@
-// @hash 31ca4906 2026-07-15T00:23
 // ════════════════════════════════════════════════════════════
 // render-utils.js — общие визуальные хелперы рендера
 // AUDIT-A4/watch-list (14.07): файл разбит на 4 — этот файл
@@ -67,7 +66,7 @@ function renderScoreDots({ value = 0, onValue, high = 'var(--damage)', size = 15
     const filled = v <= value;
     const color = scoreColor(v, { high });
     const click = typeof onValue === 'function' ? onValue(v) : '';
-    return `<span onclick="${click}" style="cursor:pointer;font-size:${size}px;color:${filled ? color : 'var(--border2)'};line-height:1">◆</span>`;
+    return `<button type="button" class="btn-reset" onclick="${click}" style="cursor:pointer;font-size:${size}px;color:${filled ? color : 'var(--border2)'};line-height:1">◆</button>`;
   }).join('');
 }
 
