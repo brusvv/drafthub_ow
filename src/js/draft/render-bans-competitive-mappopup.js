@@ -1,4 +1,4 @@
-// @hash 2498afc8 2026-07-15T23:42
+// @hash aec0646e 2026-07-16T09:06
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive-mappopup.js — попап выбора карты матча
 // (соревновательный режим банов)
@@ -28,16 +28,16 @@ function openCompMapPopup() {
           style="cursor:pointer;border-radius:8px;overflow:hidden;
                  border:2px solid ${sel ? 'var(--support)' : 'var(--border)'};
                  background:${sel ? 'rgba(43,189,142,.08)' : 'var(--bg3)'};
-                 transition:all .1s;width:100px">
+                 transition:all .1s;width:124px">
         ${src
-          ? `<img src="${src}" style="width:100%;height:56px;object-fit:cover;display:block"
+          ? `<img src="${src}" style="width:100%;height:70px;object-fit:cover;display:block"
                   onerror="this.style.display='none'">`
-          : `<div style="width:100%;height:56px;background:var(--bg4);display:flex;
+          : `<div style="width:100%;height:70px;background:var(--bg4);display:flex;
                          align-items:center;justify-content:center;
                          font-size:11px;font-weight:700;color:var(--text3)">
                ${m.name[0]}
              </div>`}
-        <div style="padding:4px 6px;font-size:10px;font-weight:600;text-align:center;
+        <div style="padding:5px 6px;font-size:12px;font-weight:600;text-align:center;
                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           ${m.name}
         </div>
@@ -63,7 +63,7 @@ function openCompMapPopup() {
   overlay.onclick = e => { if (e.target === overlay) closeCompMapPopup(); };
   overlay.innerHTML = `
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
-                width:100%;max-width:620px;max-height:84vh;display:flex;flex-direction:column">
+                width:100%;max-width:720px;max-height:84vh;display:flex;flex-direction:column">
       <div style="display:flex;align-items:center;justify-content:space-between;
                   padding:1rem 1.25rem;border-bottom:1px solid var(--border)">
         <span style="font-size:15px;font-weight:700">Выбрать карту матча</span>
