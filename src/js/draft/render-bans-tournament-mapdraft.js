@@ -123,7 +123,7 @@ function _renderTournMapDraftDone() {
                         border-radius:8px;background:var(--bg2);border:1px solid var(--border)">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:16px">${i + 1}</span>
       ${src
-        ? `<img src="${src}" style="width:48px;height:30px;object-fit:cover;border-radius:5px"
+        ? `<img src="${src}" style="width:64px;height:40px;object-fit:cover;border-radius:5px"
                 onerror="this.style.display='none'">`
         : ''}
       <span style="font-weight:700;flex:1">${pm.name}</span>
