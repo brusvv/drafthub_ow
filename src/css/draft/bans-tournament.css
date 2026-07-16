@@ -1,0 +1,91 @@
+/* @hash 00000000 2026-07-16 */
+/* ════════════════════════════════════════════════════════════
+   bans-tournament.css — турнирный драфт (FILESPLIT, 16.07)
+   Вынесено из bans.css (274 строки, по прямому запросу пользователя —
+   ниже базового порога 350, но пользователь попросил разбить явно).
+   Границу проводили не механически пополам, а по реальному потребителю
+   (см. grep .tourn- src/js/draft/*.js): все классы ниже используются
+   ТОЛЬКО render-bans-tournament-draft.js и
+   render-bans-tournament-mapdraft.js — в отличие от .ban-panel/.ban-chip/
+   .comp-ban-chip и т.п., которые общие для всех 4 draft-панелей и остались
+   в bans.css. build.sh подключает этот файл сразу после bans.css.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── TOURNAMENT MAP CHIP ── */
+.tourn-map-chip{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;transition:all .1s;overflow:hidden;min-width:100px;max-width:124px}
+.tourn-map-chip img{width:100px;height:56px;object-fit:cover;border-radius:5px;display:block}
+.tourn-map-chip span{font-size:12px;font-weight:600;text-align:center;line-height:1.3}
+.tourn-map-chip:hover{border-color:var(--border3)}
+.tourn-map-chip.sel{border-color:var(--support);background:rgba(43,189,142,.08)}
+.tourn-map-check{position:absolute;top:4px;right:4px;background:var(--support);color:#000;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800}
+
+/* ── TOURNAMENT FORMAT / SIDE PICK ── */
+.tourn-format-block{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg3);flex-wrap:wrap}
+.tourn-format-picker{display:flex;gap:5px;flex-wrap:wrap}
+.tourn-format-btn{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.06em;padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text3);cursor:pointer;transition:all .15s}
+.tourn-format-btn:hover{border-color:var(--border3);color:var(--text2)}
+.tourn-format-btn.active{border-color:var(--support);background:rgba(43,189,142,.12);color:var(--support);box-shadow:0 0 0 1px rgba(43,189,142,.18) inset}
+.tourn-side-options{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.tourn-side-hint{font-family:var(--mono);font-size:10px;line-height:1.5;color:var(--text3)}
+.tourn-side-buttons{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Экран «Карты выбраны» — колонка «Сторона: команда X → ...» не была
+   выровнена (ширина по контенту → «Сторона:» у каждой строки начиналась
+   в разном месте, см. скриншот 16.07). Имя карты слева — flex:1 (тянется
+   до конца доступного места), поэтому фиксированная ширина у ЭТОЙ колонки
+   достаточна для выравнивания — она всегда последняя в строке.
+   Правка #2 (16.07): первая версия была 270px в px — оказалась УЖЕ самого
+   длинного варианта («Сторона: команда A → Сторона 2 / правый спавн», это
+   единственный текст сторон, длиннее которого не бывает — набор фиксирован
+   в _getTournSideOptions()), из-за чего текст переполнял свою колонку и
+   утыкался в край панели БЕЗ отступа (обходя padding строки). Теперь ch
+   вместо px — шрифт моноширинный (var(--mono)), 1ch = 1 символ при любом
+   font-size, включая fluid-clamp — не нужно пересчитывать вручную при
+   следующем изменении шкалы шрифта. */
+.tourn-picked-map-side{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);width:47ch;flex-shrink:0;white-space:nowrap;text-align:left}
+
+/* ── ИТОГ СЕРИИ: строка «Карта / бан A / бан B» ──
+   (16.07, live-render правка): раньше герой A рендерился с шириной по
+   контенту → «B:» у каждой строки начиналось в разном месте (имена героев
+   разной длины). Фиксированная ширина у обоих банов — тот же принцип, что
+   и у .tourn-picked-map-side выше. Заодно увеличены аватарки (20→28px,
+   тот же размер что .counter-chip img/.ban-draft-chip img в bans.css —
+   не выдумывал новый, взял уже существующий в проекте) и шрифт названия
+   карты (12→13px). */
+.tourn-final-ban-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--bg2);border:1px solid var(--border)}
+.tourn-final-ban-map{font-size:13px;font-weight:600;flex:1}
+.tourn-final-ban-hero-img{width:28px;height:28px;border-radius:5px;object-fit:cover}
+.tourn-final-ban-hero{font-size:11px;color:var(--damage);width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ════ TOURNAMENT DRAFT STEP CHIPS ════
+   Progress bar of steps in the map draft phase.
+   Each chip shows label (БАН/ПИК/СТР), team, mode abbreviation,
+   and the chosen value once the step is done.
+   (16.07, live-render pass: was defined in bans.css but never actually
+   applied — render-bans-tournament-mapdraft.js built the same markup
+   fully inline instead. Now wired in + enlarged per user 1440p feedback.) */
+.tourn-step-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  min-width:72px;
+  padding:7px 10px;
+  border-radius:7px;
+  cursor:default;
+  border:1px solid var(--border);
+}
+.tourn-step-chip-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.tourn-step-chip-sub{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.tourn-step-chip-value{font-size:10px;font-weight:700;text-align:center;line-height:1.2;max-width:68px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+@media (max-width:640px){
+  .tourn-format-block{align-items:flex-start;flex-direction:column}
+  .tourn-map-chip{min-width:72px;max-width:88px;padding:4px 6px}
+  .tourn-map-chip img{width:72px;height:40px}
+}
+
+/* .tourn-map-chip/.tourn-format-btn :focus-visible остаются в bans.css —
+   то правило общее для ban/pick/side-выборов из ВСЕХ draft-панелей
+   (.p-hero/.comp-ban-chip/.ban-mode-btn и т.д.), не только турнирных,
+   дробить один селекторный список между двумя файлами не стали. */
