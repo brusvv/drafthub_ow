@@ -1,7 +1,15 @@
-/* @hash 3180f524 2026-07-14T14:58 */
+/* @hash a639413e 2026-07-16T01:44 */
 /* ── HERO PICKER MODAL ── */
-.picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:1rem}
+.picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;z-index:2000;padding:6vh 1rem 1rem;overflow-y:auto}
 .picker-overlay.hidden{display:none}
+/* BUG-18 (16.07): align-items:center на .picker-overlay вертикально центрировал
+   .picker-box по его высоте — при смене фильтра (Tank/Damage/Support) список
+   героев короче, box ниже, и центрирование пересчитывалось заново → окно
+   визуально "прыгало" вниз/вверх при каждом клике по фильтру. Заменено на
+   flex-start с фиксированным верхним отступом (6vh на overlay) — верхний край
+   box теперь не зависит от высоты контента, съезжает только нижний край
+   (внутри уже есть свой overflow-y:auto + max-height:88vh ниже, так что при
+   большом списке ничего не обрезается). */
 .picker-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:var(--fluid-panel-w);max-height:88vh;display:flex;flex-direction:column}
 .picker-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .picker-title{font-size:15px;font-weight:700}
