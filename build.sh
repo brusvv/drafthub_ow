@@ -204,6 +204,7 @@ JS_MODULES=(
   js/draft/render-bans-competitive-mappopup.js
   js/draft/render-bans-competitive-recs.js
   js/draft/render-bans-tournament-draft.js
+  js/draft/render-bans-tournament-mapdraft.js
   js/draft/render-bans-tournament-herobans.js
   js/draft/render-draft-comp.js
   js/draft/render-draft-comp-bans.js
