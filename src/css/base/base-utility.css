@@ -1,0 +1,73 @@
+/* @hash 8c7cd918 2026-07-16T10:18 */
+/* ════ BASE UTILITY — btn-reset / panel width / focus / card animation ════
+   Вынесено из base.css (FILESPLIT, 16.07 — было 377 строк, см.
+   base-reset.css за подробностями границы). Кросс-катинг utility-классы,
+   которые используются feature-файлами по всему проекту, а не только
+   в base/chrome: .btn-reset (AUDIT-A3 — гасит UA-стили конвертированных
+   <button>, элемент сам задаёт остальное своим классом),
+   .panel-narrow/.panel-medium (адаптивная ширина форм), focus-visible
+   (SEC-2), fade-up card-анимация (POL-2) + card box-shadow (AUDIT-D2).
+
+   Зависимости: переменные из base-reset.css. ВАЖНО: должен грузиться
+   ДО feature/modals/draft CSS — .btn-reset рассчитан на то, что более
+   специфичный класс конкретного компонента (например .map-str-chip в
+   strength.css) переопределит border/background ПОЗЖЕ по каскаду, см.
+   комментарий на .btn-reset ниже.
+*/
+
+/* AUDIT-A3: reset для <button>, заменяющих кликабельные <div>/<span> —
+   элемент сам задаёт display/border/background/padding через свой класс
+   (.sel-heroes/.comp-slot/.dot-rating-dot и т.п.), этот класс только гасит
+   UA-стили кнопки (рамку, фон, паддинг браузера по умолчанию), чтобы
+   визуально ничего не изменилось при смене тега — фокус/скринридер теперь
+   работают "из коробки", тач-таргет не меняется. */
+.btn-reset{
+  border:none;background:none;padding:0;margin:0;
+  font:inherit;color:inherit;text-align:inherit;
+  -webkit-appearance:none;appearance:none;
+}
+/* БАГ (найден): JS раньше делал el.style.display='' чтобы "показать" —
+   но '' лишь снимает inline-стиль, оставляя это правило (display:none)
+   в силе. Явный модификатор для показа вместо борьбы с display напрямую;
+   .nav-btn ничего не переопределяет для display, поэтому inline-block —
+   тот же браузерный дефолт что и у обычной <button>. */
+.admin-only.admin-only-visible { display: inline-block; }
+
+/* Замена inline style="max-width:680px/780px" в auth/ui.js (Настройки) и
+   render/admin/render-admin-ui.js (Админ) — были захардкожены без единой
+   точки адаптива, на 1440p+ давали много пустого пространства по бокам
+   при том что .app сам растёт до 1360px. XXL-апгрейд — responsive.css. */
+.panel-narrow{max-width:var(--fluid-panel-narrow-w)}
+.panel-medium{max-width:var(--fluid-panel-medium-w)}
+
+/* ── SEC-2: focus-visible ──
+   Убирает браузерный дефолтный outline на обычный клик мышью (визуально
+   шумно, не несёт информации), но оставляет явное кольцо для клавиатурной
+   навигации — где оно реально нужно для доступности. */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── POL-2 (CSS-часть) — микроанимация появления карточек ──
+   JS-часть (проставить style="--card-i:${idx}" на каждую карточку в
+   render-heroes.js/render-maps.js/render-players.js, с лимитом
+   Math.min(idx,12) чтобы длинные списки не тормозили с растущей задержкой)
+   — отдельная задача. Без JS-половины анимация всё равно играет на всех
+   карточках, просто без ступенчатой задержки (--card-i по умолчанию 0). */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.h-card, .map-card, .player-card, .tier-hero-pill, .ban-chip, .comp-rec-hero {
+  animation: fade-up .16s ease both;
+  animation-delay: calc(var(--card-i, 0) * 25ms);
+}
+
+/* AUDIT-D2: лёгкая elevation только на настоящих карточках — не на мелких
+   chip/pill из списка выше (там тень на масштабе пилюли выглядела бы чужеродно). */
+.h-card, .map-card, .player-card {
+  box-shadow: var(--shadow-card);
+}
