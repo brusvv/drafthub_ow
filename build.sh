@@ -206,6 +206,8 @@ JS_MODULES=(
   js/draft/render-bans-tournament-draft.js
   js/draft/render-bans-tournament-herobans.js
   js/draft/render-draft-comp.js
+  js/draft/render-draft-comp-bans.js
+  js/draft/render-draft-comp-result.js
 )
 
 for f in "${JS_MODULES[@]}"; do
