@@ -1,4 +1,4 @@
-// @hash fd36b27b 2026-07-16T10:11
+// @hash 4deb3124 2026-07-16T10:36
 // ════ TIER SHARE PANEL — для личного тир-листа ════
 // Вынесено из render-tier-share.js (FILESPLIT, 16.07 — было 410 строк,
 // граница спланирована ещё 12.07 в watch-list AGENT_TASKS.md: "Share panel /
