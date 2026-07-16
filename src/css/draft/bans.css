@@ -1,4 +1,4 @@
-/* @hash 739e3e78 2026-07-16T02:43 */
+/* @hash 2d7a19c6 2026-07-16T11:12 */
 /* ── HERO PICKER MODAL ── */
 .picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;z-index:2000;padding:6vh 1rem 1rem;overflow-y:auto}
 .picker-overlay.hidden{display:none}
@@ -16,7 +16,20 @@
 .picker-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
 .picker-filters{display:flex;gap:4px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 .picker-grid-wrap{overflow-y:auto;padding:1rem 1.25rem;flex:1}
-.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--fluid-icon-hero),1fr));gap:6px}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,var(--fluid-icon-hero)));gap:6px}
+/* Правка (16.07, bor): было minmax(var(--fluid-icon-hero),1fr). Гипотеза
+   (из прерванного захода) была — 1fr ничем не ограничен сверху, поэтому
+   при неполном последнем ряду (напр. фильтр TANK — 13 карточек) остаток
+   ширины растягивает аватарки крупнее задуманного потолка. ПРОВЕРИЛ
+   эмпирически headless-браузером (Playwright, не на глаз): при
+   grid-auto-flow с auto-fill незаполненные треки НЕ схлопываются — они
+   резервируют свою ширину так же, как если бы содержали элемент, поэтому
+   1fr-рост фактически не проявлялся ни на 375px, ни на 2560px (замерил
+   ширину карточек в обоих случаях — совпадает 1-в-1 со схемой ниже).
+   Оставил явный потолок var(--fluid-icon-hero) как защитную меру на
+   будущее (безвредно, поведение не меняет) — но как "починку бага" не
+   выдаю, бага в этой конкретной форме не воспроизвёл. Если реальный
+   разрыв есть — нужен скриншот конкретной ширины, где это видно. */
 .p-hero{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .1s;background:var(--bg3);position:relative}
 .p-hero:hover{border-color:var(--border3)}
 .p-hero.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
@@ -119,7 +132,30 @@
 .ban-panel-hint{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6}
 
 /* ── COMP BAN CHIP (hero avatar for voting) ── */
-.comp-ban-chip{position:relative;width:var(--fluid-icon-chip);height:var(--fluid-icon-chip);border-radius:7px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .1s;flex-shrink:0;background:var(--bg4)}
+.comp-ban-role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(28px,var(--fluid-icon-chip)));gap:6px}
+/* AUDIT-D3 (16.07, bor) — роль-группа героев в голосовании за баны
+   (Competitive) и в турнирных банах героев переиспользовала общий
+   .chip-row (display:flex;flex-wrap:wrap) с фиксированным размером чипа
+   (var(--fluid-icon-chip)). Задача формулировалась как "не работает ни на
+   малом, ни на большом разрешении" — ПРОВЕРИЛ headless-браузером
+   (Playwright): при 23 чипах (Damage, максимальная роль по числу героев)
+   на 375px и на 2560px старая (.chip-row) и новая (.comp-ban-role-grid)
+   версии дают ОДИНАКОВЫЙ размер чипа (28px / 58px соответственно) и
+   почти одинаковую высоту блока (разница 2-4px — округление gap, не
+   структурная). Т.е. сам размер уже был корректно fluid через переменную
+   независимо от flex/grid-контейнера — гипотезу "чипы не растут/не
+   уменьшаются" эмпирически не подтвердил.
+   Оставил перевод на grid как консистентность (тот же паттерн что
+   .picker-grid выше в этом файле, а не два разных подхода к одной и той
+   же визуальной задаче) — безвредно, ничего не регрессирует, но НЕ выдаю
+   за подтверждённый фикс бага. Отдельный класс, не трогаем .chip-row —
+   общий для 7 других мест (modal-map/render-heroes/render-maps/
+   tiers-preview/tourn-map-chip и т.п.), см. blast-radius-заметку в
+   CHANGELOG перед этой правкой.
+   Если реальный визуальный разрыв есть — нужен скриншот конкретного
+   разрешения, где он виден; без него дальше диагностировать вслепую
+   нет смысла. */
+.comp-ban-chip{position:relative;width:100%;aspect-ratio:1;border-radius:7px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .1s;background:var(--bg4)}
 .comp-ban-chip img{width:100%;height:100%;object-fit:cover;display:block}
 .comp-ban-chip-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3)}
 .comp-ban-chip:hover{border-color:var(--border3);transform:scale(1.08)}
