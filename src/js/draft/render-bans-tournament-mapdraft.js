@@ -1,4 +1,4 @@
-// @hash 997a5b68 2026-07-16T01:56
+// @hash e406a819 2026-07-16T02:25
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-mapdraft.js — турнирный драфт: фаза 2 (драфт карт)
 //
@@ -52,27 +52,15 @@ function _renderTournProgressBar(steps, si) {
       ? formatShortLabel(s.value, 9)
       : '';
 
-    return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;
-                        min-width:56px;padding:5px 7px;border-radius:6px;
-                        background:${s.done ? col + '1a' : 'var(--bg3)'};
-                        border:1px solid ${i === si ? col : 'var(--border)'};
-                        opacity:${i > si ? 0.45 : 1}">
-      <span style="font-family:var(--mono);font-size:7px;text-transform:uppercase;
-                   letter-spacing:.06em;color:${s.done ? col : 'var(--text3)'};font-weight:700">
-        ${label}
-      </span>
-      <span style="font-family:var(--mono);font-size:8px;color:var(--text3)">
-        ${s.team} · ${s.mode.slice(0, 3)}
-      </span>
-      ${valText
-        ? `<span style="font-size:8px;font-weight:700;color:${col};text-align:center;
-                        line-height:1.2;max-width:54px;overflow:hidden;
-                        white-space:nowrap;text-overflow:ellipsis">${valText}</span>`
-        : ''}
+    return `<div class="tourn-step-chip" style="background:${s.done ? col + '1a' : 'var(--bg3)'};
+                border-color:${i === si ? col : 'var(--border)'};opacity:${i > si ? 0.45 : 1}">
+      <span class="tourn-step-chip-label" style="color:${s.done ? col : 'var(--text3)'}">${label}</span>
+      <span class="tourn-step-chip-sub">${s.team} · ${s.mode.slice(0, 3)}</span>
+      ${valText ? `<span class="tourn-step-chip-value" style="color:${col}">${valText}</span>` : ''}
     </div>`;
   }).join('');
 
-  return `<div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">${chips}</div>`;
+  return `<div class="draft-chip-row">${chips}</div>`;
 }
 
 // Блок текущего шага (бан / пик / сторона)
@@ -122,6 +110,15 @@ function _renderTournMapDraftDone() {
   const mapRows = tDraft.pickedMaps.map((pm, i) => {
     const m   = maps.find(x => x.name === pm.name);
     const src = mapImg(pm.name);
+    // Формат pm.sideTeam — "${team} → ${value}" (см. tournDraftAction ниже) —
+    // раскладываем, чтобы подсветить букву команды тем же цветом, что и на
+    // шаге выбора стороны (_renderTournCurrentStep выше).
+    let sideHtml = '';
+    if (pm.sideTeam) {
+      const [sideTeamLetter, sideValue] = pm.sideTeam.split(' → ');
+      const sideCol = sideTeamLetter === 'A' ? 'var(--tank)' : 'var(--damage)';
+      sideHtml = `Сторона: команда <b style="color:${sideCol}">${sideTeamLetter}</b> → ${sideValue}`;
+    }
     return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;
                         border-radius:8px;background:var(--bg2);border:1px solid var(--border)">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:16px">${i + 1}</span>
@@ -131,9 +128,7 @@ function _renderTournMapDraftDone() {
         : ''}
       <span style="font-weight:700;flex:1">${pm.name}</span>
       ${mapTypeIcon(pm.mode || m?.type || '', 13)}
-      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
-        ${pm.sideTeam ? `Сторона: команда ${pm.sideTeam}` : ''}
-      </span>
+      <span class="tourn-picked-map-side">${sideHtml}</span>
     </div>`;
   }).join('');
 
