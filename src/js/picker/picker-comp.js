@@ -1,4 +1,4 @@
-// @hash fa48fd8d 2026-07-15T06:43
+// @hash 6d4ff178 2026-07-15T23:31
 // ════ PICKER — COMP SLOTS ════
 // LEQ-2: window.confirmPicker override заменён на registerPickerHandler('comp_slot', ...)
 
@@ -35,7 +35,7 @@ function renderCompSlots(){
       const src=portrait(slot.hero);
       el.innerHTML=`${src?`<img src="${src}" style="width:28px;height:28px;border-radius:5px;object-fit:cover" onerror="this.style.display='none'">`:`<div class="comp-slot-ph">${slot.hero[0]}</div>`}
         <span class="comp-slot-name">${slot.hero}</span>
-        <button class="comp-slot-clear" onclick="event.stopPropagation();clearCompSlot(${i})">✕</button>`;
+        <span class="comp-slot-clear" onclick="event.stopPropagation();clearCompSlot(${i})">✕</span>`;
       el.classList.add('filled');
     }else{
       el.innerHTML='<span class="sel-empty fs-11">Выбрать</span>';
