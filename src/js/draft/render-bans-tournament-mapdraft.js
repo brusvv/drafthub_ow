@@ -1,4 +1,4 @@
-// @hash fe614233 2026-07-16T02:45
+// @hash 830c940b 2026-07-16T09:06
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-mapdraft.js — турнирный драфт: фаза 2 (драфт карт)
 //
@@ -43,24 +43,42 @@ function _renderTournMapDraft() {
     </div>`;
 }
 
-// Прогресс-бар шагов
+// Прогресс-бар шагов — группируем подряд идущие шаги одного режима (все
+// шаги одной карты: бан/бан/пик/сторона) в один визуальный блок с общей
+// линией снизу и одной иконкой типа карты, вместо повтора текста режима
+// на каждом чипе (см. .tourn-step-group* в bans-tournament.css).
 function _renderTournProgressBar(steps, si) {
-  const chips = steps.map((s, i) => {
-    const col      = s.t === 'ban' ? 'var(--damage)' : s.t === 'pick' ? 'var(--support)' : 'var(--text3)';
-    const label    = s.t === 'ban' ? 'БАН' : s.t === 'pick' ? 'ПИК' : 'СТР';
-    const valText  = s.done && s.value
-      ? formatShortLabel(s.value, 9)
-      : '';
+  const groups = [];
+  steps.forEach((s, i) => {
+    const last = groups[groups.length - 1];
+    if (last && last.mode === s.mode) last.idxs.push(i);
+    else groups.push({ mode: s.mode, idxs: [i] });
+  });
 
-    return `<div class="tourn-step-chip" style="background:${s.done ? col + '1a' : 'var(--bg3)'};
-                border-color:${i === si ? col : 'var(--border)'};opacity:${i > si ? 0.45 : 1}">
-      <span class="tourn-step-chip-label" style="color:${s.done ? col : 'var(--text3)'}">${label}</span>
-      <span class="tourn-step-chip-sub">${s.team} · ${s.mode.slice(0, 3)}</span>
-      ${valText ? `<span class="tourn-step-chip-value" style="color:${col}">${valText}</span>` : ''}
+  const groupsHtml = groups.map(g => {
+    const chips = g.idxs.map(i => {
+      const s        = steps[i];
+      const col      = s.t === 'ban' ? 'var(--damage)' : s.t === 'pick' ? 'var(--support)' : 'var(--text3)';
+      const label    = s.t === 'ban' ? 'БАН' : s.t === 'pick' ? 'ПИК' : 'СТР';
+      const valText  = s.done && s.value
+        ? formatShortLabel(s.value, 12)
+        : '';
+
+      return `<div class="tourn-step-chip" style="background:${s.done ? col + '1a' : 'var(--bg3)'};
+                  border-color:${i === si ? col : 'var(--border)'};opacity:${i > si ? 0.45 : 1}">
+        <span class="tourn-step-chip-label" style="color:${s.done ? col : 'var(--text3)'}">${label}</span>
+        <span class="tourn-step-chip-sub">${s.team}</span>
+        ${valText ? `<span class="tourn-step-chip-value" style="color:${col}">${valText}</span>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="tourn-step-group">
+      <div class="tourn-step-group-chips">${chips}</div>
+      <div class="tourn-step-group-footer">${mapTypeIcon(g.mode, 13)}</div>
     </div>`;
   }).join('');
 
-  return `<div class="draft-chip-row">${chips}</div>`;
+  return `<div class="draft-chip-row" style="align-items:flex-start">${groupsHtml}</div>`;
 }
 
 // Блок текущего шага (бан / пик / сторона)
