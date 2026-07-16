@@ -69,16 +69,20 @@
 
     <div class="form-group">
       <label class="form-label">Предпочтительные герои</label>
-      <div class="sel-heroes" id="selPreferred" onclick="openPicker('preferred')">
-        <span class="sel-empty">Нажми чтобы выбрать</span>
-        <span class="sel-edit-hint">✎</span>
+      <div class="sel-heroes" id="selPreferred">
+        <button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('preferred')">
+          <span class="sel-empty">Нажми чтобы выбрать</span>
+          <span class="sel-edit-hint">✎</span>
+        </button>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Цели для банов</label>
-      <div class="sel-heroes" id="selBans" onclick="openPicker('bans')">
-        <span class="sel-empty">Нажми чтобы выбрать</span>
-        <span class="sel-edit-hint">✎</span>
+      <div class="sel-heroes" id="selBans">
+        <button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('bans')">
+          <span class="sel-empty">Нажми чтобы выбрать</span>
+          <span class="sel-edit-hint">✎</span>
+        </button>
       </div>
     </div>
     <div class="form-group">
@@ -104,9 +108,11 @@
 
     <div class="form-group">
       <label class="form-label">Контрпики на этой карте</label>
-      <div class="sel-heroes" id="selMapCounters" onclick="openPicker('mapCounters')" style="min-height:36px">
-        <span class="sel-empty">Нажми чтобы выбрать</span>
-        <span class="sel-edit-hint">✎</span>
+      <div class="sel-heroes" id="selMapCounters" style="min-height:36px">
+        <button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('mapCounters')">
+          <span class="sel-empty">Нажми чтобы выбрать</span>
+          <span class="sel-edit-hint">✎</span>
+        </button>
       </div>
     </div>
 
