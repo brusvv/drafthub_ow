@@ -247,16 +247,15 @@ function _renderTournFinalRecs() {
   const rows = tDraft.heroBans.map(hb => {
     const srcA = hb.banA ? portrait(hb.banA) : null;
     const srcB = hb.banB ? portrait(hb.banB) : null;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
-                        border-radius:7px;background:var(--bg2);border:1px solid var(--border)">
-      ${mapTypeIcon(hb.mode, 12)}
-      <span style="font-size:12px;font-weight:600;flex:1">${hb.mapName}</span>
+    return `<div class="tourn-final-ban-row">
+      ${mapTypeIcon(hb.mode, 14)}
+      <span class="tourn-final-ban-map">${hb.mapName}</span>
       <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--tank)">A:</span>
-      ${srcA ? `<img src="${srcA}" style="width:20px;height:20px;border-radius:3px;object-fit:cover">` : ''}
-      <span style="font-size:11px;color:var(--damage)">${hb.banA || '—'}</span>
+      ${srcA ? `<img src="${srcA}" class="tourn-final-ban-hero-img">` : ''}
+      <span class="tourn-final-ban-hero">${hb.banA || '—'}</span>
       <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--damage);margin-left:6px">B:</span>
-      ${srcB ? `<img src="${srcB}" style="width:20px;height:20px;border-radius:3px;object-fit:cover">` : ''}
-      <span style="font-size:11px;color:var(--damage)">${hb.banB || '—'}</span>
+      ${srcB ? `<img src="${srcB}" class="tourn-final-ban-hero-img">` : ''}
+      <span class="tourn-final-ban-hero">${hb.banB || '—'}</span>
     </div>`;
   }).join('');
 
