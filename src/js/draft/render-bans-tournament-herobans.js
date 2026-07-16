@@ -1,4 +1,4 @@
-// @hash 6924f2df 2026-07-16T02:45
+// @hash 7fcbfd5e 2026-07-16T11:07
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-herobans.js — турнирный драфт: баны героев
 //
@@ -133,7 +133,7 @@ function _renderCurrentMapHeroBan() {
                       display:flex;align-items:center;gap:3px">
             ${roleIcon(role, 11)} ${role}${roleDisabled ? ' (заблокирована)' : ''}
           </div>
-          <div class="chip-row">${chips}</div>
+          <div class="comp-ban-role-grid">${chips}</div>
         </div>`;
       }).join('')
     : `<div style="font-family:var(--mono);font-size:11px;color:var(--support);margin-bottom:12px">
