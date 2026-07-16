@@ -87,7 +87,9 @@ HEADER
 
 # CSS — base первым, потом features, modals, draft, responsive последним
 CSS_FILES=(
-  css/base/base.css
+  css/base/base-reset.css
+  css/base/base-chrome.css
+  css/base/base-utility.css
   css/base/skeleton.css
   css/base/auth.css
   css/features/maps.css
@@ -190,7 +192,8 @@ JS_MODULES=(
   js/render/tiers/render-tiers.js
   js/render/tiers/render-tiers-dnd.js
   js/render/tiers/render-tiers-preview.js
-  js/render/tiers/render-tier-share.js
+  js/render/tiers/render-tier-share-panel.js
+  js/render/tiers/render-tier-share-public.js
   js/render/render-players.js
   js/render/render-roster.js
   js/render/admin/render-admin-import.js
