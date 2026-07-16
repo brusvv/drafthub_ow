@@ -1,4 +1,4 @@
-// @hash 86f046b3 2026-07-15T02:31
+// @hash 804568e1 2026-07-16T01:44
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-herobans.js — турнирный драфт: баны героев
 //
@@ -114,8 +114,8 @@ function _renderCurrentMapHeroBan() {
             : isRecIdx === 1 ? 'border-color:var(--accent)' : '';
           return `<div class="comp-ban-chip${isRecIdx >= 0 ? ' active' : ''}"
                        style="${border}"
-                       data-map="${esc(hb.mapName)}"
-                       data-hero="${esc(h.name)}"
+                       data-map="${escAttr(hb.mapName)}"
+                       data-hero="${escAttr(h.name)}"
                        onclick="doTournHeroBan(this.dataset.map, this.dataset.hero)"
                        title="${h.name}${isRecIdx >= 0 ? ' — рекомендован' : ''}">
             ${bsrc
@@ -174,6 +174,15 @@ function _renderCurrentMapHeroBan() {
     ${recs.length && hb.step < 2 ? _renderBanRecs(recs.slice(0, 5)) : ''}`;
 }
 
+// BUG-19 (16.07): баны не проходили конкретно на King's Row — data-map/data-hero
+// раньше строились через esc() (экранирует ' как \' — рассчитан на JS-строку
+// внутри onclick="...('...')") внутри HTML-атрибута data-map="...", где
+// обратный слэш ничем не обрабатывается и остаётся буквальным символом.
+// this.dataset.map возвращал "King\'s Row" (с бэкслэшем), .find(x=>x.mapName
+// === mapName) не находил совпадение с "King's Row" в tDraft.heroBans → hb
+// был undefined → ранний return ниже молча ничего не делал. Заменено на
+// escAttr() (экранирует & и " — то, что реально небезопасно внутри "..."
+// HTML-атрибута; одинарная кавычка в двойных HTML-кавычках безопасна как есть).
 function doTournHeroBan(mapName, heroName) {
   const hb   = tDraft.heroBans.find(x => x.mapName === mapName);
   if (!hb || hb.step >= 2) return;
