@@ -1,6 +1,10 @@
-// @hash 99313560 2026-07-15T23:31
-// ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
-// Соревновательный режим: выбор героев → баны → рекомендации пика
+// ════ RENDER — DRAFT COMP: STATE + ОРКЕСТРАТОР + ФАЗА 1 (ПОДГОТОВКА) ════
+// Соревновательный режим: выбор героев → баны → рекомендации пика.
+// FILESPLIT (16.07, попутно с AUDIT-A3 — файл перевалил за 260 строк):
+// фаза 2 → render-draft-comp-bans.js, фаза 3 → render-draft-comp-result.js.
+// draftState/resetDraftState/renderDraftComp остаются здесь — общий вход,
+// используется всеми тремя файлами через общий script-scope (bundle,
+// не ES-модули, порядок в build.sh: comp → comp-bans → comp-result).
 
 // Состояние
 let draftState={
@@ -115,178 +119,10 @@ function loadFromRoster(){
   renderDraftComp();
 }
 
-// ── Фаза 2: вводим баны обеих команд ──
-function _renderDraftBans(){
-  const allBanned=[...draftState.ourBans,...draftState.enemyBans];
-  return`<div class="ban-panel">
-    <div class="ban-panel-head">
-      <div class="ban-panel-title">Введи итоговые баны</div>
-      <div class="ban-panel-hint">0–2 бана с каждой стороны. Максимум 2 героя одной роли суммарно на всю игру.</div>
-      <button class="btn" onclick="draftState.phase='pick';renderDraftComp()" style="margin-top:6px;font-size:10px">← Назад</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-      ${_renderBanSlots('ourBans','Наши баны','var(--tank)')}
-      ${_renderBanSlots('enemyBans','Баны врагов','var(--damage)')}
-    </div>
-    ${allBanned.length?`<div class="mono-hint-lg mb-12">
-      Забанено: ${allBanned.map(n=>`<span style="color:var(--damage)">${n}</span>`).join(', ')}
-    </div>`:''}
-    <button class="btn btn-primary btn-lg" onclick="draftState.phase='result';renderDraftComp()">
-      Показать рекомендации →
-    </button>
-  </div>`;
-}
-
-function _renderBanSlots(key,label,color){
-  const bans=draftState[key];
-  return`<div>
-    <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:6px">${label}</div>
-    ${[0,1].map(i=>{
-      const name=bans[i];
-      const src=name?portrait(name):null;
-      return`<button type="button" class="draft-ban-slot${name?' filled':''} mb-5 btn-reset"
-        onclick="openDraftBanPicker('${key}',${i})">
-        ${name
-          ?`${src?`<img src="${src}" class="draft-thumb-sm">`:''}
-             <span style="font-size:12px;font-weight:600">${name}</span>
-             <span onclick="event.stopPropagation();removeDraftBan('${key}',${i})"
-               style="margin-left:auto;cursor:pointer;color:var(--text3)">×</span>`
-          :`<span class="mono-hint-lg">+ Бан ${i+1}</span>`
-        }</button>`;
-    }).join('')}
-  </div>`;
-}
-
-function openDraftBanPicker(key,idx){
-  pickerMode=`draft_${key}_${idx}`;pickerMax=1;pickerRoleFilter='all';
-  pickerSelected[pickerMode]=[draftState[key][idx]].filter(Boolean);
-  document.querySelectorAll('#pickerOverlay .f-btn').forEach((b,i)=>{b.style.display='';b.classList.toggle('active',i===0);});
-  document.getElementById('pickerTitle').textContent='Выбери забаненного героя';
-  renderPickerGrid();
-  document.getElementById('pickerOverlay').classList.remove('hidden');
-}
-
-function removeDraftBan(key,idx){
-  draftState[key].splice(idx,1);
-  renderDraftComp();
-}
-
-// ── Фаза 3: рекомендации пика ──
-function _renderDraftResult(){
-  const allBans=[...draftState.ourBans,...draftState.enemyBans];
-  const mapObj=maps.find(m=>m.name===draftState.selectedMap);
-  const rp=rosterPlayers||[];
-  const getHeroes=p=>[...new Set([...p.mainHeroes,...p.poolHeroes])];
-
-  // Рекомендации состава
-  let compHtml='';
-  if(rp.length>=2){
-    const comps=recommendCompositions(rp,getHeroes,mapObj,draftState.side,allBans,[],3);
-    compHtml=comps.length
-      ?`<div class="ban-panel-head ban-panel-head-sub"><div class="ban-panel-title">Топ-3 состава</div></div>
-         ${comps.map((c,i)=>_renderCompCard(c,i+1,mapObj,draftState.side)).join('')}`
-      :`<div class="ban-panel-head ban-panel-head-sub"><div class="ban-draft-lbl">Недостаточно данных для полных составов</div></div>`;
-  }
-
-  // Рекомендации по ролям (всегда)
-  const byRole=recommendPicksByRole(rp.length?rp:[{mainHeroes:draftState.ourHeroes,poolHeroes:[],mainRole:''}],
-    p=>[...new Set([...p.mainHeroes,...(p.poolHeroes||[])])],
-    mapObj,draftState.side,allBans,3);
-
-  return`<div class="ban-panel">
-    <div class="ban-panel-head">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div class="ban-panel-title">Рекомендации для пика</div>
-        <button class="btn fs-10" onclick="draftState.phase='bans';renderDraftComp()">← Баны</button>
-      </div>
-      ${mapObj?`<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-        ${mapTypeIcon(mapObj.type,13)}<span style="font-size:13px;font-weight:600">${mapObj.name}</span>
-        <span class="tier-badge tier-${mapObj.tier}">${mapObj.tier}</span>
-        <span class="mono-hint">${draftState.side==='avg'?'обе стороны':draftState.side==='atk'?'атака':'защита'}</span>
-      </div>`:''}
-      ${allBans.length?`<div style="margin-top:6px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--damage)">
-        🚫 Забанено: ${allBans.join(', ')}</div>`:''}
-    </div>
-    <div class="ban-recs-grid mb-12">
-      ${['Tank','Damage','Support'].map(role=>
-        byRole[role]&&byRole[role].length
-          ?`<div>
-              <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;display:flex;align-items:center;gap:3px">${roleIcon(role,12)} ${role}</div>
-              ${byRole[role].map(x=>{const src=portrait(x.name);const h=heroMap[x.name]||{};
-                return`<div class="ban-rec-card" style="margin-bottom:5px">
-                  <div class="ban-rec-portrait">${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="ban-rec-ph">${x.name[0]}</div>`}</div>
-                  <div class="ban-rec-body">
-                    <div class="ban-rec-name">${x.name}</div>
-                    <div class="ban-rec-bar-wrap"><div class="ban-rec-bar" style="width:${Math.min(100,Math.round(x.score/1.5))}%;background:${rc[role]}"></div></div>
-                  </div>
-                  ${x.mapStr?`<span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--accent)">${x.mapStr}/10</span>`:''}
-                </div>`;
-              }).join('')}
-            </div>`
-          :''
-      ).join('')}
-    </div>
-    ${compHtml}
-    <button class="btn mt-12" onclick="draftState={phase:'pick',ourHeroes:[],ourBans:[],enemyBans:[],selectedMap:null,side:'avg'};renderDraftComp()">
-      Новый драфт
-    </button>
-  </div>`;
-}
-
-function _renderCompCard(c,rank,mapObj,side){
-  const byRole={Tank:[],Damage:[],Support:[]};
-  c.comp.forEach(n=>{const h=heroMap[n];if(h&&byRole[h.role])byRole[h.role].push(n);});
-  // DESIGN-1: свой счётчик на карту (не сквозной по всем карточкам-рекомендациям) —
-  // каждая .comp-rec-card уже отдельная визуальная единица (как .h-card/.map-card),
-  // достаточно лёгкого рывка внутри своих ~5 героев, а не через весь список карточек.
-  let _cardIdx=0;
-  return`<div class="comp-rec-card">
-    <div class="comp-rec-rank">#${rank}</div>
-    <div class="comp-rec-heroes">
-      ${['Tank','Damage','Support'].flatMap(role=>byRole[role].map(n=>{
-        const src=portrait(n);const str=mapObj?heroStrengthOnMap(n,mapObj,side):0;
-        return`<div class="comp-rec-hero" style="--card-i:${Math.min(_cardIdx++,12)}" title="${n}${str?` — ${str}/10`:''}">
-          ${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="comp-rec-ph">${n[0]}</div>`}
-          <div class="comp-rec-role-line" style="background:${rc[role]}"></div>
-          ${str>=7?`<div class="comp-rec-str">${str}</div>`:''}
-        </div>`;
-      })).join('')}
-    </div>
-    <div class="mono-hint">Синергия: ${Math.round(compSynergyTotal(c.comp))} · Скор: ${c.score}</div>
-  </div>`;
-}
-
 // LEQ-2: registerPickerHandler вместо window.confirmPicker override
 
 // Обработчик выбора наших героев для драфта
 registerPickerHandler('draftOur', function(){
   draftState.ourHeroes=[...(pickerSelected['draftOur']||[])];
-  closePicker();renderDraftComp();
-});
-
-// Обработчик банов: draft_ourBans_N и draft_enemyBans_N
-// Регистрируется как префиксный — confirmPicker направляет сюда
-// всё что начинается на 'draft_' (кроме 'draftOur' выше)
-registerPickerHandler('__draft_prefix__', function(){
-  const m=pickerMode;
-  // Разбираем 'draft_ourBans_0' → key='ourBans', idx=0
-  const parts=m.slice('draft_'.length).split('_');
-  const idx=parseInt(parts[parts.length-1]);
-  const key=parts.slice(0,-1).join('_'); // ourBans или enemyBans
-  const sel=pickerSelected[m]||[];
-  // Проверка лимита ролей: не более 2 банов одной роли суммарно
-  const all=[...draftState.ourBans,...draftState.enemyBans].filter((_,i)=>{
-    if(key==='ourBans')return i!==draftState.ourBans.indexOf(draftState[key]?.[idx]);
-    return true;
-  });
-  if(sel[0]){
-    const h=heroMap[sel[0]];
-    if(h){
-      const roleCount=all.filter(n=>(heroMap[n]||{}).role===h.role).length;
-      if(roleCount>=2){toast(`Максимум 2 бана роли ${h.role}`,'err');return;}
-    }
-    if(!draftState[key])draftState[key]=[];
-    draftState[key][idx]=sel[0];
-  }
   closePicker();renderDraftComp();
 });
