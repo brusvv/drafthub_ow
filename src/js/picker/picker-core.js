@@ -1,4 +1,4 @@
-// @hash c36975ed 2026-07-15T02:30
+// @hash 61e266b6 2026-07-16T00:41
 // ════ PICKER — CORE ════
 
 // ════════════════════════════════════════════════════════════
@@ -134,15 +134,29 @@ function renderSelPreview(){
   Object.entries(elMap).forEach(([mode,elId])=>{
     const el=document.getElementById(elId);if(!el)return;
     const sel=pickerSelected[mode]||[];
-    if(!sel.length){el.innerHTML='<span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>';return}
+    // AUDIT-A3 (16.07): контейнер .sel-heroes больше НЕ сам button/onclick —
+    // раньше это давало button-in-button, т.к. .sel-hero-chip несёт свою
+    // кнопку openHeroInfoPopup (реальная a11y-фича, не крестик — убирать её
+    // ради конверсии контейнера было бы обменом одной a11y-фичи на другую,
+    // см. AGENT_TASKS.md). Пусто → сам контейнер целиком кнопка (нет вложенных
+    // кнопок — конфликта нет). Непусто → чипы остаются просто div'ами с
+    // собственной кнопкой-инфо, а «открыть пикер» — отдельная кнопка-сиблинг
+    // в конце строки (была декоративным span'ом с тем же смыслом по факту,
+    // раз вся строка и так была одним большим onclick).
+    if(!sel.length){
+      el.innerHTML=`<button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('${mode}')">
+        <span class="sel-empty">Нажми чтобы выбрать</span><span class="sel-edit-hint">✎</span>
+      </button>`;
+      return;
+    }
     el.innerHTML=sel.map(name=>{
       const h=heroMap[name]||{};const src=portrait(name);
       return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
-        <button type="button" class="btn-reset" onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+        <button type="button" class="btn-reset" onclick="openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
           ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
         </button>
         ${name}</div>`;
-    }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
+    }).join('')+`<button type="button" class="btn-reset sel-edit-hint" style="margin-left:auto" onclick="openPicker('${mode}')">✎</button>`;
   });
   renderRolePoolPreviews();
 }
@@ -151,14 +165,20 @@ function renderRolePoolPreviews(){
   ['Tank','Damage','Support','Flex'].forEach(role=>{
     const el=document.getElementById(`selPlayer_${role}`);if(!el)return;
     const sel=pickerSelected[`playerRole_${role}`]||[];
-    if(!sel.length){el.innerHTML='<span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>';return}
+    // Та же логика что в renderSelPreview() выше — см. комментарий там.
+    if(!sel.length){
+      el.innerHTML=`<button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('playerRole_${role}',5)">
+        <span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>
+      </button>`;
+      return;
+    }
     el.innerHTML=sel.map(name=>{
       const src=portrait(name);
       return`<div class="sel-hero-chip ${role}" title="${esc(name)}">
-        <button type="button" class="btn-reset" onclick="event.stopPropagation();openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
+        <button type="button" class="btn-reset" onclick="openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
           ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
         </button>
         ${name}</div>`;
-    }).join('')+'<span class="sel-edit-hint" style="margin-left:auto">✎</span>';
+    }).join('')+`<button type="button" class="btn-reset sel-edit-hint" style="margin-left:auto" onclick="openPicker('playerRole_${role}',5)">✎</button>`;
   });
 }
