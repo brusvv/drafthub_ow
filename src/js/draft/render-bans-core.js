@@ -1,4 +1,4 @@
-// @hash a6683e32 2026-07-15T02:33
+// @hash 8f3fcfc6 2026-07-15T23:31
 // ════════════════════════════════════════════════════════════
 // render-bans-core.js — ядро вкладки «Текущие баны»
 //
@@ -140,6 +140,11 @@ function _buildCurrentBanGroups(banned) {
 /**
  * Чипы выбранных героев в строке «Наши герои» (competitive).
  */
+// AUDIT-A3 (15.07): remove-крестик был вложенным <button> — блокировало
+// конверсию .ban-hero-selector (см. render-bans-competitive.js) в <button>,
+// т.к. button-in-button — невалидный content model. Теперь <span>+
+// stopPropagation, как в render-draft-comp.js/_buildDraftChips (тот же
+// паттерн, оба места правились вместе).
 function _buildHeroChips() {
   if (!banDraftHeroes.length) {
     return '<span class="ban-hero-placeholder">Нажми чтобы выбрать...</span>';
@@ -151,8 +156,8 @@ function _buildHeroChips() {
         ? `<img src="${src}" onerror="this.style.display='none'">`
         : `<div class="ban-draft-chip-ph">${n[0]}</div>`}
       <span>${n}</span>
-      <button type="button" class="ban-draft-chip-remove btn-reset"
-            onclick="event.stopPropagation();removeBanDraftHero('${esc(n)}')">×</button>
+      <span class="ban-draft-chip-remove"
+            onclick="event.stopPropagation();removeBanDraftHero('${esc(n)}')">×</span>
     </div>`;
   }).join('');
 }
