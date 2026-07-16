@@ -1,4 +1,4 @@
-// @hash 89d0eadf 2026-07-15T04:45
+// @hash 99313560 2026-07-15T23:31
 // ════ RENDER — DRAFT COMP RECOMMENDATIONS ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика
 
@@ -56,9 +56,9 @@ function _renderDraftPick(){
       </div>
     </div>
     <div class="ban-draft-lbl" style="margin:12px 0 6px">Наши герои</div>
-    <div class="ban-hero-selector" onclick="openDraftHeroPicker()">
+    <button type="button" class="ban-hero-selector btn-reset" onclick="openDraftHeroPicker()">
       ${_buildDraftChips(draftState.ourHeroes,'Нажми чтобы выбрать...')}
-    </div>
+    </button>
     ${hasRoster?`<div style="margin-top:8px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)">
       или <button type="button" class="link-btn btn-reset" onclick="loadFromRoster()">Загрузить из состава</button>
     </div>`:''}
@@ -66,6 +66,36 @@ function _renderDraftPick(){
       Перейти к банам →
     </button>
   </div>`;
+}
+
+// BUG-17: раньше вызывалась без определения — ReferenceError на первом же
+// рендере фазы 'pick'. По образцу _buildHeroChips() (render-bans-core.js),
+// но с двумя отличиями: (1) принимает массив+placeholder явно вместо
+// чтения модульного banDraftHeroes напрямую — вызывающая сторона уже была
+// написана под такую сигнатуру; (2) remove-крестик — <span>+stopPropagation,
+// а не вложенный <button> — чтобы .ban-hero-selector ниже можно было
+// сделать <button> без button-in-button (см. AUDIT-A3, AGENT_TASKS.md).
+function _buildDraftChips(heroesArr, placeholder){
+  if(!heroesArr.length){
+    return `<span class="ban-hero-placeholder">${placeholder}</span>`;
+  }
+  return heroesArr.map(n=>{
+    const src=portrait(n);
+    return `<div class="ban-draft-chip" title="${n}">
+      ${src
+        ? `<img src="${src}" onerror="this.style.display='none'">`
+        : `<div class="ban-draft-chip-ph">${n[0]}</div>`}
+      <span>${n}</span>
+      <span class="ban-draft-chip-remove"
+            onclick="event.stopPropagation();removeDraftHero('${esc(n)}')">×</span>
+    </div>`;
+  }).join('');
+}
+
+function removeDraftHero(name){
+  draftState.ourHeroes=draftState.ourHeroes.filter(n=>n!==name);
+  if(pickerSelected['draftOur'])pickerSelected['draftOur']=[...draftState.ourHeroes];
+  renderDraftComp();
 }
 
 function openDraftHeroPicker(){
