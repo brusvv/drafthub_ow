@@ -1,4 +1,4 @@
-// @hash fd0617c1 2026-07-16T00:11
+// @hash 3f742840 2026-07-16T11:07
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
@@ -138,7 +138,7 @@ function _renderCompBanGrid() {
                   display:flex;align-items:center;gap:4px">
         ${roleIcon(role, 11)} ${role}
       </div>
-      <div class="chip-row">${chips}</div>
+      <div class="comp-ban-role-grid">${chips}</div>
     </div>`;
   }).join('');
 
