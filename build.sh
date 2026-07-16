@@ -98,6 +98,7 @@ CSS_FILES=(
   css/modals/modals.css
   css/modals/strength.css
   css/draft/bans.css
+  css/draft/bans-tournament.css
   css/draft/draft-comp.css
   css/admin.css
   css/base/responsive.css
