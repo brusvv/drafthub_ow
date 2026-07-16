@@ -7,9 +7,11 @@
       <span class="header-title">Team Analyst</span>
     </div>
     <div class="header-right">
-      <div class="team-chip authed-only" style="position:relative;cursor:pointer" onclick="renderTeamSwitcher();document.getElementById('teamSwitcherPopup').classList.toggle('hidden')">
-        <span id="headerTeamName" style="font-weight:700;font-size:13px"></span>
-        <span id="headerRoleBadge" style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;margin-left:6px"></span>
+      <div class="team-chip-wrap authed-only" style="position:relative">
+        <button type="button" class="btn-reset team-chip" style="cursor:pointer" onclick="renderTeamSwitcher();document.getElementById('teamSwitcherPopup').classList.toggle('hidden')">
+          <span id="headerTeamName" style="font-weight:700;font-size:13px"></span>
+          <span id="headerRoleBadge" style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;margin-left:6px"></span>
+        </button>
         <div id="teamSwitcherPopup" class="hidden" style="position:absolute;top:100%;right:0;margin-top:6px;
           background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:6px;min-width:180px;z-index:50"></div>
       </div>
