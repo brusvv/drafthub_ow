@@ -1,4 +1,4 @@
-// @hash b11efdbd 2026-07-15T06:29
+// @hash 126ecdbc 2026-07-16T00:41
 // ════ RENDER — TIERS: ОРКЕСТРАТОР + РЕЖИМ-СВИТЧЕР + УПРАВЛЕНИЕ СЕТАМИ ════
 // FILESPLIT-1 (03.07) — было 467 строк одним файлом. Разбито на 3:
 //   render-tiers.js         (этот файл) — точка входа renderTiers(),
@@ -119,13 +119,16 @@ function _renderTierSetSelector(){
           background:var(--bg2);border:1px solid var(--border);border-radius:8px;
           min-width:200px;padding:4px;margin-top:4px;box-shadow:0 4px 16px rgba(0,0,0,.4)">
           ${tierSets.map(s => `
-            <div style="display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:5px;
-              background:${s.id===activeTierSetId?'var(--bg3)':'transparent'};cursor:pointer"
-              onclick="switchTierSet('${s.id}');_closeTierSetDropdown()">
-              <span style="flex:1;font-size:12px">${s.name}</span>
-              ${s.is_default?'<span style="font-size:var(--fluid-fs-2xs);color:var(--text3)">по умолчанию</span>':''}
-              <button class="btn" onclick="event.stopPropagation();_openTierSetMenu('${s.id}','${esc(s.name)}')"
-                style="font-size:var(--fluid-fs-2xs);padding:1px 5px">⋯</button>
+            <div style="display:flex;align-items:center;gap:4px;padding:2px 2px 2px 0;border-radius:5px;
+              background:${s.id===activeTierSetId?'var(--bg3)':'transparent'}">
+              <button type="button" class="btn-reset" style="flex:1;display:flex;align-items:center;gap:4px;
+                text-align:left;padding:4px 0 4px 6px;cursor:pointer"
+                onclick="switchTierSet('${s.id}');_closeTierSetDropdown()">
+                <span style="flex:1;font-size:12px">${s.name}</span>
+                ${s.is_default?'<span style="font-size:var(--fluid-fs-2xs);color:var(--text3)">по умолчанию</span>':''}
+              </button>
+              <button class="btn" onclick="_openTierSetMenu('${s.id}','${esc(s.name)}')"
+                style="font-size:var(--fluid-fs-2xs);padding:1px 5px;margin-right:2px">⋯</button>
             </div>`).join('')}
           <div style="border-top:1px solid var(--border);margin:4px 0;padding-top:4px">
             <button class="btn btn-primary" onclick="_showCreateTierSetForm();_closeTierSetDropdown()"
