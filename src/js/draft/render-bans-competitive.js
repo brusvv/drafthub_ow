@@ -1,12 +1,11 @@
-// @hash d999e03a 2026-07-15T02:32
+// @hash c28cb7f5 2026-07-15T23:42
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
 // Отвечает за:
 //   • _renderCompetitiveMode()  — точка входа, вызывается из core
-//   • Попап выбора карты матча  — openCompMapPopup / closeCompMapPopup
+//   • Контролы (карта/наши герои) — _renderCompControls
 //   • Грид голосования за баны — _renderCompBanGrid / toggleCompBan
-//   • Расчёт и рендер рекомендаций — _computeCompRecs / _renderCompBanResult
 //   • Сброс состояния           — resetCompBans
 //
 // Правила режима:
@@ -14,7 +13,13 @@
 //   Каждый игрок выбирает до 3 приоритетов (P1=7 / P2=5 / P3=3 очков)
 //   Максимум 2 бана одной роли на команду
 //
-// Зависимости: render-bans-core.js (renderBans, _renderBanRecs, _buildHeroChips)
+// FILESPLIT (15.07, было 318 строк) — вынесено в соседние файлы:
+//   • render-bans-competitive-mappopup.js — openCompMapPopup/closeCompMapPopup
+//   • render-bans-competitive-recs.js     — _renderCompBanResult/_computeCompRecs
+//
+// Зависимости: render-bans-core.js (renderBans, _renderBanRecs, _buildHeroChips),
+// render-bans-competitive-mappopup.js (openCompMapPopup),
+// render-bans-competitive-recs.js (_renderCompBanResult).
 // ════════════════════════════════════════════════════════════
 
 // ── Сброс ────────────────────────────────────────────────────
@@ -25,77 +30,6 @@ function resetCompBans() {
   banDraftHeroes = [];
   if (pickerSelected) pickerSelected.banHeroes = [];
   renderBans();
-}
-
-// ════════════════════════════════════════════════════════════
-// ПОПАП ВЫБОРА КАРТЫ МАТЧА
-// ════════════════════════════════════════════════════════════
-
-function openCompMapPopup() {
-  const types    = ['Control', 'Hybrid', 'Push', 'Escort', 'Flashpoint'];
-  const groupHtml = types.map(t => {
-    const ms = maps.filter(m => m.type === t);
-    if (!ms.length) return '';
-
-    const chips = ms.map(m => {
-      const src = mapImg(m.name);
-      const sel = compBanMap === m.name;
-      return `<button type="button" class="btn-reset"
-          onclick="compBanMap='${esc(m.name)}';closeCompMapPopup();renderBans();"
-          style="cursor:pointer;border-radius:8px;overflow:hidden;
-                 border:2px solid ${sel ? 'var(--support)' : 'var(--border)'};
-                 background:${sel ? 'rgba(43,189,142,.08)' : 'var(--bg3)'};
-                 transition:all .1s;width:100px">
-        ${src
-          ? `<img src="${src}" style="width:100%;height:56px;object-fit:cover;display:block"
-                  onerror="this.style.display='none'">`
-          : `<div style="width:100%;height:56px;background:var(--bg4);display:flex;
-                         align-items:center;justify-content:center;
-                         font-size:11px;font-weight:700;color:var(--text3)">
-               ${m.name[0]}
-             </div>`}
-        <div style="padding:4px 6px;font-size:10px;font-weight:600;text-align:center;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${m.name}
-        </div>
-      </button>`;
-    }).join('');
-
-    return `<div style="margin-bottom:14px">
-      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
-                  letter-spacing:.08em;color:var(--text3);margin-bottom:6px;
-                  display:flex;align-items:center;gap:4px">
-        ${mapTypeIcon(t, 12)} ${t}
-      </div>
-      <div class="chip-row-lg">${chips}</div>
-    </div>`;
-  }).join('');
-
-  const overlay = document.createElement('div');
-  overlay.id = 'compMapPopup';
-  overlay.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,.75);
-    backdrop-filter:blur(4px);display:flex;align-items:center;
-    justify-content:center;z-index:3000;padding:1rem`;
-  overlay.onclick = e => { if (e.target === overlay) closeCompMapPopup(); };
-  overlay.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
-                width:100%;max-width:620px;max-height:84vh;display:flex;flex-direction:column">
-      <div style="display:flex;align-items:center;justify-content:space-between;
-                  padding:1rem 1.25rem;border-bottom:1px solid var(--border)">
-        <span style="font-size:15px;font-weight:700">Выбрать карту матча</span>
-        <button style="background:none;border:none;color:var(--text3);font-size:18px;
-                       cursor:pointer;padding:2px 6px"
-                onclick="closeCompMapPopup()">×</button>
-      </div>
-      <div style="overflow-y:auto;padding:1.25rem">${groupHtml}</div>
-    </div>`;
-  document.body.appendChild(overlay);
-}
-
-function closeCompMapPopup() {
-  const el = document.getElementById('compMapPopup');
-  if (el) el.remove();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -153,10 +87,10 @@ function _renderCompControls() {
       </div>
       <div class="ban-draft-ctrl">
         <div class="ban-draft-lbl">Наши герои</div>
-        <div class="ban-hero-selector" onclick="openPicker('banHeroes',5)">
+        <button type="button" class="ban-hero-selector btn-reset" onclick="openPicker('banHeroes',5)">
           ${_buildHeroChips()}
           <span class="ban-hero-edit">✎</span>
-        </div>
+        </button>
       </div>
     </div>`;
 }
@@ -239,80 +173,4 @@ function toggleCompBan(name) {
     compBanVotes[name] = count + 1;
   }
   renderBans();
-}
-
-// ════════════════════════════════════════════════════════════
-// РЕКОМЕНДАЦИИ К БАНУ
-// ════════════════════════════════════════════════════════════
-
-function _renderCompBanResult() {
-  if (!Object.keys(compBanVotes).length && !banDraftHeroes.length && !compBanMap) return '';
-
-  const selectedMap = maps.find(m => m.name === compBanMap);
-  const recs        = _computeCompRecs(selectedMap);
-
-  return `
-    <div class="ban-recs-header" style="margin-top:4px">
-      <span class="ban-recs-title">Рекомендации к бану</span>
-      <span class="ban-recs-algo-hint">по контрпикам и силе на карте</span>
-    </div>
-    ${_renderBanRecs(recs)}`;
-}
-
-/**
- * Считает итоговый скор каждого небаненного героя
- * из голосов команды + контрпиков + силы на карте.
- * @param {object|undefined} selectedMap
- * @returns {Array<{hero, score, reasons}>}
- */
-function _computeCompRecs(selectedMap) {
-  const VOTE_WEIGHTS = { 1: 7, 2: 5, 3: 3 };
-
-  return heroes
-    .filter(h => !h.banned)
-    .map(h => {
-      let score = 0;
-      const reasons = [];
-
-      // Голос команды
-      const p = compBanVotes[h.name];
-      if (p) {
-        score += (VOTE_WEIGHTS[p] || 0) * 1.5;
-        reasons.push({ type: 'meta', text: `Приоритет P${p}` });
-      }
-
-      // Контрпики наших героев
-      let counterWeight = 0;
-      const paired = [];
-      banDraftHeroes.forEach(hn => {
-        const our = heroMap[hn]; if (!our) return;
-        const c = (our.counters || []).find(x => x.name === h.name);
-        if (c) { counterWeight += c.score; paired.push({ hero: hn, score: c.score }); }
-      });
-      if (counterWeight > 0) {
-        score += counterWeight * 2;
-        const top = paired.sort((a, b) => b.score - a.score).slice(0, 2);
-        reasons.push({ type: 'counter', text: 'Контрит: ' + top.map(p => p.hero).join(', ') });
-      }
-
-      // Сила на карте матча
-      if (selectedMap) {
-        if ((h.strongMaps || []).includes(selectedMap.name)) {
-          score += 5;
-          reasons.push({ type: 'mapStrong', text: `Силён: ${selectedMap.name}` });
-        }
-        if ((selectedMap.counters || []).includes(h.name)) {
-          score += 2;
-          reasons.push({ type: 'mapBan', text: 'Бан-лист карты' });
-        }
-      }
-
-      // Мета-вес героя
-      score += h.priority * 0.4;
-
-      return { hero: h, score: Math.round(score), reasons };
-    })
-    .filter(r => r.score > 2)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
 }
