@@ -1,4 +1,4 @@
-// @hash 804568e1 2026-07-16T01:44
+// @hash 20164238 2026-07-16T01:56
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-herobans.js — турнирный драфт: баны героев
 //
@@ -112,7 +112,7 @@ function _renderCurrentMapHeroBan() {
           const border = isRecIdx === 0
             ? 'border-color:var(--damage);background:var(--bg3)'
             : isRecIdx === 1 ? 'border-color:var(--accent)' : '';
-          return `<div class="comp-ban-chip${isRecIdx >= 0 ? ' active' : ''}"
+          return `<button type="button" class="comp-ban-chip btn-reset${isRecIdx >= 0 ? ' active' : ''}"
                        style="${border}"
                        data-map="${escAttr(hb.mapName)}"
                        data-hero="${escAttr(h.name)}"
@@ -124,7 +124,7 @@ function _renderCurrentMapHeroBan() {
             ${isRecIdx === 0
               ? `<div class="comp-ban-priority" style="background:var(--damage)">★</div>`
               : ''}
-          </div>`;
+          </button>`;
         }).join('');
 
         return `<div style="${roleDisabled ? 'opacity:.3;pointer-events:none' : ''}">
