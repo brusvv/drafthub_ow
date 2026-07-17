@@ -1,22 +1,24 @@
-/* @hash 4aa54539 2026-07-17T12:03 */
+/* @hash 74f85563 2026-07-17T19:31 */
 /* ── DRAFT COMP — Competitive ── */
-.ban-draft-controls{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
-.ban-draft-ctrl{display:flex;flex-direction:column;gap:4px}
-.ban-draft-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:var(--text3)}
-/* .ban-hero-selector — АУДИТ-D6 (17.07): убран отсюда, был дублем со
-   значениями расходящимися от bans.css (тот же класс, оба контекста —
-   render-bans-competitive.js/render-draft-comp.js — используют один UI-
-   паттерн). Единственный источник теперь bans.css (там же note про
-   merge). */
-.ban-hero-placeholder{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
-.ban-draft-chip{display:flex;align-items:center;gap:4px;padding:3px 6px 3px 4px;border-radius:5px;background:var(--bg4);font-size:11px;font-weight:500}
-/* .ban-draft-chip img/.ban-draft-chip-ph — было задублировано здесь (18px),
-   конфликтовало с bans.css (20px). draft-comp.css грузится позже в build.sh
-   → тихо побеждал меньший размер. Убрано — единственный источник теперь
-   bans.css (там же поднят размер, см. Design Audit). */
-.ban-draft-chip-ph{background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--text3)}
-.ban-draft-chip-remove{cursor:pointer;color:var(--text3);margin-left:2px;font-size:10px}
-.ban-hero-edit{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);margin-left:auto}
+/* AUDIT-D6 (17.07, полный проход): css_dupe_check.py расширен на
+   кросс-файловые дубли (был единственный простой селектор на файл) —
+   прогон по всему build order нашёл, что почти весь этот файл (кроме
+   .draft-ban-slot* и .comp-rec-* ниже) был построчной копией bans.css с
+   разошедшимися значениями: .ban-draft-controls/.ban-draft-ctrl/
+   .ban-draft-lbl/.ban-hero-placeholder/.ban-draft-chip(-ph/-remove)/
+   .ban-hero-edit/.ban-recs-header/.ban-recs-title/.ban-recs-algo-hint/
+   .ban-recs-grid/.ban-recs-empty/.ban-rec-rank/.ban-rec-portrait(+img)/
+   .ban-rec-ph/.ban-rec-body/.ban-rec-name/.ban-rec-sub/.ban-rec-bar(-wrap)/
+   .ban-rec-tags/.ban-rec-tag/.ban-rec-urgency — 25 селекторов, не 2 как
+   в исходном тикете (.ban-hero-selector/.ban-rec-card, консолидированы
+   раньше в этом же заходе). Для каждого взяты значения, которые уже
+   реально рендерились (draft-comp.css грузится позже в build.sh, поэтому
+   его версия обычно побеждала на пересекающихся свойствах — но не на
+   всех: где draft-comp.css не трогал свойство, бралось значение
+   bans.css). 0 визуальной разницы, единственный источник теперь
+   bans.css. Не найдено инструментом (компаунд/descendant-селекторы вне
+   его периметра, см. docstring) и свёрено вручную: .ban-rec-card.ban-rec-high
+   (был байт-в-байт дублем — просто убран). */
 
 /* Draft ban slots */
 .draft-ban-slot{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;background:var(--bg3);border:1px dashed var(--border2);cursor:pointer;transition:all .1s;min-height:40px}
@@ -32,25 +34,3 @@
 .comp-rec-ph{background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--text3)}
 .comp-rec-role-line{height:2px;width:100%;border-radius:1px;margin-top:1px}
 .comp-rec-str{position:absolute;bottom:3px;right:1px;font-family:var(--mono);font-size:7px;font-weight:700;color:#fff;background:rgba(0,0,0,.65);border-radius:2px;padding:0 2px;line-height:1.4}
-
-/* Ban recs (shared) */
-.ban-recs-header{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
-.ban-recs-title{font-size:13px;font-weight:700}
-.ban-recs-algo-hint{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
-.ban-recs-grid{display:flex;flex-direction:column;gap:5px}
-.ban-recs-empty{font-family:var(--mono);font-size:10px;color:var(--text3);padding:8px 0}
-/* .ban-rec-card — АУДИТ-D6 (17.07): убран отсюда, тот же дубль-паттерн
-   что .ban-hero-selector выше — единственный источник теперь bans.css. */
-.ban-rec-card.ban-rec-high{border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.04)}
-.ban-rec-rank{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text3);min-width:16px;text-align:center}
-.ban-rec-portrait{width:48px;height:48px;flex-shrink:0}
-.ban-rec-portrait img{width:48px;height:48px;border-radius:7px;object-fit:cover;display:block}
-.ban-rec-ph{width:48px;height:48px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--text3)}
-.ban-rec-body{flex:1;min-width:0}
-.ban-rec-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ban-rec-sub{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);display:flex;align-items:center;gap:3px;text-transform:uppercase}
-.ban-rec-bar-wrap{height:3px;background:var(--bg4);border-radius:2px;margin-top:3px;overflow:hidden}
-.ban-rec-bar{height:100%;border-radius:2px;transition:width .2s}
-.ban-rec-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
-.ban-rec-tag{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;border:1px solid transparent}
-.ban-rec-urgency{font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;flex-shrink:0}
