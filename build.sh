@@ -88,6 +88,7 @@ HEADER
 # CSS — base первым, потом features, modals, draft, responsive последним
 CSS_FILES=(
   css/base/base-reset.css
+  css/base/tokens.css
   css/base/base-chrome.css
   css/base/base-utility.css
   css/base/skeleton.css
@@ -99,7 +100,9 @@ CSS_FILES=(
   css/features/tiers.css
   css/modals/modals.css
   css/modals/strength.css
+  css/modals/picker.css
   css/draft/bans.css
+  css/draft/ban-recommendations.css
   css/draft/bans-tournament.css
   css/draft/draft-comp.css
   css/admin.css
