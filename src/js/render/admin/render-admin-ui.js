@@ -1,4 +1,4 @@
-// @hash 8a9ec520 2026-07-13T12:18
+// @hash ea858a2c 2026-07-17T20:08
 // ════ ADMIN UI — навигация, команды, пользователи, глобальный тир-лист ════
 // Вкладка доступна только пользователям с app_role = 'admin' | 'superadmin'
 // Зависимости: session.js (isAdmin, isSuperAdmin, currentTeam, currentUser),
@@ -101,7 +101,7 @@ async function _renderUsersTab(el) {
           ${users.map(u => `<tr>
             <td>${u.email}</td>
             <td>${u.app_role
-              ? `<span class="role-tag" style="font-size:var(--fluid-fs-2xs);background:rgba(99,179,237,.15);color:var(--accent)">${u.app_role}</span>`
+              ? `<span class="role-tag-admin" style="font-size:var(--fluid-fs-2xs);background:rgba(99,179,237,.15);color:var(--accent)">${u.app_role}</span>`
               : '<span style="color:var(--text3);font-size:10px">—</span>'}</td>
             <td style="font-size:10px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('ru')}</td>
           </tr>`).join('')}
