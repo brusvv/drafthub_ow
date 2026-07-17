@@ -1,4 +1,4 @@
-/* @hash 3c56c2a0 2026-07-17T10:00 */
+/* @hash 8641eb93 2026-07-17T10:23 */
 /* ── HERO PICKER MODAL ── */
 .picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;z-index:2000;padding:6vh 1rem 1rem;overflow-y:auto}
 .picker-overlay.hidden{display:none}
@@ -16,7 +16,19 @@
 .picker-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
 .picker-filters{display:flex;gap:4px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 .picker-grid-wrap{overflow-y:auto;padding:1rem 1.25rem;flex:1}
-.picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:6px;justify-items:center}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:6px;justify-items:center}
+/* Калибровка (17.07, bor): было 84px MIN → 14 карточек в ряд на типичной
+   ширине панели (~1267px content), карточки ~86px. Пользователь попросил
+   ужать примерно до 12 в ряд и чуть увеличить сами иконки, допуская что
+   после увеличения станет 10-11. Проверил цифрами (Playwright, 52
+   карточки, content ~1267px): 84→14@86px, 95-100→12@101px,
+   105-110→11@111px, 115→10@123px. Выбрал 105px — 11 в ряд, карточки
+   ~111px (+29% к прежнему размеру). Не трогал `.picker-box`/
+   `--fluid-panel-w` отдельно — раз auto-fit+1fr (round 2 фикс) уже
+   заполняет ряд без остатка, поднятого MIN само по себе одновременно и
+   уменьшает число колонок, и увеличивает карточки на той же ширине
+   панели — второй рычаг (сама ширина окна) не понадобился. Брейкпоинты
+   ≤768/≤480 в responsive.css не трогал — просьба была про широкий экран. */
 /* Правка #2 (16.07, bor) — пользователь показал скриншот: между последним
    столбцом и правым краем модалки — пустая полоса. Причина ровно та,
    что я нашёл в прошлой заметке ниже, но не додумал до конца: auto-fill
