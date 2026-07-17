@@ -1,4 +1,4 @@
-// @hash 6aeae250 2026-07-15T02:28
+// @hash 0dddf533 2026-07-17T20:08
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -196,7 +196,7 @@ async function _renderMembersTab(el){
               ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
             </select>
             <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')" aria-label="Удалить участника ${esc(name)}">✕</button>
-          ` : `<span class="role-tag fs-10">${roleLabel}</span>`}
+          ` : `<span class="role-tag-admin fs-10">${roleLabel}</span>`}
         </div>`;
       }).join('')}
     </div>`;
@@ -212,7 +212,7 @@ async function _renderRolesTab(el){
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:13px;font-weight:700">${r.label}</span>
-              ${r.is_system?'<span class="role-tag" style="font-size:var(--fluid-fs-2xs)">встроенная</span>':''}
+              ${r.is_system?'<span class="role-tag-admin" style="font-size:var(--fluid-fs-2xs)">встроенная</span>':''}
             </div>
             ${!r.is_system?`<button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:3px 8px" onclick="deleteCustomRole('${r.id}')">Удалить</button>`:''}
           </div>
