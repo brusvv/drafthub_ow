@@ -1,4 +1,4 @@
-/* @hash abbd9100 2026-06-20T08:48 */
+/* @hash 2fb54e2a 2026-07-17T20:08 */
 /* ── AUTH SCREEN ── */
 .auth-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
 .auth-logo{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:24px;text-align:center}
@@ -24,7 +24,18 @@
 /* ── MEMBER ROWS ── */
 .member-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border)}
 .member-av{width:32px;height:32px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--text3);flex-shrink:0}
-.role-tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--bg4);color:var(--text2)}
+/* AUDIT-D6 (17.07, css-dedup-check --build-order): переименовано из
+   `.role-tag` — то же имя, что и пилюля роли игрока в features/players.css
+   (там же `.Tank/.Damage/.Support/.Flex`-модификаторы), но другой
+   компонент: этот — плоский тег для админ/системных ролей (auth/ui.js,
+   render-admin-ui.js), без цветовых модификаторов. players.css грузится
+   ПОСЛЕ auth.css → её border/border-radius:20px тихо перетирали этот тег
+   везде, где он использовался (`.role-tag` без border здесь не
+   перекрывает border, заданный только в players.css) — админ-теги
+   рендерились скруглённой пилюлей с рамкой, которую этот файл никогда не
+   задавал. Единственный источник для тега игрока — features/players.css,
+   не трогал. */
+.role-tag-admin{font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:5px;background:var(--bg4);color:var(--text2)}
 
 /* ── ROLES ADMIN ── */
 .role-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
