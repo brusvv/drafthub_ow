@@ -1,4 +1,4 @@
-/* @hash f4a59391 2026-07-16T11:12 */
+/* @hash a2387723 2026-07-17T10:00 */
 /* ════════════════════════════════════════════════
    responsive.css — адаптивность Draft Hub
    Breakpoints:
@@ -124,10 +124,14 @@
   .modal-title{font-size:14px}
   .form-row{grid-template-columns:1fr}
   .picker-box{max-height:92vh}
-  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(76px,var(--fluid-icon-hero)))}
-  /* bor 16.07: тот же потолок что и базовое правило в bans.css, для
-     консистентности (не отдельный фикс — см. заметку в bans.css про то,
-     что 1fr эмпирически не давал видимого разрыва). */
+  .picker-grid{grid-template-columns:repeat(auto-fit,minmax(76px,1fr))}
+  .p-hero{max-width:76px}
+  /* bor 16.07 (round 2): было auto-fill+minmax(76px,var(--fluid-icon-hero))
+     на треке — тот же баг, что и в базовом правиле bans.css (пустота с
+     края ряда, см. заметку там). Трек — auto-fit+1fr, потолок карточки —
+     явный max-width здесь (глобальный var(--fluid-icon-hero) не даёт
+     сжаться меньше своего MIN 84px, на этом брейкпоинте раньше был
+     меньше — 76px, поэтому override явный, не через переменную). */
 
   /* Баны */
   .ban-role-heroes{gap:5px}
@@ -177,7 +181,8 @@
   .modal-overlay{padding:.5rem}
   .modal{border-radius:12px;max-height:95vh}
   .picker-box{border-radius:12px;max-height:94vh}
-  .picker-grid{grid-template-columns:repeat(auto-fill,minmax(68px,var(--fluid-icon-hero)));gap:5px}
+  .picker-grid{grid-template-columns:repeat(auto-fit,minmax(68px,1fr));gap:5px}
+  .p-hero{max-width:68px}
 
   /* Баны */
   .ban-chip-name{font-size:var(--fluid-fs-2xs)}
