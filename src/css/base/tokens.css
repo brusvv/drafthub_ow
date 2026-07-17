@@ -1,0 +1,40 @@
+/* @hash 0a8f156e 2026-07-17T21:30 */
+/* AUDIT-D6 (17.07) — семантические surface-токены. Восстановлено из
+   транскрипта другого агента (файл сам никуда не долетел — та же
+   систематическая проблема, что уже дважды всплывала 16-17.07, см.
+   CHANGELOG «BUG-20 закрыт + AUDIT-D3 продолжение»). Реконструировано
+   по описанию из транскрипта + перепроверено: во всех перечисленных
+   ниже селекторах в присланных файлах background/border/border-radius
+   отсутствуют (тихо ожидают эти правила из этого файла) — без него
+   .h-card/.modal/.picker-box и т.д. рендерились бы без фона и рамки
+   вообще, это не опечатка транскрипта, а реальная зависимость.
+
+   Только подтверждённые 1:1-идентичные кластеры (найдены Python-сканом
+   по всему проекту после дедупа, не на глаз) — где все совпадающие
+   свойства СОВПАДАЛИ по значению, чистый rename без визуального риска.
+   Кластеры где значения были БЛИЗКИ, но не идентичны (второй, более
+   разнородный набор — модалки/тосты/дропдауны/чипы с разбросом radius
+   8-20px) сознательно НЕ трогали — токенизация вслепую без возможности
+   свериться на живом рендере признана рискованной, см. AGENT_TASKS.md.
+
+   Грузится сразу после base-reset.css (нужны --bg2/--border/--border2/
+   --radius) и ДО всех файлов, что на него ссылаются — иначе card-специфичные
+   переопределения (padding и т.д.) в heroes.css/maps.css/players.css/
+   modals.css/picker.css не смогут выигрывать каскад у общих правил здесь. */
+
+/* ── surface-panel: bg2 + var(--border) + var(--radius) ──
+   Потребители: .h-card (heroes.css), .map-card/.detail-header/.d-card
+   (maps.css), .player-card/.roster-player-row/.roster-picker-modal/
+   .pd-header-card (players.css). */
+.h-card,.map-card,.detail-header,.d-card,.player-card,
+.roster-player-row,.roster-picker-modal,.pd-header-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+}
+
+/* ── surface-popover: bg2 + var(--border2) + фикс. 14px ──
+   Потребители: .modal (modals.css), .picker-box (picker.css). Не тот же
+   токен что surface-panel — другой border-color (border2, не border) и
+   независимый от --radius фиксированный радиус, не унифицировать силой. */
+.modal,.picker-box{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+}
