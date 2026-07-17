@@ -1,17 +1,11 @@
-/* @hash 3788c4ec 2026-06-14T08:30 */
-/* ── HERO SORTING NOTE ── */
-.hero-sort-note{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:14px}
-
-/* ════ HERO CARD COUNTER ICONS ════
-   .h-counter-icon — change width/height to resize
-   .h-counter-score — overlaid score badge
-*/
-/* ── HERO CARD COUNTERS ── */
-.h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
-.h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
-.h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
-.h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
-.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:9px;font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
+/* @hash a27e78f4 2026-07-17T20:08 */
+/* AUDIT-D6 (17.07): .hero-sort-note/.h-counter-* убраны отсюда — были
+   byte-в-byte дублем features/tiers.css и modals/modals.css, при этом
+   ЭТА копия была мёртвой (modals.css грузится последним из трёх в
+   build.sh — его версия всегда побеждала в каскаде, здешний хардкод 9px
+   для .h-counter-score никогда фактически не рендерился). Единственный
+   реальный потребитель — render-heroes.js; единственный источник теперь
+   features/heroes.css. */
 
 /* ════ TIER PREVIEW POPUP ════
    .tier-preview-overlay / .tier-preview-box / .tier-preview-banner
