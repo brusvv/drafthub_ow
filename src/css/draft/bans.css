@@ -1,68 +1,5 @@
-/* @hash a382d6cd 2026-07-17T12:02 */
-/* ── HERO PICKER MODAL ── */
-.picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;z-index:2000;padding:6vh 1rem 1rem;overflow-y:auto}
-.picker-overlay.hidden{display:none}
-/* BUG-18 (16.07): align-items:center на .picker-overlay вертикально центрировал
-   .picker-box по его высоте — при смене фильтра (Tank/Damage/Support) список
-   героев короче, box ниже, и центрирование пересчитывалось заново → окно
-   визуально "прыгало" вниз/вверх при каждом клике по фильтру. Заменено на
-   flex-start с фиксированным верхним отступом (6vh на overlay) — верхний край
-   box теперь не зависит от высоты контента, съезжает только нижний край
-   (внутри уже есть свой overflow-y:auto + max-height:88vh ниже, так что при
-   большом списке ничего не обрезается). */
-.picker-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:var(--fluid-panel-w);max-height:88vh;display:flex;flex-direction:column}
-.picker-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.picker-title{font-size:15px;font-weight:700}
-.picker-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
-.picker-filters{display:flex;gap:4px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.picker-grid-wrap{overflow-y:auto;padding:1rem 1.25rem;flex:1}
-/* Правка #3 (17.07, Claude) — предыдущий заход (round «калибровка размера
-   иконок») остановился на 105px/11 карточек, допуская что после увеличения
-   станет 10-11. Пользователь попросил ещё уже — 9 в ряд. Измерено не на
-   глаз и не экстраполяцией — тем же методом что round 2/3 выше
-   (Playwright, синтетическая страница с реальными :root --fluid-panel-w
-   и .picker-box/.picker-grid-wrap правилами, 52 карточки, viewport
-   1440/1920/2560px — панель везде упирается в потолок --fluid-panel-w=
-   1320px, поэтому результат одинаков на всех трёх). MIN=130px → ровно
-   9 карточек по 137px (+23% к прежним 111px), с запасом от границы
-   флипа на 8 (та начинается уже на MIN=137px, вплотную). Брейкпоинты
-   ≤1200/≤768/≤480 в responsive.css не трогал — тот же скоуп-принцип что
-   и в прошлом раунде, запрос про широкий экран. */
-.picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;justify-items:center}
-/* Калибровка (17.07, bor): было 84px MIN → 14 карточек в ряд на типичной
-   ширине панели (~1267px content), карточки ~86px. Пользователь попросил
-   ужать примерно до 12 в ряд и чуть увеличить сами иконки, допуская что
-   после увеличения станет 10-11. Проверил цифрами (Playwright, 52
-   карточки, content ~1267px): 84→14@86px, 95-100→12@101px,
-   105-110→11@111px, 115→10@123px. Выбрал 105px — 11 в ряд, карточки
-   ~111px (+29% к прежнему размеру). Не трогал `.picker-box`/
-   `--fluid-panel-w` отдельно — раз auto-fit+1fr (round 2 фикс) уже
-   заполняет ряд без остатка, поднятого MIN само по себе одновременно и
-   уменьшает число колонок, и увеличивает карточки на той же ширине
-   панели — второй рычаг (сама ширина окна) не понадобился. Брейкпоинты
-   ≤768/≤480 в responsive.css не трогал — просьба была про широкий экран. */
-/* Правка #2 (16.07, bor) — пользователь показал скриншот: между последним
-   столбцом и правым краем модалки — пустая полоса. Причина ровно та,
-   что я нашёл в прошлой заметке ниже, но не додумал до конца: auto-fill
-   резервирует место под "пустые" треки, а не схлопывает их — то, что я
-   проверял как "не растягивает картинки" (верно), оборачивается ровно
-   этой пустой полосой (то, что я не проверил). Раньше был потолок на
-   ТРЕКЕ (minmax(84px,var(--fluid-icon-hero))) — из-за этого трек не
-   дорастал до полной ширины ряда, и остаток превращался в пустоту с
-   правого края. Теперь потолок — на САМОЙ КАРТОЧКЕ (.p-hero max-width
-   ниже), а трек — auto-fit+1fr (пустые треки схлопываются, реальные
-   заполняют весь ряд без остатка). justify-items:center — чтобы
-   карточка не растягивалась на всю (уже возможно широкую) 1fr-колонку,
-   а сидела по центру своей колонки. */
-.p-hero{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .1s;background:var(--bg3);position:relative;width:100%;max-width:var(--fluid-icon-hero)}
-.p-hero:hover{border-color:var(--border3)}
-.p-hero.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.p-hero.selected::after{content:'✓';position:absolute;top:4px;right:4px;background:var(--accent);color:#000;font-size:var(--fluid-fs-2xs);font-weight:800;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
-.p-hero-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg4)}
-.p-hero-img-ph{width:100%;aspect-ratio:1;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
-.p-hero-name{font-size:var(--fluid-fs-2xs);font-weight:600;text-align:center;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.picker-footer{padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;flex-shrink:0}
- 
+/* @hash a7b00b1e 2026-07-17T21:30 */
+/* ── COUNTER GRID (heroes grouped by role) ── */
 /* ── COUNTER GRID (heroes grouped by role) ── */
 .counter-role-group{margin-bottom:8px}
 .counter-role-label{font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:5px}
@@ -73,16 +10,23 @@
 .counter-chip-ph{width:28px;height:28px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text3);flex-shrink:0}
 .counter-chip-name{font-size:11px;font-weight:600}
 .counter-chip-ban{font-family:var(--mono);font-size:7px;text-transform:uppercase;background:rgba(224,85,85,.2);color:var(--damage);border-radius:3px;padding:1px 4px;margin-left:2px}
- 
-/* ── ROSTER PLAYER ROLE SELECTOR ── */
-.roster-role-select{display:flex;gap:4px;align-items:center}
-.roster-role-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
-.roster-role-btn:hover{border-color:var(--border3)}
-.roster-role-btn.active-Tank{border-color:var(--tank);background:rgba(74,158,224,.12)}
-.roster-role-btn.active-Damage{border-color:var(--damage);background:rgba(224,85,85,.12)}
-.roster-role-btn.active-Support{border-color:var(--support);background:rgba(43,189,142,.12)}
-.roster-role-btn.active-Flex{border-color:var(--accent);background:rgba(240,160,48,.12)}
- 
+
+/* AUDIT-D6 (17.07, css-dedup-check --build-order): весь блок
+   «ROSTER PLAYER ROLE SELECTOR» удалён — `.roster-role-select` и все 4
+   модификатора `.active-Tank/-Damage/-Support/-Flex` не используются
+   НИГДЕ в src/js/+src/html (проверено grep) — 100% мёртвый код. Хуже
+   того: базовое правило `.roster-role-btn` здесь СОВПАДАЛО по имени с
+   реально используемым `.roster-role-btn` из features/players.css
+   (единственный потребитель — render-roster.js, там `.active`, а не
+   `.active-Role` — т.е. эти два класса никогда не были одним и тем же
+   компонентом, просто случайно тёзки). Т.к. bans.css грузится в build.sh
+   ПОСЛЕ players.css, этот мёртвый код тихо перетирал padding
+   (0 вместо реальных 3px 6px) и border/transition у настоящей кнопки
+   выбора роли в ростере — визуальный баг без единой строчки кода,
+   которая должна была что-то менять. `.roster-role-btn:focus-visible`
+   в общем списке ниже — оставлен, он относится к РЕАЛЬНОМУ классу из
+   players.css. */
+
 /* ── BAN GRID BY ROLE ── */
 .ban-role-group{margin-bottom:1.25rem}
 .ban-role-header{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
@@ -92,76 +36,17 @@
 .ban-chip img{width:var(--fluid-icon-chip);height:var(--fluid-icon-chip);border-radius:5px;object-fit:cover;flex-shrink:0}
 .ban-chip-ph{width:var(--fluid-icon-chip);height:var(--fluid-icon-chip);border-radius:5px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text3);flex-shrink:0}
 .ban-chip-name{font-size:11px;font-weight:700;color:var(--damage);word-break:break-word;overflow-wrap:anywhere;white-space:normal}
- 
-/* ── HERO SUBROLE GROUPING ── */
-.subrole-group{margin-bottom:1rem}
-.subrole-lbl{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text1);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px}
- 
 
-/* ── DRAFT BAN ASSIST ── */
-/* AUDIT-D6 (17.07): .ban-draft-panel убран — был байт-в-байт дублем
-   .ban-panel ниже (bg2/border/radius var(--radius)/padding 1.5rem, то же
-   самое), grep по src/js/+src/html/ на класс — 0 использований, чистый
-   мёртвый код, не переименование действующего стиля. */
-.ban-draft-header{margin-bottom:1.25rem}
-.ban-draft-title{font-size:16px;font-weight:800;margin-bottom:4px}
-.ban-draft-hint{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6}
+/* .subrole-group/.subrole-lbl убраны отсюда (Claude, 17.07) — были
+   byte-в-byte дублем draft/bans.css и features/heroes.css (единственный
+   реальный потребитель — render-heroes.js). heroes.css уже утверждал в
+   своём собственном комментарии, что удаление отсюда сделано — но в
+   реально присланном файле правило было на месте (та же систематическая
+   проблема «описано, но не доехало», см. CHANGELOG). Канонический
+   источник — features/heroes.css, не трогал его. */
 
-.ban-draft-controls{display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
-.ban-draft-ctrl{display:flex;flex-direction:column;gap:6px;min-width:160px}
-.ban-draft-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
 
-/* AUDIT-D6 (17.07): раньше был задублирован в draft-comp.css с другими
-   значениями (padding/border-color/radius/min-height) — тот же класс,
-   используется и в render-bans-competitive.js (этот файл), и в
-   render-draft-comp.js (draft-comp.css) — реально ОДИН UI-паттерн, а не
-   два разных. draft-comp.css грузится в build.sh ПОСЛЕ этого файла →
-   его версия побеждала в каскаде на все свойства кроме `transition`
-   (которого там не было) — сведено сюда РОВНО в те значения, что уже
-   реально рендерились (padding 8px/border var(--border)/radius 7px/
-   min-height 42px), 0 визуальной разницы, только убран дублирующий
-   источник правды. */
-.ban-hero-selector{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px;cursor:pointer;min-height:42px;transition:border-color .15s}
-.ban-hero-selector:hover{border-color:var(--border3)}
-.ban-hero-placeholder{font-size:12px;color:var(--text3)}
-.ban-hero-edit{margin-left:auto;color:var(--text3);font-size:12px}
-
-.ban-draft-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:2px 6px 2px 3px;font-size:11px;font-weight:600}
-.ban-draft-chip img{width:28px;height:28px;border-radius:5px;object-fit:cover}
-.ban-draft-chip-ph{width:28px;height:28px;border-radius:5px;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--text3)}
-.ban-draft-chip-remove{margin-left:2px;color:var(--text3);cursor:pointer;font-size:13px;line-height:1}
-.ban-draft-chip-remove:hover{color:var(--damage)}
-
-/* Результаты */
-.ban-recs-empty{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:2rem 0}
-.ban-recs-header{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.ban-recs-title{font-size:13px;font-weight:700}
-.ban-recs-algo-hint{font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3)}
-
-.ban-recs-grid{display:flex;flex-direction:column;gap:6px}
-
-/* AUDIT-D6 (17.07): та же история что у .ban-hero-selector выше —
-   задублирован в draft-comp.css (align-items/gap/padding/radius
-   расходились), тот же класс используется и в render-bans-core.js (этот
-   файл), и в render-draft-comp-result.js (draft-comp.css). Сведено в
-   значения, которые уже реально побеждали в каскаде (draft-comp.css грузится
-   позже) — align-items:center/gap 8px/padding 6px 9px/radius 7px, `transition`
-   сохранён (в draft-comp.css его не было, ничего не перекрывало). */
-.ban-rec-card{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 9px;transition:border-color .15s}
-.ban-rec-card.ban-rec-high{border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.04)}
-.ban-rec-rank{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text3);min-width:14px;margin-top:3px}
-.ban-rec-portrait{width:56px;height:56px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg4)}
-.ban-rec-portrait img{width:100%;height:100%;object-fit:cover;display:block}
-.ban-rec-ph{width:44px;height:44px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
-.ban-rec-body{flex:1;min-width:0}
-.ban-rec-name{font-size:14px;font-weight:700;margin-bottom:2px}
-.ban-rec-sub{display:flex;align-items:center;gap:3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);color:var(--text3);margin-bottom:5px}
-.ban-rec-bar-wrap{height:3px;background:var(--bg5);border-radius:2px;margin-bottom:6px;overflow:hidden}
-.ban-rec-bar{height:100%;border-radius:2px;transition:width .3s ease}
-.ban-rec-tags{display:flex;flex-wrap:wrap;gap:4px}
-.ban-rec-tag{font-family:var(--mono);font-size:var(--fluid-fs-2xs);padding:2px 7px;border-radius:4px;border:1px solid transparent;line-height:1.5}
-.ban-rec-urgency{font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:700;letter-spacing:.08em;flex-shrink:0;margin-top:4px}
-
+/* ── BAN MODE SWITCHER ── */
 /* ── BAN MODE SWITCHER ── */
 .ban-mode-switcher{display:flex;gap:4px;margin-bottom:16px;background:var(--bg3);border-radius:10px;padding:3px}
 .ban-mode-btn{flex:1;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:7px 14px;border-radius:7px;border:none;background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;font-weight:600}
@@ -169,57 +54,24 @@
 .ban-mode-btn.active{background:var(--bg);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
 
 /* ── BAN PANEL ── */
+/* ── BAN PANEL ── */
 #view-bans{max-width:var(--fluid-panel-w)}
-.ban-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.ban-panel{padding:1.5rem}
 .ban-panel-head{margin-bottom:1.25rem}
 .ban-panel-title{font-size:var(--fluid-fs-title);font-weight:800;margin-bottom:4px}
 .ban-panel-hint{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6}
 
-/* ── COMP BAN CHIP (hero avatar for voting) ── */
-/* Правка #4 (17.07, Claude) — баг подтверждён скриншотом пользователя:
-   заметные ПРОБЕЛЫ МЕЖДУ иконками у Tank/Support (по 14 героев), при этом
-   Damage (24, 2 ряда) выглядел нормально. Причина — предыдущие правки
-   (#2/#3 ниже, см. историю) скопировали сюда `auto-fit+1fr` из
-   `.picker-grid` выше в файле по аналогии, не проверив что там ДРУГАЯ
-   ситуация: `.picker-grid` почти всегда заполняет несколько строк
-   полностью, а здесь Tank/Support почти ВСЕГДА один неполный ряд (14
-   героев редко делится ровно на число треков, которое вмещает панель).
-   Механизм `auto-fit`: если ряд не заполнен до конца, ЛИШНИЕ (пустые)
-   треки схлопываются до 0, а их доля `1fr` перераспределяется между
-   оставшимися занятыми треками — те раздуваются шире номинала, чип
-   (у него свой `max-width`) центрируется в раздутом треке, между чипами
-   и остаётся видимый пробел. Ряд Damage #1 (полностью заполненный) этой
-   стянутости не показывал — потому и выглядел нормально, вводя в
-   заблуждение, что грид в целом работает.
+/* FILESPLIT (17.07): .picker-* / hero-picker модалка, .ban-draft-*/
+   .ban-recs-*/.ban-rec-*/.comp-ban-* и мелкие draft-утилиты (AUDIT-D3)
+   вынесены в modals/picker.css и draft/ban-recommendations.css — этот
+   файл теперь только "каркас" вкладки Бан (роль-группы/mode-switcher/
+   panel/layout), см. те два файла для остального. */
 
-   Фикс — `auto-fill` вместо `auto-fit`: незанятые треки НЕ схлопываются,
-   остаются пустыми ячейками в конце ряда (как уже было у Damage-ряда #2),
-   треки с контентом не раздуваются. Заодно пересчитан MIN — было 64px
-   (Damage 24 → 18 колонок, Tank/Support 14 совсем не насыщают ряд, отсюда
-   и большой пробел на растяжку). Посчитано под текущую ширину панели
-   (`--fluid-panel-w` уже упёрлась в потолок 1320px на ≥1439px viewport,
-   `.ban-panel` padding 1.5rem×2 → контент 1272px):
-   `floor((1272+6) / (MIN+6))` — при MIN=**80px** даёт ровно **14** колонок:
-   Tank/Support (14) заполняют ряд ЦЕЛИКОМ без остатка (не просто без
-   растяжки — вообще без пустого хвоста), Damage (24) делится на 14+10
-   вместо прежних 18+6 (тот самый "перенести часть героев во второй ряд",
-   про который просил пользователь) — и заодно чипы визуально крупнее
-   (64→80px), тоже часть запроса. На более узких viewport (`--fluid-panel-w`
-   меньше 1320px) колонок будет меньше, но `auto-fill` там не создаёт
-   проблему независимо от точного числа — она была именно в паре
-   auto-fit + недозаполненный ряд, не в самом MIN. */
-.comp-ban-role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;justify-items:center}
-.comp-ban-chip{position:relative;width:100%;max-width:80px;aspect-ratio:1;border-radius:7px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .1s;background:var(--bg4)}
-.comp-ban-chip img{width:100%;height:100%;object-fit:cover;display:block}
-.comp-ban-chip-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--text3)}
-.comp-ban-chip:hover{border-color:var(--border3);transform:scale(1.08)}
-.comp-ban-chip.active{border-color:var(--damage)}
-.comp-ban-priority{position:absolute;bottom:-1px;right:-1px;font-family:var(--mono);font-size:7px;font-weight:800;padding:1px 3px;border-radius:3px;color:#fff;line-height:1.2}
-
-/* .tourn-* (map chip / format / side / step chip) — вынесено в
-   bans-tournament.css (FILESPLIT, 16.07), подключается сразу после
-   этого файла в build.sh. */
-
+/* ════ BANS VIEW LAYOUT OVERRIDE ════
+   The #bansGrid container inherits a tile-grid from tiers.css.
+   For the bans view, we need a single full-width column layout.
+   This overrides the grid so ban-panel and mode-switcher span full width.
+*/
 @media (max-width:640px){
   .ban-mode-switcher{flex-direction:column}
   .ban-mode-btn{width:100%}
@@ -237,64 +89,19 @@
   gap:0;
 }
 
-/* ════ COMP MAP POPUP ════
-   Full-screen overlay for selecting the match map in competitive mode.
-   Opened by openCompMapPopup(), closed by closeCompMapPopup() or clicking backdrop.
-*/
-/* Styles are mostly inline since the popup is dynamically created.
-   Only the thumbnail grid sizing is defined here for easy tweaking. */
-
-/* ── BAN-REC PORTRAIT — imgH helper classes ── */
-.ban-rec-portrait-img{width:100%;height:100%;object-fit:cover;display:block;border-radius:7px}
-.ban-rec-portrait-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3);border-radius:7px;background:var(--bg4)}
-
-/* ════ AUDIT-D3 (12.07→13.07) — inline styles повторявшиеся ДОСЛОВНО как
-   минимум в 2 из 4 draft-панелей (render-bans-tournament-herobans.js,
-   render-draft-comp.js, render-bans-tournament-draft.js,
-   render-bans-competitive.js) — извлечены сюда, т.к. bans.css уже
-   загружается на всех вкладках драфта. Однократные inline-паттерны
-   намеренно НЕ трогали (см. AUDIT-A2: "не единичные — не дубли"). ════ */
-
-/* Крупная кнопка запуска действия ("Начать драфт карт"/"Начать бан героев"/
-   "Показать состав") — .btn.btn-primary база чуть теснее чем нужно тут. */
-.btn-lg{padding:8px 20px}
-
-/* Вторичный (вложенный) заголовок секции внутри .ban-panel-head — база
-   (bans.css выше) даёт margin-bottom:1.25rem для ПЕРВОГО заголовка панели;
-   этот модификатор — для заголовка, который появляется НЕ первым в панели
-   (например "Топ-3 состава" после уже отрисованного основного блока). */
-.ban-panel-head-sub{margin:16px 0 8px}
-.ban-panel-head-sub .ban-panel-title{font-size:14px}
-
-/* Изображения-превью — размеры реально повторяются 1:1 в разных файлах. */
-.draft-thumb-xs{width:20px;height:20px;border-radius:3px;object-fit:cover}
-.draft-thumb-sm{width:24px;height:24px;border-radius:4px;object-fit:cover}
-
-/* Приглушённый элемент (недоступная опция, ещё не выбрано) */
-.draft-dim{opacity:.5}
-
-/* Мелкий текст с акцентом "внимание"/предупреждение (счётчик оставшихся
-   банов на нуле и т.п.) — 11px уже переведён на fluid-шкалу (AUDIT-D1). */
-.draft-warn-sm{font-size:var(--fluid-fs-sm);color:var(--damage)}
-
-/* mono-подпись 10px (соседний паттерн с уже существующим .mono-hint из
-   base.css, который использует --fluid-fs-2xs — этот чуть крупнее,
-   --fluid-fs-xs, отдельный класс а не редефайн .mono-hint чтобы не задеть
-   остальные места приложения где .mono-hint уже применён). */
-.mono-hint-lg{font-family:var(--mono);font-size:var(--fluid-fs-xs);color:var(--text3)}
-
-/* Строка чипов с переносом — тот же принцип что .chip-row из base.css
-   (AUDIT-A2), другой gap/margin — не универсальный, только для драфт-панелей. */
-.draft-chip-row{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
-
-/* Точечные одноразовые отступы, встретившиеся в 2 разных файлах — не
-   универсальные .mb-N/.ml-N (те уже есть в base.css для 12px), эти два
-   конкретных значения не были покрыты. */
-.ml-8{margin-left:8px}
-.mb-8{margin-bottom:8px}
-.mb-5{margin-bottom:5px}
-.fs-13{font-size:13px}
-
+/* ════ AUDIT-D3 пункт 1 (16.07) — единый :focus-visible для ban/pick/side-
+   выборов. Раньше в этом файле не было НИ ОДНОГО :focus-правила — Tab по
+   пикеру героев/чипам банов/картам/формату визуально никак не отличался от
+   отсутствия фокуса. Это НЕ редизайн hover (тот уже был у каждого класса
+   ниже, просто оставлен как есть — см. .comp-ban-chip:hover/scale — трогать
+   его не входило в задачу), а добавление недостающего состояния сверху.
+   :focus-visible (не :focus) — чтобы кольцо не появлялось на обычный клик
+   мышью, только при навигации с клавиатуры. offset вместо inset — не бьётся
+   с border-color, который эти же классы меняют в своих .hover/.active/.sel
+   правилах выше по файлу. Классы из .p-hero/.comp-ban-chip/.tourn-*/
+   .ban-hero-selector теперь живут в других файлах после FILESPLIT (17.07)
+   выше — список селекторов не переносился построчно, оставлен как есть,
+   т.к. CSS-каскад не зависит от того, в каком файле объявлен класс. */
 /* ════ AUDIT-D3 пункт 1 (16.07) — единый :focus-visible для ban/pick/side-
    выборов. Раньше в этом файле не было НИ ОДНОГО :focus-правила — Tab по
    пикеру героев/чипам банов/картам/формату визуально никак не отличался от
