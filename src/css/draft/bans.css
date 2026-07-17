@@ -99,7 +99,10 @@
  
 
 /* ── DRAFT BAN ASSIST ── */
-.ban-draft-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+/* AUDIT-D6 (17.07): .ban-draft-panel убран — был байт-в-байт дублем
+   .ban-panel ниже (bg2/border/radius var(--radius)/padding 1.5rem, то же
+   самое), grep по src/js/+src/html/ на класс — 0 использований, чистый
+   мёртвый код, не переименование действующего стиля. */
 .ban-draft-header{margin-bottom:1.25rem}
 .ban-draft-title{font-size:16px;font-weight:800;margin-bottom:4px}
 .ban-draft-hint{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6}
@@ -108,7 +111,17 @@
 .ban-draft-ctrl{display:flex;flex-direction:column;gap:6px;min-width:160px}
 .ban-draft-lbl{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
 
-.ban-hero-selector{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:40px;transition:border-color .15s}
+/* AUDIT-D6 (17.07): раньше был задублирован в draft-comp.css с другими
+   значениями (padding/border-color/radius/min-height) — тот же класс,
+   используется и в render-bans-competitive.js (этот файл), и в
+   render-draft-comp.js (draft-comp.css) — реально ОДИН UI-паттерн, а не
+   два разных. draft-comp.css грузится в build.sh ПОСЛЕ этого файла →
+   его версия побеждала в каскаде на все свойства кроме `transition`
+   (которого там не было) — сведено сюда РОВНО в те значения, что уже
+   реально рендерились (padding 8px/border var(--border)/radius 7px/
+   min-height 42px), 0 визуальной разницы, только убран дублирующий
+   источник правды. */
+.ban-hero-selector{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px;cursor:pointer;min-height:42px;transition:border-color .15s}
 .ban-hero-selector:hover{border-color:var(--border3)}
 .ban-hero-placeholder{font-size:12px;color:var(--text3)}
 .ban-hero-edit{margin-left:auto;color:var(--text3);font-size:12px}
@@ -127,7 +140,14 @@
 
 .ban-recs-grid{display:flex;flex-direction:column;gap:6px}
 
-.ban-rec-card{display:flex;align-items:flex-start;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 12px;transition:border-color .15s}
+/* AUDIT-D6 (17.07): та же история что у .ban-hero-selector выше —
+   задублирован в draft-comp.css (align-items/gap/padding/radius
+   расходились), тот же класс используется и в render-bans-core.js (этот
+   файл), и в render-draft-comp-result.js (draft-comp.css). Сведено в
+   значения, которые уже реально побеждали в каскаде (draft-comp.css грузится
+   позже) — align-items:center/gap 8px/padding 6px 9px/radius 7px, `transition`
+   сохранён (в draft-comp.css его не было, ничего не перекрывало). */
+.ban-rec-card{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 9px;transition:border-color .15s}
 .ban-rec-card.ban-rec-high{border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.04)}
 .ban-rec-rank{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text3);min-width:14px;margin-top:3px}
 .ban-rec-portrait{width:56px;height:56px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg4)}
