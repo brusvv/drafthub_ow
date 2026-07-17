@@ -1,8 +1,8 @@
-/* @hash e705dca5 2026-07-16T00:41 */
+/* @hash 8372705a 2026-07-17T20:44 */
 /* ── MAP MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
 .modal-overlay.hidden{display:none}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
+.modal{padding:1.5rem;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}
 .modal.modal-wide{max-width:720px}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:1.25rem}
 .modal-footer{display:flex;gap:7px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
@@ -63,19 +63,11 @@
 .comp-slot-clear{margin-left:auto;font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px}
 .comp-slot-clear:hover{color:var(--damage)}
 
-/* ── HERO SORTING NOTE ── */
-.hero-sort-note{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:14px}
-
-/* ════ HERO CARD COUNTER ICONS ════
-   .h-counter-icon — change width/height to resize
-   .h-counter-score — overlaid score badge
-*/
-/* ── HERO CARD COUNTERS ── */
-.h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
-.h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
-.h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
-.h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
-.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
+/* AUDIT-D6 (17.07): .hero-sort-note/.h-counter-* убраны отсюда — были
+   byte-в-byte дублем features/subroles.css и features/tiers.css (эта
+   копия и была той, что реально побеждала в каскаде — modals.css грузится
+   последним из трёх в build.sh). Единственный реальный потребитель —
+   render-heroes.js; единственный источник теперь features/heroes.css. */
 
 /* ════ TIER PREVIEW POPUP ════
    .tier-preview-overlay / .tier-preview-box / .tier-preview-banner
