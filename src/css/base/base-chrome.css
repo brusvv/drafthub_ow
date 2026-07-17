@@ -1,4 +1,4 @@
-/* @hash 43b82b0f 2026-07-16T10:18 */
+/* @hash d9945105 2026-07-17T11:26 */
 /* ════ BASE CHROME — Auth / Header / Nav / Filters / Mode-switcher ════
    Вынесено из base.css (FILESPLIT, 16.07 — было 377 строк, см.
    base-reset.css за подробностями границы). Постоянные видимые элементы
@@ -12,11 +12,17 @@
 */
 
  
-/* ── AUTH ── */
-.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem}
-.auth-logo{font-size:32px;font-weight:800;letter-spacing:-0.03em;text-align:center}
-.auth-sub{font-family:var(--mono);font-size:var(--fluid-fs-xs);text-transform:uppercase;letter-spacing:0.15em;color:var(--text3);text-align:center;margin-top:4px}
-.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2rem;text-align:center;max-width:400px;width:100%}
+/* ── AUTH ──
+   .auth-screen/.auth-logo/.auth-sub/.auth-card были задублированы здесь
+   и в base/auth.css — BUG-20 (16.07), закрыт 17.07. auth.css грузится
+   ПОСЛЕ этого файла (build.sh: base-chrome.css → auth.css) и определяет
+   эти же 4 селектора с той же специфичностью — по спецификации CSS
+   более поздний в source order выигрывает. Проверено дважды независимо:
+   по коду (порядок в build.sh + в собранном dist/index.html) и логически
+   (простые .class-селекторы, специфичность равна, других переопределений
+   нет) — так что версии из ЭТОГО файла были 100% мёртвым CSS, удалены.
+   Живая версия — src/css/base/auth.css. .auth-card p и .google-btn ниже
+   дублей не имели, остаются здесь. */
 .auth-card p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:1.5rem}
 .google-btn{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#1a1a1a;font-family:var(--font);font-size:14px;font-weight:600;padding:11px 20px;border-radius:8px;border:none;cursor:pointer;width:100%;justify-content:center;transition:opacity .15s}
 .google-btn:hover{opacity:.9}
