@@ -1,4 +1,4 @@
-// @hash 60b33d11 2026-07-12T05:03
+// @hash 9828f667 2026-07-17T11:26
 // ════ MODAL — MAP ════
 
 function openMapModal(map){
@@ -123,8 +123,10 @@ function onPlayerRoleChange(){
   block.innerHTML=roles.map(role=>`
     <div class="form-group">
       <label class="form-label">Герои ${role} (до 5)</label>
-      <div class="sel-heroes" id="selPlayer_${role}" onclick="openPicker('playerRole_${role}',5)">
-        <span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>
+      <div class="sel-heroes" id="selPlayer_${role}">
+        <button type="button" class="btn-reset sel-empty-btn" onclick="openPicker('playerRole_${role}',5)">
+          <span class="sel-empty">Нажми чтобы выбрать (до 5)</span><span class="sel-edit-hint">✎</span>
+        </button>
       </div>
     </div>`).join('');
   renderRolePoolPreviews();
