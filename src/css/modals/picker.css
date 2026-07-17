@@ -1,0 +1,68 @@
+/* @hash 87a05e14 2026-07-17T20:44 */
+/* FILESPLIT (17.07): вынесено из bans.css — единственный блок про
+   hero-picker модалку, используется не только draft-кластером (общая
+   .p-hero/.picker-* модалка), потому в modals/, не draft/. Значения
+   1:1 из bans.css на момент разбивки, 0 визуальной разницы. */
+/* ── HERO PICKER MODAL ── */
+.picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;z-index:2000;padding:6vh 1rem 1rem;overflow-y:auto}
+.picker-overlay.hidden{display:none}
+/* BUG-18 (16.07): align-items:center на .picker-overlay вертикально центрировал
+   .picker-box по его высоте — при смене фильтра (Tank/Damage/Support) список
+   героев короче, box ниже, и центрирование пересчитывалось заново → окно
+   визуально "прыгало" вниз/вверх при каждом клике по фильтру. Заменено на
+   flex-start с фиксированным верхним отступом (6vh на overlay) — верхний край
+   box теперь не зависит от высоты контента, съезжает только нижний край
+   (внутри уже есть свой overflow-y:auto + max-height:88vh ниже, так что при
+   большом списке ничего не обрезается). */
+.picker-box{width:100%;max-width:var(--fluid-panel-w);max-height:88vh;display:flex;flex-direction:column}
+.picker-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.picker-title{font-size:15px;font-weight:700}
+.picker-count{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.picker-filters{display:flex;gap:4px;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.picker-grid-wrap{overflow-y:auto;padding:1rem 1.25rem;flex:1}
+/* Правка #3 (17.07, Claude) — предыдущий заход (round «калибровка размера
+   иконок») остановился на 105px/11 карточек, допуская что после увеличения
+   станет 10-11. Пользователь попросил ещё уже — 9 в ряд. Измерено не на
+   глаз и не экстраполяцией — тем же методом что round 2/3 выше
+   (Playwright, синтетическая страница с реальными :root --fluid-panel-w
+   и .picker-box/.picker-grid-wrap правилами, 52 карточки, viewport
+   1440/1920/2560px — панель везде упирается в потолок --fluid-panel-w=
+   1320px, поэтому результат одинаков на всех трёх). MIN=130px → ровно
+   9 карточек по 137px (+23% к прежним 111px), с запасом от границы
+   флипа на 8 (та начинается уже на MIN=137px, вплотную). Брейкпоинты
+   ≤1200/≤768/≤480 в responsive.css не трогал — тот же скоуп-принцип что
+   и в прошлом раунде, запрос про широкий экран. */
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;justify-items:center}
+/* Калибровка (17.07, bor): было 84px MIN → 14 карточек в ряд на типичной
+   ширине панели (~1267px content), карточки ~86px. Пользователь попросил
+   ужать примерно до 12 в ряд и чуть увеличить сами иконки, допуская что
+   после увеличения станет 10-11. Проверил цифрами (Playwright, 52
+   карточки, content ~1267px): 84→14@86px, 95-100→12@101px,
+   105-110→11@111px, 115→10@123px. Выбрал 105px — 11 в ряд, карточки
+   ~111px (+29% к прежнему размеру). Не трогал `.picker-box`/
+   `--fluid-panel-w` отдельно — раз auto-fit+1fr (round 2 фикс) уже
+   заполняет ряд без остатка, поднятого MIN само по себе одновременно и
+   уменьшает число колонок, и увеличивает карточки на той же ширине
+   панели — второй рычаг (сама ширина окна) не понадобился. Брейкпоинты
+   ≤768/≤480 в responsive.css не трогал — просьба была про широкий экран. */
+/* Правка #2 (16.07, bor) — пользователь показал скриншот: между последним
+   столбцом и правым краем модалки — пустая полоса. Причина ровно та,
+   что я нашёл в прошлой заметке ниже, но не додумал до конца: auto-fill
+   резервирует место под "пустые" треки, а не схлопывает их — то, что я
+   проверял как "не растягивает картинки" (верно), оборачивается ровно
+   этой пустой полосой (то, что я не проверил). Раньше был потолок на
+   ТРЕКЕ (minmax(84px,var(--fluid-icon-hero))) — из-за этого трек не
+   дорастал до полной ширины ряда, и остаток превращался в пустоту с
+   правого края. Теперь потолок — на САМОЙ КАРТОЧКЕ (.p-hero max-width
+   ниже), а трек — auto-fit+1fr (пустые треки схлопываются, реальные
+   заполняют весь ряд без остатка). justify-items:center — чтобы
+   карточка не растягивалась на всю (уже возможно широкую) 1fr-колонку,
+   а сидела по центру своей колонки. */
+.p-hero{border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .1s;background:var(--bg3);position:relative;width:100%;max-width:var(--fluid-icon-hero)}
+.p-hero:hover{border-color:var(--border3)}
+.p-hero.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.p-hero.selected::after{content:'✓';position:absolute;top:4px;right:4px;background:var(--accent);color:#000;font-size:var(--fluid-fs-2xs);font-weight:800;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
+.p-hero-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg4)}
+.p-hero-img-ph{width:100%;aspect-ratio:1;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--text3)}
+.p-hero-name{font-size:var(--fluid-fs-2xs);font-weight:600;text-align:center;padding:4px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-footer{padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;flex-shrink:0}
