@@ -1,11 +1,11 @@
-/* @hash f0e32f16 2026-06-14T08:30 */
+/* @hash 897e1953 2026-07-17T20:44 */
 /* ── HERO POOL ── */
 .role-section{margin-bottom:2rem}
 .role-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .role-title{font-size:20px;font-weight:800}
 .role-cnt{font-family:var(--mono);font-size:10px;color:var(--text3)}
 .hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
-.h-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg2);cursor:pointer;transition:all .15s;position:relative}
+.h-card{overflow:hidden;cursor:pointer;transition:all .15s;position:relative}
 .h-card:hover{border-color:var(--border2);transform:translateY(-1px)}
 .h-card.banned{opacity:.3;filter:grayscale(1)}
 .h-card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
@@ -17,6 +17,40 @@
 .map-card-type{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:flex;align-items:center;gap:3px;margin-bottom:5px}
 .h-card-prio{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
 .banned-tag{position:absolute;top:5px;right:5px;font-family:var(--mono);font-size:8px;text-transform:uppercase;background:var(--damage);color:#fff;padding:2px 5px;border-radius:3px}
+
+/* AUDIT-D6 (17.07, css-dedup-check --build-order): этот блок был byte-в-byte
+   продублирован в 3 файлах (features/subroles.css, features/tiers.css,
+   modals/modals.css), хотя единственный реальный потребитель —
+   render-heroes.js (проверено grep по src/js/+src/html/, 0 других мест).
+   Из трёх копий tiers.css/modals.css уже были обновлены на
+   var(--fluid-fs-2xs) для .h-counter-score; subroles.css отстал на старом
+   хардкоде 9px — но т.к. modals.css грузится последним из трёх в
+   build.sh, его версия побеждала в каскаде ВЕЗДЕ, а версия subroles.css
+   никогда фактически не применялась (мёртвый источник, не просто лишний
+   дубль). Перенесено сюда — в файл, реально отвечающий за то, что рисует
+   render-heroes.js, а не туда, где исторически оказалась копия. */
+/* ── HERO SORTING NOTE ── */
+.hero-sort-note{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:14px}
+
+/* ════ HERO CARD COUNTER ICONS ════
+   .h-counter-icon — change width/height to resize
+   .h-counter-score — overlaid score badge
+*/
+/* ── HERO CARD COUNTERS ── */
+.h-counter-list{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.h-counter-icon{position:relative;flex-shrink:0;width:30px;height:30px}
+.h-counter-icon img{width:30px;height:30px;border-radius:5px;object-fit:cover;display:block;background:var(--bg4)}
+.h-counter-icon-ph{width:30px;height:30px;border-radius:5px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text3)}
+.h-counter-score{position:absolute;right:-3px;bottom:-3px;font-family:var(--mono);font-size:var(--fluid-fs-2xs);font-weight:800;background:var(--bg);border:1px solid var(--border2);border-radius:4px;line-height:1;padding:1px 3px}
+/* AUDIT-D6 (17.07, продолжение): .subrole-group/.subrole-lbl — были
+   byte-в-byte дублем в 2 местах (features/tiers.css, draft/bans.css),
+   единственный реальный потребитель — render-heroes.js (grep, 0 других
+   мест ни в tiers.css, ни в bans.css) — тот же паттерн, что и
+   .h-counter-score выше в этом файле. Перенесено сюда, убрано из обоих
+   старых мест. */
+.subrole-group{margin-bottom:1rem}
+.subrole-lbl{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text1);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px}
+
  
 /* ════ TIER LIST ════
    .tier-row / .tier-lbl / .tier-pill / .tier-hero-pill
