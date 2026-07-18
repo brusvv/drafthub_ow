@@ -31,7 +31,7 @@ from pathlib import Path
 # намеренно не анализируем: сравнение их cascade требует полноценного CSS DOM.
 SIMPLE_SELECTOR = re.compile(r'^[.#][\w-]+(?::[\w-]+(?:\([^)]*\))?)?$')
 RULE_RE = re.compile(r'([^{}]+)\{([^{}]*)\}')
-CSS_FILES_RE = re.compile(r'CSS_FILES=\((.*?)\)', re.S)
+CSS_FILES_RE = re.compile(r'CSS_FILES=\((.*?)^\)', re.S | re.M)
 CSS_PATH_RE = re.compile(r'^\s*(css/[\w./-]+\.css)\s*$', re.M)
 
 
