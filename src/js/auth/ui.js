@@ -1,4 +1,4 @@
-// @hash 0dddf533 2026-07-17T20:08
+// @hash 218f5b68 2026-07-18T02:37
 // ════ AUTH — UI ════
 // Рендер форм входа, выбора команды, настроек + админка ролей.
 // Новая схема: roles, role_permissions, permissions, user_roles
@@ -195,7 +195,7 @@ async function _renderMembersTab(el){
             <select class="form-select" style="width:130px;font-size:11px" onchange="setMemberRole('${m.id}',this.value)">
               ${roles.map(r=>`<option value="${r.id}"${r.id===m.role_id?' selected':''}>${r.label}</option>`).join('')}
             </select>
-            <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')" aria-label="Удалить участника ${esc(name)}">✕</button>
+            <button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="removeMember('${m.id}','${m.users?.id}')" aria-label="Удалить участника ${escAttr(name)}">✕</button>
           ` : `<span class="role-tag-admin fs-10">${roleLabel}</span>`}
         </div>`;
       }).join('')}
@@ -288,7 +288,7 @@ async function _renderInvitesTab(el){
             <code style="font-family:var(--mono);font-size:10px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${appPath(`/join/${inv.token}`)}</code>
             <span class="text-3">${inv.roles?.label||''}</span>
             <span class="text-3">${inv.uses}${inv.max_uses?'/'+inv.max_uses:''}</span>
-            <button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+esc(inv.roles.label):''}">✕</button>
+            <button class="btn btn-danger" style="font-size:var(--fluid-fs-2xs);padding:2px 6px" onclick="deleteInvite('${inv.id}')" aria-label="Удалить инвайт${inv.roles?.label?' для роли '+escAttr(inv.roles.label):''}">✕</button>
           </div>`).join('')}
       </div>` : '<div class="empty">Нет активных инвайтов</div>'}`;
 }
