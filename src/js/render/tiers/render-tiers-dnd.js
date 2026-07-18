@@ -1,4 +1,4 @@
-// @hash 6c6ecd15 2026-07-09T11:39
+// @hash 2630a2e4 2026-07-18T02:37
 // ════ RENDER — TIERS: РЯДЫ S/A/B/C/D + DRAG&DROP ════
 // Часть группы render-tiers-*.js (FILESPLIT-1, 03.07) — см. шапку
 // render-tiers.js за общим описанием разбивки.
@@ -82,7 +82,7 @@ function renderTierMaps(){
           const mapType = m?.type ?? _mapCatalogByName[name]?.type;
           const hidden=tierMapTypeFilter!=='all'&&(mapType&&mapType!==tierMapTypeFilter);
           return`<div class="tier-pill${hidden?' tier-pill-hidden':''}" draggable="${_canEditCurrentTier()}"
-            data-tier="${t}" data-type="maps" data-name="${esc(name)}"
+            data-tier="${t}" data-type="maps" data-name="${escAttr(name)}"
             ondragstart="onDragStart(event,'maps','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierMapPreview('${esc(name)}')">
@@ -124,12 +124,12 @@ function renderTierHeroes(){
           const hidden=tierHeroRoleFilter!=='all'&&heroRole&&heroRole!==tierHeroRoleFilter;
           const tipText=heroSubrole?`${name} · ${heroSubrole}`:name;
           return`<div class="tier-hero-pill${hidden?' tier-pill-hidden':''}" style="--card-i:${Math.min(_cardIdx++,12)}" draggable="${_canEditCurrentTier()}"
-            data-tier="${t}" data-type="heroes" data-name="${esc(name)}" data-role="${heroRole||''}"
+            data-tier="${t}" data-type="heroes" data-name="${escAttr(name)}" data-role="${heroRole||''}"
             ondragstart="onDragStart(event,'heroes','${t}',${idx})"
             ondragend="onDragEnd(event)"
             onclick="openTierHeroPreview('${esc(name)}')">
-            ${src?`<img src="${src}" alt="${name}" onerror="this.outerHTML='<div class=tier-hero-pill-ph>${name[0]}</div>'">`:`<div class="tier-hero-pill-ph">${name[0]}</div>`}
-            <div class="tier-hero-pill-tip">${tipText}</div>
+            ${src?`<img src="${src}" alt="${escAttr(name)}" onerror="this.outerHTML='<div class=tier-hero-pill-ph>${escAttr(name[0])}</div>'">`:`<div class="tier-hero-pill-ph">${escAttr(name[0])}</div>`}
+            <div class="tier-hero-pill-tip">${escAttr(tipText)}</div>
           </div>`;
         }).join('')}
       </div>
