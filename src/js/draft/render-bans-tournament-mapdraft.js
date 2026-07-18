@@ -1,4 +1,4 @@
-// @hash 830c940b 2026-07-16T09:06
+// @hash 0d53a931 2026-07-18T02:37
 // ════════════════════════════════════════════════════════════
 // render-bans-tournament-mapdraft.js — турнирный драфт: фаза 2 (драфт карт)
 //
@@ -105,7 +105,7 @@ function _renderTournCurrentStep(step, steps, si) {
            const src = mapImg(n);
            return `<button type="button" class="tourn-map-chip btn-reset" onclick="tournDraftAction('${esc(n)}')">
              ${src ? `<img src="${src}" onerror="this.style.display='none'">` : ''}
-             <span>${n}</span>
+             <span>${escAttr(n)}</span>
            </button>`;
          }).join('')}
        </div>`;
