@@ -1,4 +1,4 @@
-// @hash 61e266b6 2026-07-16T00:41
+// @hash c622b94f 2026-07-18T02:37
 // ════ PICKER — CORE ════
 
 // ════════════════════════════════════════════════════════════
@@ -151,11 +151,11 @@ function renderSelPreview(){
     }
     el.innerHTML=sel.map(name=>{
       const h=heroMap[name]||{};const src=portrait(name);
-      return`<div class="sel-hero-chip ${h.role||''}" title="${esc(name)}">
+      return`<div class="sel-hero-chip ${h.role||''}" title="${escAttr(name)}">
         <button type="button" class="btn-reset" onclick="openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${escAttr(name[0])}</div>`}
         </button>
-        ${name}</div>`;
+        ${escAttr(name)}</div>`;
     }).join('')+`<button type="button" class="btn-reset sel-edit-hint" style="margin-left:auto" onclick="openPicker('${mode}')">✎</button>`;
   });
   renderRolePoolPreviews();
@@ -174,11 +174,11 @@ function renderRolePoolPreviews(){
     }
     el.innerHTML=sel.map(name=>{
       const src=portrait(name);
-      return`<div class="sel-hero-chip ${role}" title="${esc(name)}">
+      return`<div class="sel-hero-chip ${role}" title="${escAttr(name)}">
         <button type="button" class="btn-reset" onclick="openHeroInfoPopup('${esc(name)}')" style="display:flex;cursor:pointer">
-          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${name[0]}</div>`}
+          ${src?`<img src="${src}" onerror="this.style.display='none'" class="icon-sm">`:`<div class="sel-hero-chip-ph">${escAttr(name[0])}</div>`}
         </button>
-        ${name}</div>`;
+        ${escAttr(name)}</div>`;
     }).join('')+`<button type="button" class="btn-reset sel-edit-hint" style="margin-left:auto" onclick="openPicker('playerRole_${role}',5)">✎</button>`;
   });
 }
