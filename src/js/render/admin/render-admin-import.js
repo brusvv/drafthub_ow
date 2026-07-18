@@ -1,4 +1,4 @@
-// @hash 409e0d72 2026-07-12T07:33
+// @hash 49ba1729 2026-07-18T04:03
 // ════ ADMIN IMPORT — CSV импорт данных в Supabase ════
 // Зависимости: session.js (currentTeam, currentUser),
 //              render-admin-ui.js (_loadAdminTeams)
@@ -111,7 +111,7 @@ function _onCsvFileSelected(input) {
       _renderCsvPreview(_csvParsed);
     } catch(err) {
       document.getElementById('adminCsvPreview').innerHTML =
-        `<div class="admin-error">Ошибка парсинга: ${err.message}</div>`;
+        `<div class="admin-error">Ошибка парсинга: ${escAttr(err.message)}</div>`;
     }
   };
   reader.readAsText(file, 'UTF-8');
@@ -152,13 +152,13 @@ function _renderCsvPreview(parsed) {
   const preview = rows.slice(0, 5);
   document.getElementById('adminCsvPreview').innerHTML = `
     <div style="font-size:11px;color:var(--text3);margin-bottom:6px">
-      Найдено строк: <b>${rows.length}</b> · Колонки: ${headers.join(', ')}
+      Найдено строк: <b>${rows.length}</b> · Колонки: ${headers.map(escAttr).join(', ')}
     </div>
     <div style="overflow-x:auto;max-height:160px;overflow-y:auto">
       <table class="admin-table">
-        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <thead><tr>${headers.map(h => `<th>${escAttr(h)}</th>`).join('')}</tr></thead>
         <tbody>${preview.map(r =>
-          `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`
+          `<tr>${headers.map(h => `<td>${escAttr(r[h] ?? '')}</td>`).join('')}</tr>`
         ).join('')}</tbody>
       </table>
     </div>
@@ -189,11 +189,11 @@ async function _submitCsvImport() {
         <div class="admin-log-ok">✓ Импортировано: <b>${imported}</b></div>
         ${skipped  ? `<div class="admin-log-warn">⚠ Пропущено: ${skipped}</div>` : ''}
         ${errors.length ? `<div class="admin-log-err">✗ Ошибок: ${errors.length}<br>
-          <code style="font-size:var(--fluid-fs-2xs)">${errors.slice(0,5).join('<br>')}</code></div>` : ''}
+          <code style="font-size:var(--fluid-fs-2xs)">${errors.slice(0,5).map(escAttr).join('<br>')}</code></div>` : ''}
       </div>`;
     toast(`Импорт завершён: ${imported} строк`, 'ok');
   } catch(e) {
-    log.innerHTML = `<div class="admin-error">Ошибка: ${e.message}</div>`;
+    log.innerHTML = `<div class="admin-error">Ошибка: ${escAttr(e.message)}</div>`;
     toast('Ошибка импорта', 'err');
   } finally {
     btn.disabled = false;
