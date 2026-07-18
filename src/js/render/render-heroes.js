@@ -1,4 +1,4 @@
-// @hash c5b16b62 2026-07-15T02:19
+// @hash c62da222 2026-07-18T02:37
 // ════ HEROES — подклассы новой строкой ════
 function renderHeroes(){
   // Создавать героев можно только в командном режиме (роль/приоритет
@@ -11,7 +11,7 @@ function renderHeroes(){
   }
 
   // POL-2 (JS-часть): счётчик карточек сквозной по всей вьюхе (не сбрасывается
-  // на каждой подгруппе роли/подкласса) — иначе анимация fade-up (base.css)
+  // на каждой подгруппе роли/подкласса) — иначе анимация fade-up (base-utility.css)
   // переигрывала бы с задержки 0 в начале каждой подгруппы, что выглядело бы
   // как повторяющийся "рывок" вместо одной плавной волны сверху вниз.
   // Math.min(...,12) — после 12-й карточки задержка перестаёт расти, иначе
@@ -98,7 +98,7 @@ function _heroScoreChip(name, score, colorFn, size=36){
   const img=src
     ?`<img src="${src}" style="width:${size}px;height:${size}px;border-radius:${r}px;object-fit:cover;border:2px solid ${color};display:block" onerror="this.style.display='none'">`
     :`<div style="width:${size}px;height:${size}px;border-radius:${r}px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.3)}px;font-weight:800;color:var(--text3);border:2px solid ${color}">${name[0]}</div>`;
-  return`<button type="button" class="btn-reset" title="${esc(name)}" style="position:relative;cursor:pointer;flex-shrink:0"
+  return`<button type="button" class="btn-reset" title="${escAttr(name)}" style="position:relative;cursor:pointer;flex-shrink:0"
               onclick="event.stopPropagation();closeTierPreview();openHeroInfoPopup('${esc(name)}')">
     ${img}
     <div style="position:absolute;bottom:-3px;right:-3px;font-family:var(--mono);font-size:8px;font-weight:700;background:${color};color:#000;border-radius:3px;padding:0 3px;line-height:1.5">${score}</div>
