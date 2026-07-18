@@ -1,4 +1,4 @@
-// @hash 3388ed73 2026-07-16T01:20
+// @hash 4b80a0f5 2026-07-18T02:37
 // ════ RENDER — DRAFT COMP: STATE + ОРКЕСТРАТОР + ФАЗА 1 (ПОДГОТОВКА) ════
 // Соревновательный режим: выбор героев → баны → рекомендации пика.
 // FILESPLIT (16.07, попутно с AUDIT-A3 — файл перевалил за 260 строк):
@@ -47,7 +47,7 @@ function _renderDraftPick(){
         <select class="form-select fs-13" id="draftMapSel" onchange="draftState.selectedMap=this.value;renderDraftComp()">
           <option value="">— не выбрана —</option>
           ${maps.sort((a,b)=>a.name.localeCompare(b.name)).map(m=>
-            `<option value="${esc(m.name)}"${draftState.selectedMap===m.name?' selected':''}>${m.name} (${m.type})</option>`
+            `<option value="${escAttr(m.name)}"${draftState.selectedMap===m.name?' selected':''}>${escAttr(m.name)} (${escAttr(m.type)})</option>`
           ).join('')}
         </select>
       </div>
