@@ -1,4 +1,4 @@
-/* @hash 5fc94424 2026-07-17T20:44 */
+/* @hash 8e8226d0 2026-07-19T03:57 */
 /* ── PLAYERS ── */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .player-card{overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
@@ -94,7 +94,6 @@
 .roster-role-selected {
   display:flex; align-items:center; gap:3px; cursor:pointer;
   padding:3px 7px; border-radius:6px;
-  background:var(--bg4); border:1px solid var(--border2);
   transition:border-color .15s;
 }
 .roster-role-selected:hover { border-color:var(--border3); }
@@ -195,7 +194,6 @@
 .roster-picker-item  {
   display:flex; align-items:center; gap:10px;
   padding:9px 12px; border-radius:8px;
-  background:var(--bg3); border:1px solid var(--border);
   cursor:pointer; transition:border-color .15s;
 }
 .roster-picker-item:hover { border-color:var(--border2); }
@@ -225,7 +223,7 @@
 
 /* Rank badges */
 .pd-ranks         { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-.pd-rank-badge    { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:8px 12px; text-align:center; }
+.pd-rank-badge    { border-radius:8px; padding:8px 12px; text-align:center; }
 .pd-rank-role     { font-family:var(--mono); font-size:8px; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); margin-bottom:3px; }
 .pd-rank-val      { font-family:var(--mono); font-size:13px; font-weight:700; }
 
@@ -241,7 +239,7 @@
 
 /* ── Ban rows ────────────────────────────────────────────── */
 .pd-list           { display:flex; flex-direction:column; gap:4px; }
-.pd-ban-row        { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; background:var(--bg3); border:1px solid var(--border); }
+.pd-ban-row        { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; }
 .pd-ban-row-high   { border-color:rgba(224,85,85,.3); }
 .pd-ban-av         { width:36px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0; }
 .pd-ban-av-ph      { background:var(--bg4); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; }
