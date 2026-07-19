@@ -1,4 +1,4 @@
-/* @hash 0a8f156e 2026-07-17T21:30 */
+/* @hash 90aa5871 2026-07-19T03:57 */
 /* AUDIT-D6 (17.07) — семантические surface-токены. Восстановлено из
    транскрипта другого агента (файл сам никуда не долетел — та же
    систематическая проблема, что уже дважды всплывала 16-17.07, см.
@@ -37,4 +37,53 @@
    независимый от --radius фиксированный радиус, не унифицировать силой. */
 .modal,.picker-box{
   background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Group B (18.07) — то, что в комментарии выше названо "разбросом radius
+   8-20px" и сознательно не трогалось. Полный Python-скан по всему src/css/
+   (группировка по паре bg/border переменных, не на глаз) показал: во ВСЕХ
+   этих кластерах background+border ИДЕНТИЧНЫ дословно, расходится только
+   border-radius. Радиус — реальная, наблюдаемая разница между компонентами
+   (тост 8px vs previewbox 16px и т.д.), решение объединять их в один
+   визуальный класс уже отклонено выше — но саму СОВПАДАЮЩУЮ часть
+   (background+border) можно свести в общий селектор без единого пикселя
+   визуальной разницы, тем же приёмом что surface-panel/surface-popover
+   выше, просто без border-radius в списке общих свойств. border-radius
+   остаётся на каждом отдельном селекторе в своём файле — сознательно НЕ
+   переименовано в `.surface-card`/`.surface-chip` (аспирационные имена из
+   исходной формулировки задачи) — группировка здесь чисто механическая,
+   по значению CSS-переменных, а не по смысловой роли компонента, часть
+   которых («тост», «попап меню», «карточка героя в сравнении») друг на
+   друга визуально/семантически не похожи достаточно чтобы одно имя не
+   вводило в заблуждение. Семантическое имя — отдельное решение, после
+   того как кто-то отсмотрит компоненты вживую, не отсюда. */
+
+/* bg2 + border2, radius остаётся на каждом (7/9/14-уже-выше/16/8px) */
+.mode-popup,.tourn-format-btn,.tier-preview-box,.toast{
+  background:var(--bg2);border:1px solid var(--border2);
+}
+
+/* bg2 + border (не border2), radius остаётся на каждом (14/20/7/8/8px) */
+.auth-card,.user-chip,.tourn-final-ban-row,.hero-sort-note,.tier-pill{
+  background:var(--bg2);border:1px solid var(--border);
+}
+
+/* bg3 + border, radius остаётся на каждом (7-10px + одна pill-форма 999px) */
+.member-row,.role-card,.ban-hero-selector,.ban-rec-card,.tourn-format-block,
+.comp-card,.roster-picker-item,.pd-rank-badge,.pd-ban-row,
+.tier-preview-meta span,.tier-preview-stats>div,.tier-preview-notes,
+.sel-heroes,.p-hero,.map-str-chip{
+  background:var(--bg3);border:1px solid var(--border);
+}
+
+/* bg3 + border2, radius остаётся на каждом (6-9px) */
+.oauth-btn,.config-input,.tourn-map-chip,.counter-chip,.comp-rec-card,
+.form-input,.form-select,.form-textarea,.comp-slot{
+  background:var(--bg3);border:1px solid var(--border2);
+}
+
+/* bg4 + border2, radius остаётся на каждом (5/6px) */
+.ban-draft-chip,.roster-role-selected{
+  background:var(--bg4);border:1px solid var(--border2);
 }
