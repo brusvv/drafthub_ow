@@ -1,4 +1,4 @@
-// @hash 4deb3124 2026-07-16T10:36
+// @hash 90f31616 2026-07-18T02:37
 // ════ TIER SHARE PANEL — для личного тир-листа ════
 // Вынесено из render-tier-share.js (FILESPLIT, 16.07 — было 410 строк,
 // граница спланирована ещё 12.07 в watch-list AGENT_TASKS.md: "Share panel /
@@ -72,14 +72,14 @@ async function _buildTierSharePanel(){
           // Фаза 6: показываем имя сета к которому привязана ссылка
           const linkSet  = tierSets.find(s => s.id === l.tier_set_id);
           const setChip  = linkSet
-            ? `<span class="tier-share-set-chip">📋 ${linkSet.name}</span>`
+            ? `<span class="tier-share-set-chip">📋 ${escAttr(linkSet.name)}</span>`
             : '';
-          const rowLabel = esc(l.label || _shareEntityLabel(l.entity_type));
+          const rowLabel = escAttr(l.label || _shareEntityLabel(l.entity_type));
           return `
           <div class="member-row tier-share-row">
             <div class="tier-share-row-main">
               <div class="tier-share-row-title">
-                <span class="tier-share-row-label">${l.label || _shareEntityLabel(l.entity_type)}</span>
+                <span class="tier-share-row-label">${escAttr(l.label || _shareEntityLabel(l.entity_type))}</span>
                 ${setChip}
               </div>
               <code class="tier-share-url">
