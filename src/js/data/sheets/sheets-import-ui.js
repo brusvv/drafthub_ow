@@ -1,4 +1,4 @@
-// @hash e2fe7487 2026-07-12T05:01
+// @hash 0c2d6b1c 2026-07-18T02:37
 // ════ SHEETS IMPORT UI — чеклист + scope-селектор + прогресс/отчёт ════
 // Тело под-таба «Импорт» внутри общей панели Google Sheets
 // (shell — sheets-settings-panel.js, SETTINGS-1; общая шапка/Sheet ID
@@ -79,7 +79,7 @@ function _renderImportSection(){
       }</div>`).join('')}
       ${_importLastReport.skipped.map(r => `<div class="text-3">– ${r.label}: пусто, пропущено</div>`).join('')}
       ${_importLastReport.partial.map(r => `<div style="color:var(--accent)">⚠ ${r.label}: не найдено в каталоге — ${r.unresolved.map(esc).join(', ')}</div>`).join('')}
-      ${_importLastReport.errors.map(r => `<div style="color:var(--damage)">✗ ${r.label}: ${esc(r.message)}</div>`).join('')}
+      ${_importLastReport.errors.map(r => `<div style="color:var(--damage)">✗ ${escAttr(r.label)}: ${escAttr(r.message)}</div>`).join('')}
     </div>` : '';
 
   return `
