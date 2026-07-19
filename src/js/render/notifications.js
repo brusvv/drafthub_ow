@@ -1,4 +1,4 @@
-// @hash fbd15d9a 2026-07-15T00:21
+// @hash 454f7b12 2026-07-19T00:26
 // ════════════════════════════════════════════════════════════
 // notifications.js — уведомления и обработка ошибок
 // Выделено из render-utils.js (watch-list, AGENT_TASKS.md).
@@ -24,10 +24,14 @@ function toast(msg, type = 'ok') {
   toastT = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// Ошибка внутри контейнера (заменяет его содержимое)
+// Ошибка внутри контейнера (заменяет его содержимое). msg экранируется —
+// это функция для отображения ТЕКСТА ошибки, не для доверенного HTML
+// (внешний аудит, 18.07: раньше без экранирования вообще — сейчас
+// единственный видимый мне call site передаёт статичную строку, но
+// функция не должна полагаться на то, что так будет всегда).
 function showError(id, msg) {
   const el = document.getElementById(id);
-  if (el) el.innerHTML = `<div class="error-state">⚠ ${msg}</div>`;
+  if (el) el.innerHTML = `<div class="error-state">⚠ ${escAttr(msg)}</div>`;
 }
 
 // Единый обработчик ошибок Supabase/JS.
