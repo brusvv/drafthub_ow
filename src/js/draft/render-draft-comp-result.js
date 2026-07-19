@@ -1,4 +1,4 @@
-// @hash 06e49f5b 2026-07-16T00:44
+// @hash 81d85953 2026-07-19T10:03
 // ════ RENDER — DRAFT COMP: ФАЗА 3 (РЕКОМЕНДАЦИИ) ════
 // Вынесено из render-draft-comp.js (16.07, AUDIT-A3-попутный split — файл
 // перевалил за 260 строк). Граница по фазам, не механически — см.
@@ -45,7 +45,7 @@ function _renderDraftResult(){
       ${['Tank','Damage','Support'].map(role=>
         byRole[role]&&byRole[role].length
           ?`<div>
-              <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;display:flex;align-items:center;gap:3px">${roleIcon(role,12)} ${role}</div>
+              <div class="meta-label" style="letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;display:flex;align-items:center;gap:3px">${roleIcon(role,12)} ${role}</div>
               ${byRole[role].map(x=>{const src=portrait(x.name);const h=heroMap[x.name]||{};
                 return`<div class="ban-rec-card" style="margin-bottom:5px">
                   <div class="ban-rec-portrait">${src?`<img src="${src}" onerror="this.style.display='none'">`:`<div class="ban-rec-ph">${x.name[0]}</div>`}</div>
