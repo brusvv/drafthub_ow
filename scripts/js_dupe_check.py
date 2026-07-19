@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Проверяет дубли функций в src/js/ с учётом порядка build.sh.
 
-Два независимых отчёта:
+Три независимых отчёта:
 
 1. КОЛЛИЗИИ ИМЁН (критично). build.sh склеивает все файлы в ОДИН <script>
    без модулей/import — значит имя верхнеуровневой функции должно быть
@@ -10,7 +10,10 @@
    исключение, не warning — типичный источник "почему мой код не
    вызывается" багов). Это ровно то, что до сих пор проверялось руками
    через `grep -rh 'function name(' | sort | uniq -d` перед каждой сдачей
-   — здесь то же самое, но с указанием файлов и строк.
+   — здесь то же самое, но с указанием файлов и строк. Ловит и
+   `function name(){}`, и `window.name = function(){}`/`window.name = ...`
+   — второй паттерн раньше не проверялся вообще (см. AUD-7, 18.07): те же
+   молчаливые коллизии, просто другой синтаксис объявления.
 
 2. ПОХОЖИЕ ТЕЛА ФУНКЦИЙ (эвристика, не баг сам по себе). Структурно
    похожие функции под РАЗНЫМИ именами — кандидаты на вынос в общий
@@ -19,6 +22,14 @@
    нормализации) можно консолидировать почти всегда безопасно; NEAR-дубли
    (порог `--similarity`, по умолчанию 0.85) — только сигнал "посмотри
    глазами", часто окажется что различия осмысленные.
+
+3. ИНВЕНТАРЬ СБОРКИ (критично). Файл может существовать в src/js/, но не
+   быть подключён в JS_MODULES build.sh (весь код в нём мёртв в
+   dist/index.html, хотя выглядит как рабочий) — и наоборот, путь в
+   JS_MODULES может указывать на файл, которого больше нет. Оба случая
+   молчаливы: сборка не падает ни в одном (bash просто не находит файл
+   или просто не включает лишний), узнаётся только руками. См. AUD-7
+   (18.07) — тот же класс "тихого расхождения", что и коллизии имён выше.
 
 Как и css_dupe_check.py: простой regex + подсчёт скобок, не полноценный
 JS-парсер. Ловит `function name(...) {...}` и `async function name(...) {...}`
@@ -43,6 +54,14 @@ from pathlib import Path
 FUNC_RE = re.compile(
     r'(?P<async>async\s+)?function\s+(?P<name>[A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{',
 )
+# window.name = ... — второй способ объявить то, что по факту становится
+# глобальным именем при сборке в один script. Не пытаемся понять ЧТО справа
+# от "=" (функция/значение/геттер через Object.defineProperty — тот
+# используется отдельно, сюда не попадает по синтаксису) — само по себе имя
+# в left-hand side уже достаточно, чтобы коллизия имела смысл: вторая
+# window.X = ... тем же именем молча перетирает первую независимо от того,
+# что справа.
+WINDOW_ASSIGN_RE = re.compile(r'^\s*window\.([A-Za-z_$][\w$]*)\s*=(?!=)')
 JS_FILES_RE = re.compile(r'JS_MODULES=\((.*?)^\)', re.S | re.M)
 JS_PATH_RE = re.compile(r'^\s*(js/[\w./-]+\.js)\s*$', re.M)
 
@@ -161,22 +180,49 @@ def extract_functions(path: str) -> list[FuncDecl]:
     return out
 
 
-def report_name_collisions(funcs: list[FuncDecl]) -> int:
+def extract_window_assignments(path: str) -> list[tuple[str, str, int]]:
+    """Возвращает (name, path, line) для верхнеуровневых window.X = ...
+
+    Как и FUNC_RE выше — не полноценный парсер, только top-level (depth==0
+    на строке присвоения), той же логикой отслеживания глубины скобок что
+    и extract_functions(), но по строкам (сама конструкция однострочная в
+    этом проекте — Object.defineProperties(window,{...}) блоки НЕ матчатся
+    этим regex'ом намеренно, у них другой синтаксис, не `window.X =`).
+    """
+    text = Path(path).read_text(encoding='utf-8')
+    stripped = BLOCK_COMMENT_RE.sub(lambda m: '\n' * m.group().count('\n'), text)
+    stripped = LINE_COMMENT_RE.sub('', stripped)
+
+    out = []
+    depth = 0
+    for line_no, line in enumerate(stripped.splitlines(), 1):
+        match = WINDOW_ASSIGN_RE.match(line)
+        if depth == 0 and match:
+            out.append((match.group(1), path, line_no))
+        depth += line.count('{') - line.count('}')
+        depth = max(depth, 0)
+    return out
+
+
+def report_name_collisions(funcs: list[FuncDecl], window_assigns: list[tuple[str, str, int]]) -> int:
     by_name = defaultdict(list)
     for f in funcs:
         if f.top_level:
-            by_name[f.name].append(f)
+            by_name[f.name].append(('function', f.path, f.line))
+    for name, path, line in window_assigns:
+        by_name[name].append(('window.assign', path, line))
+
     collisions = {name: items for name, items in by_name.items() if len(items) > 1}
     if not collisions:
-        print('✓ Коллизий имён верхнеуровневых функций не найдено.\n')
+        print('✓ Коллизий имён верхнеуровневых функций/window-присвоений не найдено.\n')
         return 0
-    print(f'⚠️  {len(collisions)} ИМЁН ФУНКЦИЙ ОБЪЯВЛЕНЫ ПОВТОРНО (build order — последнее побеждает):\n')
+    print(f'⚠️  {len(collisions)} ИМЁН ОБЪЯВЛЕНЫ ПОВТОРНО (build order — последнее побеждает):\n')
     for name, items in collisions.items():
-        items_sorted = items  # уже в build order, т.к. funcs собирались по paths в этом порядке
-        winner = items_sorted[-1]
-        for item in items_sorted[:-1]:
-            print(f'  ⚠️  {name}() {item.path}:{item.line} — МОЛЧА ПЕРЕЗАТЁРТА версией из '
-                  f'{winner.path}:{winner.line}')
+        # items уже в build order, т.к. funcs/window_assigns собирались по paths в этом порядке
+        winner = items[-1]
+        for kind, path, line in items[:-1]:
+            print(f'  ⚠️  {name} [{kind}] {path}:{line} — МОЛЧА ПЕРЕЗАТЁРТА версией из '
+                  f'[{winner[0]}] {winner[1]}:{winner[2]}')
     print()
     return len(collisions)
 
@@ -230,16 +276,45 @@ def report_similar_bodies(funcs: list[FuncDecl], threshold: float, min_lines: in
     return len(exact_dupes)
 
 
+def report_build_inventory(paths: list[str]) -> int:
+    """Файлы в src/js/ отсутствующие в JS_MODULES (мёртвый код — не попадает
+    в dist/index.html вообще) и пути в JS_MODULES без файла на диске
+    (сборка молча пропускает — bash не падает на отсутствующем cat)."""
+    source_files = sorted(str(p) for p in Path('src/js').rglob('*.js'))
+    build_files = set(paths)
+    missing_from_build = sorted(set(source_files) - build_files)
+    missing_from_source = sorted(p for p in build_files if not Path(p).is_file())
+
+    if not missing_from_build and not missing_from_source:
+        print('✓ Инвентарь сборки в порядке — все src/js/*.js подключены, лишних путей нет.\n')
+        return 0
+
+    print('⚠️  Расхождение инвентаря сборки:\n')
+    if missing_from_build:
+        print('  Есть на диске, НЕТ в JS_MODULES (мёртвый код, не в dist/index.html):')
+        for p in missing_from_build:
+            print(f'    {p}')
+    if missing_from_source:
+        print('  Путь в JS_MODULES, файла на диске НЕТ (сборка молча пропускает):')
+        for p in missing_from_source:
+            print(f'    {p}')
+    print()
+    return len(missing_from_build) + len(missing_from_source)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--similarity', type=float, default=0.85,
                          help='порог похожести тел для отчёта 2, 0..1 (1.0 = только точные дубли, отключает fuzzy-сравнение)')
     parser.add_argument('--min-lines', type=int, default=4,
                          help='пропускать функции короче этого числа строк в отчёте 2 (шум от геттеров/заглушек)')
+    parser.add_argument('--skip-inventory', action='store_true',
+                         help='пропустить отчёт 3 (инвентарь сборки) — полезно при явном списке файлов аргументами')
     parser.add_argument('paths', nargs='*', help='JS-файлы или glob-шаблоны в build-order; по умолчанию — JS_MODULES из build.sh')
     args = parser.parse_args()
 
-    if args.paths:
+    explicit_paths = bool(args.paths)
+    if explicit_paths:
         paths = [p for pattern in args.paths for p in sorted(glob.glob(pattern, recursive=True))]
         if not paths:
             parser.error('Переданные шаблоны не нашли JS-файлов')
@@ -247,17 +322,25 @@ def main() -> None:
         paths = build_order(Path('build.sh'))
 
     missing = [p for p in paths if not Path(p).is_file()]
-    if missing:
+    if missing and not explicit_paths:
+        # Отчёт 3 сам объяснит что именно отсутствует — не падаем здесь
+        pass
+    elif missing:
         parser.error('JS-файлы не найдены: ' + ', '.join(missing))
 
-    funcs = []
-    for p in paths:
-        funcs.extend(extract_functions(p))
+    existing_paths = [p for p in paths if Path(p).is_file()]
 
-    print(f'Просканировано файлов: {len(paths)}, функций: {len(funcs)}\n')
-    n1 = report_name_collisions(funcs)
+    funcs = []
+    window_assigns = []
+    for p in existing_paths:
+        funcs.extend(extract_functions(p))
+        window_assigns.extend(extract_window_assignments(p))
+
+    print(f'Просканировано файлов: {len(existing_paths)}, функций: {len(funcs)}, window-присвоений: {len(window_assigns)}\n')
+    n1 = report_name_collisions(funcs, window_assigns)
     n2 = report_similar_bodies(funcs, args.similarity, args.min_lines)
-    raise SystemExit(1 if (n1 or n2) else 0)
+    n3 = 0 if (explicit_paths or args.skip_inventory) else report_build_inventory(paths)
+    raise SystemExit(1 if (n1 or n2 or n3) else 0)
 
 
 if __name__ == '__main__':
