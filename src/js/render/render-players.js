@@ -1,4 +1,4 @@
-// @hash a02da840 2026-07-15T02:19
+// @hash 2f867e64 2026-07-18T18:01
 // ════════════════════════════════════════════════════════════
 // render-players.js — вкладка «Игроки»
 //
@@ -79,10 +79,10 @@ function renderPlayers(){
         : `<div class="mini-av-ph">${n[0]}</div>`;
     }).join('');
 
-    return `<button type="button" class="player-card btn-reset" style="--card-i:${Math.min(idx,12)}" data-name="${esc(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
+    return `<button type="button" class="player-card btn-reset" style="--card-i:${Math.min(idx,12)}" data-name="${escAttr(p.name)}" onclick="showPlayerDetail(this.dataset.name)">
       <div class="player-card-top">
         <div class="player-av">${p.name[0].toUpperCase()}</div>
-        <div><div class="player-name">${p.name}</div><div class="player-btag">${p.btag||'—'}</div></div>
+        <div><div class="player-name">${escAttr(p.name)}</div><div class="player-btag">${escAttr(p.btag)||'—'}</div></div>
         ${roleBlock}
       </div>
       <div class="player-card-heroes">
@@ -136,7 +136,7 @@ function _buildDetailHtml(p){
           <div class="d-card-title pd-avoid-title">⚠ Сложные карты</div>
           <div class="pd-list">${_avoidSection(recs.avoidMaps)}</div>` : ''}
       </div>
-      ${p.notes ? `<div class="d-card full"><div class="d-card-title">Заметки</div><div class="notes-text">${p.notes}</div></div>` : ''}
+      ${p.notes ? `<div class="d-card full"><div class="d-card-title">Заметки</div><div class="notes-text">${escAttr(p.notes)}</div></div>` : ''}
     </div>
     <button class="back-btn" onclick="backToPlayers()" style="margin-top:10px">← Назад к игрокам</button>`;
 }
@@ -171,8 +171,8 @@ function _detailHeader(p){
       <div class="pd-header-left">
         <div class="pd-avatar">${p.name[0].toUpperCase()}</div>
         <div>
-          <div class="pd-name">${p.name}</div>
-          <div class="pd-btag">${p.btag||'Battle.net tag не указан'}</div>
+          <div class="pd-name">${escAttr(p.name)}</div>
+          <div class="pd-btag">${escAttr(p.btag)||'Battle.net tag не указан'}</div>
           <div class="pd-role-tags">
             ${p.mainRole ? `<span class="role-tag ${p.mainRole}">Основная: ${p.mainRole}</span>` : ''}
             ${p.offRole  ? `<span class="role-tag ${p.offRole}">Офф: ${p.offRole}</span>`  : ''}
@@ -181,7 +181,7 @@ function _detailHeader(p){
         <div class="pd-role-icon">${roleBlock}</div>
       </div>
       <button class="btn"
-              data-name="${esc(p.name)}"
+              data-name="${escAttr(p.name)}"
               onclick="openPlayerModal(players.find(x=>x.name===this.dataset.name))">
         ✎ Редактировать
       </button>
