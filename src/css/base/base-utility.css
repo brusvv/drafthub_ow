@@ -71,3 +71,19 @@
 .h-card, .map-card, .player-card {
   box-shadow: var(--shadow-card);
 }
+
+/* .meta-label (19.07) — по предложению пользователя сократить inline-стили
+   в main-app.html компонентными классами. Проверил перед тем как делать:
+   этот конкретный паттерн (мелкий моно-текст капсом — роль-заголовки,
+   счётчики, статус-бейджи) повторялся как инлайн-стиль 11 раз в 8 разных
+   файлах (render-maps.js/render-tiers.js×2/render-draft-comp-result.js/
+   render-bans-competitive.js/render-bans-competitive-mappopup.js/
+   render-draft-comp-bans.js/render-bans-tournament-herobans.js/
+   main-app.html×3) — не только в main-app.html, весь проект. В общий
+   класс вынесены только 3 СОВПАДАЮЩИЕ ВЕЗДЕ свойства (font-family/
+   font-size/text-transform); letter-spacing/color/margin разные у каждого
+   использования (.06em/.08em/.12em вперемешку, цвет то var(--text3), то
+   динамический var(--rc)) — остаются инлайн-модификаторами рядом с
+   классом, тем же приёмом что уже применялся в Group B (D6): выносится
+   только реально идентичное, остальное — на месте. */
+.meta-label{font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase}
