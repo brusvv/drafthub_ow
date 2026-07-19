@@ -1,4 +1,4 @@
-// @hash 96b9bd05 2026-07-13T12:30
+// @hash 8ea1a637 2026-07-19T03:31
 // ════ AUTH — SESSION ════
 // Управляет сессией пользователя, активной командой и её правами.
 // Новая схема: user_roles → roles → role_permissions → permissions
@@ -143,6 +143,21 @@ async function renderPublicMode() {
 
   // Загружаем только то что доступно anon через RLS
   try {
+    // BUG-21-2 (19.07): _loadCatalogs() здесь раньше не вызывался —
+    // _loadTierEntries() (внутри loadGlobalTiers) резолвит hero_id/map_id
+    // в имя через _heroCatalogById/_mapCatalogById, которые заполняет
+    // ТОЛЬКО _loadCatalogs(). Для анонима эти объекты оставались {} —
+    // резолв имени всегда давал undefined, запись тихо не попадала в
+    // mapsObj/heroesObj (см. _loadTierEntries: `if(name && ...)`).
+    // Тир-лист выглядел пустым (только буквы S/A/B/C/D, без пилюль) ДАЖЕ
+    // если tier_entries реально заполнены — независимо от того, была ли
+    // ещё и сама строка tier_lists(scope='global') не создана (см.
+    // предыдущую запись BUG-21 про lazy-create/is_superadmin — тот фикс
+    // был верным, но решал только половину: "есть ли записи", не "видны
+    // ли они"). RLS/grants на hero_catalog/map_catalog для anon уже были
+    // открыты (`FOR SELECT USING (true)` + `GRANT SELECT ... TO anon`,
+    // 008_catalog_rls.sql) — не барьер доступа, просто недостающий вызов.
+    await _loadCatalogs();
     await Promise.all([loadPortraits(), loadMapScreenshots(), loadGlobalTiers()]);
   } catch(e) {
     console.warn('renderPublicMode: failed to load global data', e.message);
