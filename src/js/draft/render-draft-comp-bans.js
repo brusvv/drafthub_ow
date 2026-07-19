@@ -1,4 +1,4 @@
-// @hash 483df7cd 2026-07-16T00:44
+// @hash 91e57cb4 2026-07-19T10:03
 // ════ RENDER — DRAFT COMP: ФАЗА 2 (БАНЫ) ════
 // Вынесено из render-draft-comp.js (16.07, AUDIT-A3-попутный split — файл
 // перевалил за 260 строк). Граница по фазам, не механически: state
@@ -30,7 +30,7 @@ function _renderDraftBans(){
 function _renderBanSlots(key,label,color){
   const bans=draftState[key];
   return`<div>
-    <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;letter-spacing:.08em;color:${color};margin-bottom:6px">${label}</div>
+    <div class="meta-label" style="letter-spacing:.08em;color:${color};margin-bottom:6px">${label}</div>
     ${[0,1].map(i=>{
       const name=bans[i];
       const src=name?portrait(name):null;
