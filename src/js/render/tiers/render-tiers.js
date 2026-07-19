@@ -1,4 +1,4 @@
-// @hash 126ecdbc 2026-07-16T00:41
+// @hash 858c1f13 2026-07-19T10:03
 // ════ RENDER — TIERS: ОРКЕСТРАТОР + РЕЖИМ-СВИТЧЕР + УПРАВЛЕНИЕ СЕТАМИ ════
 // FILESPLIT-1 (03.07) — было 467 строк одним файлом. Разбито на 3:
 //   render-tiers.js         (этот файл) — точка входа renderTiers(),
@@ -68,7 +68,7 @@ function _renderTierModeSwitcher(){
   if(isPublicMode()) {
     return `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
-        <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
+        <span class="meta-label" style="
           letter-spacing:.1em;color:var(--text3)">🌐 Глобальный тир-лист</span>
         <span style="margin-left:auto">
           <button class="btn btn-sm" onclick="renderAuthUI('login')">Войти</button>
@@ -83,7 +83,7 @@ function _renderTierModeSwitcher(){
   ];
   return `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
+      <span class="meta-label" style="
         letter-spacing:.1em;color:var(--text3)">Тир-лист:</span>
       ${modes.map(m => `
         <button class="f-btn${tierViewMode===m.key?' active':''} fs-11"
