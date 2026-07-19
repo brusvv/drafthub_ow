@@ -1,4 +1,4 @@
-// @hash aec0646e 2026-07-16T09:06
+// @hash d298a10f 2026-07-19T10:03
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive-mappopup.js — попап выбора карты матча
 // (соревновательный режим банов)
@@ -45,7 +45,7 @@ function openCompMapPopup() {
     }).join('');
 
     return `<div style="margin-bottom:14px">
-      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
+      <div class="meta-label" style="
                   letter-spacing:.08em;color:var(--text3);margin-bottom:6px;
                   display:flex;align-items:center;gap:4px">
         ${mapTypeIcon(t, 12)} ${t}
