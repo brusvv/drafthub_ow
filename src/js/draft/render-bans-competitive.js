@@ -1,4 +1,4 @@
-// @hash 3f742840 2026-07-16T11:07
+// @hash 1af080ec 2026-07-19T10:03
 // ════════════════════════════════════════════════════════════
 // render-bans-competitive.js — соревновательный режим банов
 //
@@ -133,7 +133,7 @@ function _renderCompBanGrid() {
     }).join('');
 
     return `<div>
-      <div style="font-family:var(--mono);font-size:var(--fluid-fs-2xs);text-transform:uppercase;
+      <div class="meta-label" style="
                   letter-spacing:.08em;color:${rc[role]};margin-bottom:6px;
                   display:flex;align-items:center;gap:4px">
         ${roleIcon(role, 11)} ${role}
