@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Draft Hub V2 — экран Карт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0D;--surface-1:#141417;--surface-2:#1B1B1F;--surface-3:#232326;--surface-4:#2A2A2E;
+  --border-1:#2F2F36;--border-2:#3A3A42;--text-1:#F5F5F7;--text-2:#A1A1AA;--text-3:#71717A;
+  --success:#22C55E;--warning:#FBBF24;--danger:#EF4444;--info:#3B82F6;--accent:#FF8A00;--accent-hover:#FFA733;
+  --role-tank:#4A9EE0;--role-damage:#E05555;--role-support:#2BBD8E;
+  --tier-s:#F0A030;--tier-a:#8BC34A;--tier-b:#5B9BD5;--tier-c:#888888;--tier-d:#A04030;
+  --shadow-popover:0 8px 24px rgba(0,0,0,.4);--shadow-modal:0 20px 50px rgba(0,0,0,.55);
+  --duration-fast:100ms;--duration-base:150ms;--duration-slow:250ms;--ease-out:cubic-bezier(.16,1,.3,1);
+  --font-sans:'Inter',sans-serif;--font-mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;color:var(--text-1);font-family:var(--font-sans);padding:32px;display:flex;flex-direction:column;align-items:center;gap:16px}
+button,input,select{font:inherit}
+.demo-toolbar{display:flex;gap:8px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:10px;padding:4px}
+.demo-toolbar button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);background:transparent;border:0;border-radius:7px;padding:8px 14px;cursor:pointer;transition:background var(--duration-fast),color var(--duration-fast)}
+.demo-toolbar button:hover{color:var(--text-2)}
+.demo-toolbar button.active{background:var(--surface-3);color:var(--text-1)}
+.demo-toolbar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.frame{width:1180px;height:760px;background:var(--bg);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.identity-bar{height:56px;flex-shrink:0;background:var(--surface-1);border-bottom:1px solid var(--border-1);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.identity-left,.identity-right{display:flex;align-items:center;gap:10px}.wordmark{font-weight:700;font-size:14px;letter-spacing:-.01em}.wordmark span{color:var(--accent)}
+.scope-switch{display:flex;gap:2px;background:var(--surface-2);border-radius:7px;padding:2px}.scope-switch button{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:5px 10px;border-radius:5px;border:0;background:transparent;color:var(--text-3);cursor:pointer}.scope-switch button.active{background:var(--surface-3);color:var(--text-1)}
+.team-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px}.avatar{width:26px;height:26px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--text-2)}
+.body-row{flex:1;display:flex;min-height:0}.rail{width:220px;flex-shrink:0;background:var(--surface-1);border-right:1px solid var(--border-1);padding:12px 8px;display:flex;flex-direction:column;gap:2px}.rail-item{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:8px;border-left:2px solid transparent;color:var(--text-2);cursor:pointer}.rail-item:hover{background:var(--surface-2);color:var(--text-1)}.rail-item.active{background:var(--surface-3);border-left-color:var(--accent);color:var(--text-1)}.rail-item.active .label{font-weight:600}.rail-item .icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center}.rail-item.active .icon{color:var(--accent)}.rail-item:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}.rail-divider{height:1px;background:var(--border-1);margin:12px}.rail-secondary .rail-item{color:var(--text-3)}
+.workspace{flex:1;min-height:0;overflow-y:auto;padding:24px 28px}.page-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:16px}.page-title{font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-.01em}.page-meta{font-size:13px;color:var(--text-2);margin-top:6px}.ready-note{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--success);padding:7px 10px;border:1px solid rgba(34,197,94,.35);border-radius:24px;background:rgba(34,197,94,.08)}
+.summary-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}.stat-card{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;padding:14px;text-align:left;color:inherit;cursor:pointer;transition:border-color var(--duration-fast),background var(--duration-fast)}.stat-card:hover{border-color:var(--border-2);background:var(--surface-2)}.stat-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.stat-value{font-family:var(--font-mono);font-size:24px;font-weight:700;line-height:1}.stat-label{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-top:6px}.stat-action{font-size:13px;color:var(--text-2);margin-top:8px;line-height:1.45}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}.toolbar-left,.toolbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.search{position:relative;width:260px}.search input{width:100%;background:var(--surface-1);border:1px solid var(--border-2);border-radius:7px;padding:8px 12px 8px 34px;color:var(--text-1);font-size:13px;outline:0;transition:border-color var(--duration-fast),box-shadow var(--duration-fast)}.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,138,0,.12)}.search input::placeholder{color:var(--text-3)}.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3)}
+.type-toggle{display:flex;gap:2px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:8px;padding:3px}.type-toggle button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:7px 11px;border-radius:6px;border:0;background:transparent;color:var(--text-3);cursor:pointer;transition:background var(--duration-fast),color var(--duration-fast)}.type-toggle button:hover{color:var(--text-2)}.type-toggle button.active{background:var(--surface-3);color:var(--text-1);font-weight:700}.type-toggle button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.select{background:var(--surface-1);border:1px solid var(--border-2);border-radius:7px;color:var(--text-1);font-size:13px;padding:8px 10px;outline:0}.select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.type-section{margin-bottom:28px}.type-header{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-1);padding-bottom:10px;margin-bottom:12px}.type-title{font-size:20px;font-weight:600}.type-count{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--text-3)}.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:12px}.map-card{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;text-align:left;color:inherit;cursor:pointer;transition:border-color var(--duration-fast),transform var(--duration-fast)}.map-card:hover{border-color:var(--border-2);transform:translateY(-2px)}.map-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.map-banner{height:92px;background:linear-gradient(135deg,var(--surface-3),var(--surface-2));position:relative}.map-type-pill{position:absolute;top:8px;left:8px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-radius:24px;padding:4px 7px;background:rgba(11,11,13,.72);color:var(--text-2);border:1px solid rgba(245,245,247,.12)}.map-card-body{padding:10px}.map-name{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.map-meta-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}.status-badge{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;border-radius:4px;padding:3px 6px;border:1px solid var(--border-2);color:var(--text-2)}.status-warning{border-color:rgba(251,191,36,.5);color:var(--warning);background:rgba(251,191,36,.08)}.status-danger{border-color:rgba(239,68,68,.5);color:var(--danger);background:rgba(239,68,68,.08)}.score{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text-1)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px;color:var(--text-3)}.empty-icon{font-size:32px;opacity:.65;margin-bottom:12px}.empty-title{font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px}.empty-desc{font-size:13px;color:var(--text-2);line-height:1.6;max-width:360px;margin-bottom:20px}.btn-secondary,.btn-ghost{font-size:13px;font-weight:600;border-radius:6px;padding:9px 18px;cursor:pointer;transition:background var(--duration-fast),border-color var(--duration-fast),color var(--duration-fast)}.btn-secondary{border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-1)}.btn-secondary:hover{background:var(--surface-3)}.btn-ghost{border:1px solid transparent;background:transparent;color:var(--text-2)}.btn-ghost:hover{color:var(--text-1);background:var(--surface-2)}.btn-secondary:focus-visible,.btn-ghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.alert{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.45);border-radius:12px;padding:16px;display:flex;align-items:flex-start;gap:12px;max-width:650px;color:var(--text-2)}.alert-icon{width:24px;height:24px;border-radius:50%;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:700;flex-shrink:0}.alert-title{font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px}.alert-desc{font-size:13px;line-height:1.55;margin-bottom:14px}.alert-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;margin-top:10px}
+.skeleton{background:linear-gradient(90deg,var(--surface-1) 25%,var(--surface-2) 50%,var(--surface-1) 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}.skeleton-card{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden}.skeleton-banner{height:92px}.skeleton-body{padding:10px;display:flex;flex-direction:column;gap:8px}.skeleton-line{height:14px;border-radius:4px}.skeleton-small{height:22px;border-radius:4px;width:54%}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000}.modal-overlay.show{display:flex}.modal{width:100%;max-width:640px;max-height:82vh;overflow-y:auto;background:var(--surface-1);border:1px solid var(--border-2);border-radius:12px;box-shadow:var(--shadow-modal);padding:24px;position:relative}.modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;border:1px solid var(--border-2);background:transparent;color:var(--text-2);cursor:pointer}.modal-close:hover{background:var(--surface-2);color:var(--text-1)}.modal-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.modal-banner{height:150px;border-radius:12px;background:linear-gradient(135deg,#273044,var(--surface-3));margin-bottom:16px}.modal-title{font-size:24px;font-weight:700}.modal-meta{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--text-2);font-family:var(--font-mono);font-size:12px;text-transform:uppercase}.modal-section-title{font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-top:20px;margin-bottom:10px}.hero-row,.note-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border-1);margin-bottom:6px}.hero-dot{width:8px;height:8px;border-radius:50%;background:var(--role-damage)}.hero-name,.note-label{font-size:13px;font-weight:600;flex:1}.hero-score{font-family:var(--font-mono);font-size:13px;font-weight:700}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}.caption{width:1180px;color:var(--text-3);font-family:var(--font-mono);font-size:11px;line-height:1.6}.caption b{color:var(--text-2)}
+</style>
+</head>
+<body>
+<div class="demo-toolbar" aria-label="Демо состояния">
+  <button class="active" data-state="default" onclick="setState('default',this)">Default</button>
+  <button data-state="loading" onclick="setState('loading',this)">Loading</button>
+  <button data-state="emptyCatalog" onclick="setState('emptyCatalog',this)">Empty catalog</button>
+  <button data-state="emptyFilter" onclick="setState('emptyFilter',this)">Empty filter</button>
+  <button data-state="error" onclick="setState('error',this)">Error</button>
+  <button data-state="detail" onclick="setState('detail',this)">Detail</button>
+</div>
+<div class="frame">
+  <header class="identity-bar">
+    <div class="identity-left"><div class="wordmark">DRAFT HUB <span>V2</span></div></div>
+    <div class="identity-right"><div class="scope-switch"><button class="active">Team</button><button>Personal</button><button>Global</button></div><div class="team-chip">Team Analyst<div class="avatar">TA</div></div></div>
+  </header>
+  <div class="body-row">
+    <nav class="rail" aria-label="Навигация">
+      <div class="rail-item active" tabindex="0"><span class="icon">▧</span><span class="label">Карты</span></div>
+      <div class="rail-item" tabindex="0"><span class="icon">◉</span><span class="label">Герои</span></div>
+      <div class="rail-item" tabindex="0"><span class="icon">✓</span><span class="label">Драфт</span></div>
+      <div class="rail-item" tabindex="0"><span class="icon">▤</span><span class="label">Состав</span></div>
+      <div class="rail-item" tabindex="0"><span class="icon">◎</span><span class="label">Игроки</span></div>
+      <div class="rail-divider"></div>
+      <div class="rail-secondary">
+        <div class="rail-item" tabindex="0"><span class="icon">≡</span><span class="label">Tier List</span></div>
+        <div class="rail-item" tabindex="0"><span class="icon">⚙</span><span class="label">Настройки</span></div>
+      </div>
+    </nav>
+    <main class="workspace">
+      <div class="page-head">
+        <div><h1 class="page-title">Карты</h1><div class="page-meta" id="pageMeta">Team scope · 12 карт · обновлено 12 минут назад</div></div>
+        <div class="ready-note" id="readyNote">3 задачи подготовки</div>
+      </div>
+      <div id="summary"></div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="mapSearch" type="text" placeholder="Найти карту..." oninput="onSearchInput()"></div>
+          <div class="type-toggle" id="typeToggle"></div>
+        </div>
+        <div class="toolbar-right"><select class="select" id="sortSelect" onchange="renderMaps()"><option value="type">по типу</option><option value="score">по оценке</option><option value="name">по имени</option><option value="updated">по обновлению</option></select></div>
+      </div>
+      <div id="content"></div>
+    </main>
+  </div>
+</div>
+<div class="caption" id="caption"><b>Default</b> — action summary показывает только задачи, которые меняют следующее действие; сетка сгруппирована по типу карты.</div>
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="mapDetailTitle">
+    <button class="modal-close" onclick="closeModal()" aria-label="Закрыть">×</button>
+    <div class="modal-banner"></div>
+    <h2 class="modal-title" id="mapDetailTitle">King's Row</h2>
+    <div class="modal-meta"><span class="status-badge">Hybrid</span><span>Team score 8.4</span></div>
+    <div class="modal-section-title">Сильные герои</div>
+    <div class="hero-row"><span class="hero-dot" style="background:var(--role-tank)"></span><span class="hero-name">Рейнхардт</span><span class="hero-score" style="color:var(--success)">8.5</span></div>
+    <div class="hero-row"><span class="hero-dot"></span><span class="hero-name">Кэссиди</span><span class="hero-score" style="color:var(--success)">7.9</span></div>
+    <div class="modal-section-title">Слабые герои / риски</div>
+    <div class="hero-row"><span class="hero-dot" style="background:var(--role-support)"></span><span class="hero-name">Мерси</span><span class="hero-score" style="color:var(--danger)">3.1</span></div>
+    <div class="modal-section-title">Заметки по сторонам</div>
+    <div class="note-row"><span class="note-label">Атака</span><span class="status-badge">rush через hotel</span></div>
+    <div class="note-row"><span class="note-label">Оборона</span><span class="status-badge">держать statue</span></div>
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeModal()">Закрыть</button><button class="btn-secondary">Редактировать оценку</button></div>
+  </section>
+</div>
+<script>
+const TYPES=['Все','Control','Escort','Hybrid','Push','Flashpoint','Clash'];
+const MAPS=[
+  {n:"King's Row",t:'Hybrid',score:8.4,status:'ready',updated:4},
+  {n:'Hollywood',t:'Hybrid',score:7.6,status:'lowdata',updated:8},
+  {n:'Circuit Royal',t:'Escort',score:3.2,status:'weak',updated:20},
+  {n:'Dorado',t:'Escort',score:6.8,status:'ready',updated:18},
+  {n:'Lijiang Tower',t:'Control',score:null,status:'unrated',updated:30},
+  {n:'Ilios',t:'Control',score:7.1,status:'ready',updated:12},
+  {n:'Colosseo',t:'Push',score:4.5,status:'weak',updated:25},
+  {n:'New Queen Street',t:'Push',score:6.1,status:'ready',updated:14},
+  {n:'Suravasa',t:'Flashpoint',score:null,status:'unrated',updated:41},
+  {n:'New Junk City',t:'Flashpoint',score:5.9,status:'lowdata',updated:16},
+  {n:'Hanaoka',t:'Clash',score:null,status:'unrated',updated:50},
+  {n:'Runasapi',t:'Push',score:6.4,status:'ready',updated:9}
+];
+let currentType='Все';let searchTimer=null;
+const statusText={unrated:'Без оценки',lowdata:'Мало данных',weak:'Слабая'};
+function initTypes(){document.getElementById('typeToggle').innerHTML=TYPES.map(t=>`<button class="${t===currentType?'active':''}" onclick="setType('${t}',this)">${t}</button>`).join('');}
+function summaryHtml(){const unrated=MAPS.filter(m=>m.status==='unrated').length;const weak=MAPS.filter(m=>m.status==='weak').length;const lowdata=MAPS.filter(m=>m.status==='lowdata').length;return `<div class="summary-row"><button class="stat-card" onclick="applyStatus('unrated')"><div class="stat-value" style="color:var(--warning)">${unrated}</div><div class="stat-label">Без оценки</div><div class="stat-action">Открыть карты, где нужно заполнить оценку</div></button><button class="stat-card" onclick="applyStatus('weak')"><div class="stat-value" style="color:var(--danger)">${weak}</div><div class="stat-label">Слабые карты</div><div class="stat-action">Проверить риски перед map pool</div></button><button class="stat-card" onclick="applyStatus('lowdata')"><div class="stat-value" style="color:var(--info)">${lowdata}</div><div class="stat-label">Мало данных</div><div class="stat-action">Добавить силу героев и заметки</div></button></div>`;}
+function cardHtml(map){const badge=map.status==='ready'?'':`<span class="status-badge ${map.status==='weak'?'status-danger':'status-warning'}">${statusText[map.status]}</span>`;return `<button class="map-card" onclick="openModal()"><div class="map-banner"><span class="map-type-pill">${map.t}</span></div><div class="map-card-body"><div class="map-name">${map.n}</div><div class="map-meta-line">${badge}<span class="score">${map.score==null?'—':map.score.toFixed(1)}</span></div></div></button>`;}
+function renderMaps(statusFilter){document.getElementById('summary').innerHTML=summaryHtml();const q=document.getElementById('mapSearch').value.trim().toLowerCase();let rows=MAPS.filter(m=>(currentType==='Все'||m.t===currentType)&&(!q||m.n.toLowerCase().includes(q))&&(!statusFilter||m.status===statusFilter));const sort=document.getElementById('sortSelect').value;if(sort==='score')rows.sort((a,b)=>(b.score??-1)-(a.score??-1));if(sort==='name')rows.sort((a,b)=>a.n.localeCompare(b.n));if(sort==='updated')rows.sort((a,b)=>a.updated-b.updated);if(!rows.length){document.getElementById('content').innerHTML=emptyFilterHtml(q,currentType);return;}const groups=[...new Set(rows.map(m=>m.t))];document.getElementById('content').innerHTML=groups.map(t=>{const maps=rows.filter(m=>m.t===t);return `<section class="type-section"><div class="type-header"><div class="type-title">${t}</div><div class="type-count">${maps.length} карт</div></div><div class="map-grid">${maps.map(cardHtml).join('')}</div></section>`;}).join('');}
+function setType(type,btn){currentType=type;document.querySelectorAll('#typeToggle button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderMaps();}
+function onSearchInput(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>renderMaps(),150);}
+function applyStatus(status){currentType='Все';document.getElementById('mapSearch').value='';initTypes();renderMaps(status);}
+function loadingHtml(){const cards=Array.from({length:8},()=>`<div class="skeleton-card"><div class="skeleton skeleton-banner"></div><div class="skeleton-body"><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-small"></div></div></div>`).join('');return `<div class="summary-row"><div class="skeleton" style="height:92px;border-radius:12px"></div><div class="skeleton" style="height:92px;border-radius:12px"></div><div class="skeleton" style="height:92px;border-radius:12px"></div></div><div class="map-grid">${cards}</div>`;}
+function emptyCatalogHtml(){return `<div class="empty-state"><div class="empty-icon">▧</div><div class="empty-title">Карты не добавлены</div><div class="empty-desc">В Team scope пока нет карт. Импортируй каталог или открой Global-карты, если нет прав на импорт.</div><button class="btn-secondary">Импортировать карты</button></div>`;}
+function emptyFilterHtml(q,type){return `<div class="empty-state"><div class="empty-icon">🔎</div><div class="empty-title">Ничего не найдено</div><div class="empty-desc">По типу «${type}»${q?` и запросу «${q}»`:''} карт нет. Сбрось фильтры, чтобы вернуться к полному списку.</div><button class="btn-secondary" onclick="currentType='Все';document.getElementById('mapSearch').value='';initTypes();renderMaps()">Сбросить фильтры</button></div>`;}
+function errorHtml(){return `<div class="alert" role="alert"><div class="alert-icon">!</div><div><div class="alert-title">Не удалось загрузить карты</div><div class="alert-desc">Каталог карт сейчас недоступен. Повтори загрузку; если ошибка останется, проверь подключение или права текущей команды.</div><button class="btn-secondary" onclick="setState('loading',document.querySelector('.demo-toolbar button[data-state=loading]'));setTimeout(()=>setState('default',document.querySelector('.demo-toolbar button[data-state=default]')),700)">Повторить загрузку</button><div class="alert-meta">Фильтры не сброшены</div></div></div>`;}
+const captions={default:'<b>Default</b> — action summary показывает только задачи, которые меняют следующее действие; сетка сгруппирована по типу карты.',loading:'<b>Loading</b> — skeleton повторяет форму summary + card grid, без spinner по центру.',emptyCatalog:'<b>Empty catalog</b> — пустой scope объяснён отдельно от пустого фильтра и содержит действие импорта.',emptyFilter:'<b>Empty filter</b> — активный запрос/тип названы в тексте, действие сбрасывает фильтры.',error:'<b>Error</b> — persistent Alert с безопасным текстом и повтором загрузки; не toast.',detail:'<b>Detail</b> — полный профиль карты вынесен из compact card в Overlay, чтобы сохранить плотность сетки.'};
+function setState(state,btn){document.querySelectorAll('.demo-toolbar button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');closeModal();document.getElementById('caption').innerHTML=captions[state];document.getElementById('readyNote').textContent=state==='default'?'3 задачи подготовки':'Demo state';if(state==='default'){currentType='Все';document.getElementById('mapSearch').value='';initTypes();renderMaps();}else if(state==='loading'){document.getElementById('summary').innerHTML='';document.getElementById('content').innerHTML=loadingHtml();}else if(state==='emptyCatalog'){document.getElementById('summary').innerHTML='';document.getElementById('content').innerHTML=emptyCatalogHtml();}else if(state==='emptyFilter'){currentType='Clash';document.getElementById('mapSearch').value='zz';initTypes();renderMaps();}else if(state==='error'){document.getElementById('summary').innerHTML='';document.getElementById('content').innerHTML=errorHtml();}else if(state==='detail'){currentType='Все';document.getElementById('mapSearch').value='';initTypes();renderMaps();openModal();}}
+function openModal(){document.getElementById('modalOverlay').classList.add('show');}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+initTypes();renderMaps();
+</script>
+</body>
+</html>
