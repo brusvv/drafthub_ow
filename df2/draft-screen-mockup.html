@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Draft Hub V2 — Живой турнирный драфт (§2.8 + §2.13 нового)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── §1.1 Neutrals — 1:1 из DESIGN_SYSTEM.md, не менялись ── */
+  --bg:#0B0B0D;
+  --surface-1:#141417;
+  --surface-2:#1B1B1F;
+  --surface-3:#232326;
+  --surface-4:#2A2A2E;
+  --border-1:#2F2F36;
+  --border-2:#3A3A42;
+  --text-1:#F5F5F7;
+  --text-2:#A1A1AA;
+  --text-3:#71717A;
+  /* ── §1.2 Semantic — 1:1, ban=danger/pick=success/side=info решено БЕЗ
+       новых токенов (см. лог решений внизу файла) ── */
+  --success:#22C55E;
+  --warning:#FBBF24;
+  --danger:#EF4444;
+  --info:#3B82F6;
+  --accent:#FF8A00;
+  --accent-hover:#FFA733;
+  /* ── §1.3 Роли/тиры — 1:1 ── */
+  --role-tank:#4A9EE0;
+  --role-damage:#E05555;
+  --role-support:#2BBD8E;
+  --tier-s:#F0A030;--tier-a:#8BC34A;--tier-b:#5B9BD5;--tier-c:#888;--tier-d:#A04030;
+  /* Team A/B (20.07, пересмотрено) — НЕТ отдельных --team-a/--team-b
+     токенов. Проверено в реальном V1 (render-bans-tournament-mapdraft.js:86):
+     teamColor = step.team==='A' ? 'var(--tank)' : 'var(--damage)' — та же
+     пара, что ICON_ATK/ICON_DEF в core/config.js (#E05555/#4A9EE0) — уже
+     устоявшийся, не изобретённый заново V1-паттерн переиспользования
+     ролевых токенов под команду. См. лог решений внизу файла — что
+     именно поменялось и почему после V1-проверки.
+  */
+  --font-sans:'Inter',sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;font-family:var(--font-sans);color:var(--text-1);padding:32px;display:flex;flex-direction:column;gap:16px;align-items:center}
+
+/* ── Тулбар демо-состояний (не часть продукта, только эта страница) ── */
+.toolbar{display:flex;gap:8px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:10px;padding:4px}
+.toolbar button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border-radius:7px;border:none;background:transparent;color:var(--text-3);cursor:pointer;transition:all .15s}
+.toolbar button:hover{color:var(--text-2)}
+.toolbar button.active{background:var(--surface-3);color:var(--text-1)}
+
+/* ── Shell: identity-bar + rail — 1:1 из nav-shell-mockup.html §2.11,
+     состояние "живой драфт" (свёрнут, без Secondary) — этот экран ВСЕГДА
+     в этом состоянии, т.к. Workspace здесь — сам живой драфт. ── */
+.frame{width:1100px;height:640px;background:var(--bg);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.identity-bar{height:56px;flex-shrink:0;background:var(--surface-1);border-bottom:1px solid var(--border-1);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.identity-left{display:flex;align-items:center;gap:10px}
+.wordmark{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.wordmark span{color:var(--accent)}
+.identity-right{display:flex;align-items:center;gap:10px}
+.team-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer}
+.team-chip:hover{background:var(--surface-2)}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text-2)}
+.body-row{flex:1;display:flex;min-height:0}
+.rail{width:64px;flex-shrink:0;background:var(--surface-1);border-right:1px solid var(--border-1);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.rail-item{height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border-left:2px solid transparent;cursor:pointer;color:var(--text-2)}
+.rail-item .icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.rail-item .icon svg{width:16px;height:16px}
+.rail-item.active{background:var(--surface-3);border-left-color:var(--accent);color:var(--accent)}
+
+/* ════════════════════════════════════════════════════════════
+   Workspace — раздел Драфт, турнирный режим, фаза 2 (драфт карт)
+   ════════════════════════════════════════════════════════════ */
+.workspace{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}
+
+/* H2 (§1.4) + Caption (§1.4) в одну строку — заголовок фазы */
+.phase-header{display:flex;align-items:baseline;gap:12px}
+.phase-title{font-family:var(--font-sans);font-size:24px;font-weight:700;letter-spacing:-.005em}
+.phase-meta{font-family:var(--font-mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--text-3)}
+
+/* ── §2.8 Индикатор шагов драфта — концептуально был специфицирован в
+     DESIGN_SYSTEM.md (команда+действие+карта одновременно, шаги карты
+     группируются), но БЕЗ конкретных px/цветов. Это первое конкретное
+     воплощение — см. §2.13 нового в логе решений. ──
+   Шаги одной карты — общая подложка-группа (surface-1), внутри —
+   строка чипов-шагов + разделительная линия снизу с иконкой режима. */
+.step-groups{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px}
+.step-group{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.step-group-chips{display:flex;gap:6px}
+.step-chip{
+  width:76px;padding:8px 6px;border-radius:6px;border:1px solid var(--border-1);
+  background:var(--surface-2);display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:opacity var(--duration-base,150ms) var(--ease-out,ease),border-color var(--duration-base,150ms);
+}
+.step-chip .t{font-family:var(--font-mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.step-chip .team{
+  font-family:var(--font-mono);font-size:10px;font-weight:700;
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--bg);
+}
+.step-chip .val{font-family:var(--font-sans);font-size:11px;color:var(--text-2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+/* Состояния — done приглушён (сделано, не нужно перечитывать), current —
+   акцентная рамка цветом действия + полная непрозрачность, upcoming —
+   ещё сильнее приглушён (не нужно считывать раньше своего шага). Три
+   состояния — существующие Neutrals-токены (§1.1), НЕ новые. */
+.step-chip.done{opacity:.55;border-color:var(--border-1)}
+.step-chip.current{opacity:1;border-width:2px;padding:7px 5px}
+.step-chip.upcoming{opacity:.35}
+.step-group-footer{display:flex;align-items:center;justify-content:center;gap:5px;padding-top:6px;border-top:1px solid var(--border-1);color:var(--text-3)}
+.step-group-footer svg{width:13px;height:13px}
+.step-group-footer span{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Панель текущего шага — surface-1 (первая ступень над --bg рабочей
+     области, §1.1 правило лестницы), тень НЕ используется (§1.7 — тени
+     только для реально всплывающих поверхностей, эта панель — часть
+     обычного потока, не popover/modal). ── */
+.current-step{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;padding:20px 24px}
+.current-step-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.action-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.action-icon svg{width:16px;height:16px}
+.current-step-title{font-family:var(--font-sans);font-size:20px;font-weight:600}
+.team-badge{
+  font-family:var(--font-mono);font-size:11px;font-weight:700;
+  width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--bg);vertical-align:-4px;
+}
+.current-step-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:5px;margin-bottom:16px}
+.current-step-sub svg{width:13px;height:13px}
+
+/* ── §2.13 нового — "плитка выбора" (selection tile), см. лог решений:
+     третий паттерн чипов, не toggle и не съёмный фильтр (§2.3) — разовое
+     действие выбора одного варианта из плотной сетки. Compact-плотность
+     §2.4 применена к самому выбору, не только к сущности в общей сетке. */
+.tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.tile{
+  background:var(--surface-2);border:1px solid var(--border-1);border-radius:8px;
+  padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;transition:all 100ms;
+}
+.tile:hover{background:var(--surface-3);border-color:var(--border-2);transform:translateY(-1px)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile-img{width:100%;aspect-ratio:16/10;border-radius:5px;object-fit:cover;background:var(--surface-3)}
+.tile-name{font-size:13px;font-weight:500;text-align:center;line-height:1.3}
+
+.legend{display:flex;gap:16px;margin-top:auto;padding-top:16px;border-top:1px solid var(--border-1)}
+.legend-item{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+
+.state-caption{width:1100px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);line-height:1.6}
+.state-caption b{color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="active" data-state="ban" onclick="setState('ban',this)">Шаг: бан карты</button>
+  <button data-state="pick" onclick="setState('pick',this)">Шаг: пик карты</button>
+  <button data-state="side" onclick="setState('side',this)">Шаг: выбор стороны</button>
+</div>
+<div class="frame">
+  <div class="identity-bar">
+    <div class="identity-left"><div class="wordmark">DRAFT HUB <span>V2</span></div></div>
+    <div class="identity-right">
+      <div class="team-chip">Team Analyst<div class="avatar">TA</div></div>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="rail">
+      <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V6l-6-3m0 14V4"/></svg></span></div>
+      <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span></div>
+      <div class="rail-item active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span></div>
+      <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span></div>
+      <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><path d="M2 20v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="8" r="2.5"/><path d="M15.5 20v-.5a5 5 0 0 1 7 0v.5"/></svg></span></div>
+    </nav>
+
+    <div class="workspace">
+      <div class="phase-header">
+        <div class="phase-title">Драфт карт Bo3</div>
+        <div class="phase-meta" id="stepCounter">шаг 5/11</div>
+      </div>
+
+      <div class="step-groups" id="stepGroups"><!-- рендерится JS --></div>
+
+      <div class="current-step" id="currentStep"><!-- рендерится JS --></div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--role-tank)"></span>Команда A</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--role-damage)"></span>Команда B</div>
+        <div class="legend-item"><span class="action-icon" style="width:13px;height:13px;color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg></span>Бан</div>
+        <div class="legend-item"><span class="action-icon" style="width:13px;height:13px;color:var(--success)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg></span>Пик</div>
+        <div class="legend-item"><span class="action-icon" style="width:13px;height:13px;color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 8h13M17 4l3 4-3 4"/><path d="M17 16H4M7 12l-3 4 3 4"/></svg></span>Сторона</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="state-caption" id="caption">
+  <b>Шаг 5 — бан карты.</b> Control уже отыгран (2 шага сделаны, приглушены), Hybrid — текущий шаг (бан команды B), Push — все шаги ещё впереди (сильно приглушены). Три сигнала на активном шаге: акцентная рамка + полная непрозрачность + позиция в группе — не только цвет (§3.6).
+</div>
+<div class="state-caption" id="paletteNote"></div>
+
+<script>
+// Демо-данные — тот же формат что реальный TOURN_MODE_STEPS, но с "done"/"value"
+// для нескольких карт разом, чтобы показать группировку (§2.8) на реальном
+// количестве шагов (Bo3 = 11 шагов если считать все режимы полностью).
+const modeIcon = {
+  Control: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>',
+  Hybrid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 12l6-6M3 12l6 6"/></svg>',
+  Push: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+};
+const teamColor = t => t === 'A' ? 'var(--role-tank)' : 'var(--role-damage)';
+const actionColor = t => t === 'ban' ? 'var(--danger)' : t === 'pick' ? 'var(--success)' : 'var(--info)';
+const actionLabel = t => t === 'ban' ? 'БАН' : t === 'pick' ? 'ПИК' : 'СТОР';
+// Форма, не только цвет — та же роль, что emoji 🚫/✅/🔄 в V1
+// (render-bans-tournament-mapdraft.js), просто на SVG-языке иконок,
+// который уже используется остальным мокапом (modeIcon и т.д.), а не
+// emoji напрямую. Именно это убирает коллизию с team-badge того же
+// action-цвета (§3.6 — форма как второй, не только цветовой, сигнал).
+const actionIcon = {
+  ban:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>',
+  pick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>',
+  side: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 8h13M17 4l3 4-3 4"/><path d="M17 16H4M7 12l-3 4 3 4"/></svg>',
+};
+
+const scenarios = {
+  ban: {
+    counter: '5/11', current: 4,
+    groups: [
+      { mode:'Control', steps:[
+        {t:'ban',team:'A',done:true,value:'Busan'},
+        {t:'ban',team:'B',done:true,value:'Ilios'},
+        {t:'pick',team:'A',done:true,value:'Lijiang Tower'},
+        {t:'side',team:'B',done:true,value:'Атака'},
+      ]},
+      { mode:'Hybrid', steps:[
+        {t:'ban',team:'B',done:false,current:true},
+        {t:'ban',team:'A',done:false},
+        {t:'pick',team:'B',done:false},
+        {t:'side',team:'A',done:false},
+      ]},
+      { mode:'Push', steps:[
+        {t:'ban',team:'B',done:false},
+        {t:'pick',team:'A',done:false},
+        {t:'side',team:'B',done:false},
+      ]},
+    ],
+    active:{t:'ban',team:'B',mode:'Hybrid'},
+    pool:['King\u2019s Row','Numbani','Hollywood','Eichenwalde'],
+  },
+  pick: {
+    counter: '7/11', current: 6,
+    groups: [
+      { mode:'Control', steps:[
+        {t:'ban',team:'A',done:true,value:'Busan'},{t:'ban',team:'B',done:true,value:'Ilios'},
+        {t:'pick',team:'A',done:true,value:'Lijiang Tower'},{t:'side',team:'B',done:true,value:'Атака'},
+      ]},
+      { mode:'Hybrid', steps:[
+        {t:'ban',team:'B',done:true,value:'King\u2019s Row'},{t:'ban',team:'A',done:true,value:'Numbani'},
+        {t:'pick',team:'B',done:false,current:true},{t:'side',team:'A',done:false},
+      ]},
+      { mode:'Push', steps:[
+        {t:'ban',team:'B',done:false},{t:'pick',team:'A',done:false},{t:'side',team:'B',done:false},
+      ]},
+    ],
+    active:{t:'pick',team:'B',mode:'Hybrid'},
+    pool:['Hollywood','Eichenwalde'],
+  },
+  side: {
+    counter: '8/11', current: 7,
+    groups: [
+      { mode:'Control', steps:[
+        {t:'ban',team:'A',done:true,value:'Busan'},{t:'ban',team:'B',done:true,value:'Ilios'},
+        {t:'pick',team:'A',done:true,value:'Lijiang Tower'},{t:'side',team:'B',done:true,value:'Атака'},
+      ]},
+      { mode:'Hybrid', steps:[
+        {t:'ban',team:'B',done:true,value:'King\u2019s Row'},{t:'ban',team:'A',done:true,value:'Numbani'},
+        {t:'pick',team:'B',done:true,value:'Hollywood'},{t:'side',team:'A',done:false,current:true},
+      ]},
+      { mode:'Push', steps:[
+        {t:'ban',team:'B',done:false},{t:'pick',team:'A',done:false},{t:'side',team:'B',done:false},
+      ]},
+    ],
+    active:{t:'side',team:'A',mode:'Hybrid'},
+    pool:null,
+  }
+};
+
+const captions = {
+  ban: '<b>Шаг 5 — бан карты.</b> Control уже отыгран (2 шага сделаны, приглушены), Hybrid — текущий шаг (бан команды B), Push — все шаги ещё впереди (сильно приглушены). Три сигнала на активном шаге: акцентная рамка + полная непрозрачность + позиция в группе — не только цвет (§3.6).',
+  pick: '<b>Шаг 7 — пик карты.</b> Тот же паттерн, action-цвет сменился на --success (карта выбирается, не банится) — команда/действие/карта считываются одновременно на каждом чипе, порядок group→chip не меняется между типами шага.',
+  side: '<b>Шаг 8 — выбор стороны.</b> Нет сетки карт — вместо неё две Secondary-кнопки (Атака/Защита), т.к. вариантов всегда ровно два и они не "плитки выбора" из сетки (§2.13), это обычный выбор из двух опций.'
+};
+
+function renderStepGroups(groups){
+  return groups.map(g => {
+    const chips = g.steps.map(s => {
+      const cls = s.done ? 'done' : s.current ? 'current' : 'upcoming';
+      const col = actionColor(s.t);
+      return `<div class="step-chip ${cls}" style="${s.current ? `border-color:${col}` : ''}">
+        <span class="t" style="color:${s.done || s.current ? col : 'var(--text-3)'}">${actionLabel(s.t)}</span>
+        <span class="team" style="background:${teamColor(s.team)}">${s.team}</span>
+        ${s.value ? `<span class="val">${s.value}</span>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="step-group">
+      <div class="step-group-chips">${chips}</div>
+      <div class="step-group-footer">${modeIcon[g.mode]}<span>${g.mode}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderCurrentStep(scn){
+  const a = scn.active;
+  const col = actionColor(a.t);
+  const verb = a.t === 'ban' ? 'банит карту' : a.t === 'pick' ? 'выбирает карту' : 'выбирает сторону';
+  const poolHtml = scn.pool
+    ? `<div class="tile-grid">${scn.pool.map(n => `
+        <div class="tile" tabindex="0">
+          <div class="tile-img"></div>
+          <div class="tile-name">${n}</div>
+        </div>`).join('')}</div>`
+    : `<div style="display:flex;gap:10px">
+        <button style="font-family:var(--font-sans);font-size:13px;font-weight:600;padding:10px 20px;border-radius:6px;border:1px solid var(--border-1);background:var(--surface-2);color:var(--text-1);cursor:pointer">⚔️ Атака</button>
+        <button style="font-family:var(--font-sans);font-size:13px;font-weight:600;padding:10px 20px;border-radius:6px;border:1px solid var(--border-1);background:var(--surface-2);color:var(--text-1);cursor:pointer">🛡️ Защита</button>
+      </div>`;
+  document.getElementById('currentStep').innerHTML = `
+    <div class="current-step-head">
+      <span class="action-icon" style="color:${col}">${actionIcon[a.t]}</span>
+      <span class="current-step-title">Команда <span class="team-badge" style="background:${teamColor(a.team)}">${a.team}</span> ${verb}</span>
+    </div>
+    <div class="current-step-sub">${modeIcon[a.mode]} ${a.mode}</div>
+    ${poolHtml}`;
+}
+
+function setState(state, btn){
+  document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const scn = scenarios[state];
+  document.getElementById('stepCounter').textContent = `шаг ${scn.counter}`;
+  document.getElementById('stepGroups').innerHTML = renderStepGroups(scn.groups);
+  renderCurrentStep(scn);
+  document.getElementById('caption').innerHTML = captions[state];
+}
+
+setState('ban', document.querySelector('.toolbar button.active'));
+</script>
+</body>
+</html>

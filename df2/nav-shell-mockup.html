@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Draft Hub V2 — навигационная оболочка (§2.11)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0D;
+  --surface-1:#141417;
+  --surface-2:#1B1B1F;
+  --surface-3:#232326;
+  --border-1:#2F2F36;
+  --border-2:#3A3A42;
+  --text-1:#F5F5F7;
+  --text-2:#A1A1AA;
+  --text-3:#71717A;
+  --accent:#FF8A00;
+  --tank:#5B9BD5;
+  --damage:#E05555;
+  --support:#2BBD8E;
+  --font-sans:'Inter',sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#050506;
+  font-family:var(--font-sans);
+  color:var(--text-1);
+  padding:32px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  align-items:center;
+}
+.toolbar{
+  display:flex;
+  gap:8px;
+  background:var(--surface-1);
+  border:1px solid var(--border-1);
+  border-radius:10px;
+  padding:4px;
+}
+.toolbar button{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  padding:8px 14px;
+  border-radius:7px;
+  border:none;
+  background:transparent;
+  color:var(--text-3);
+  cursor:pointer;
+  transition:all .15s;
+}
+.toolbar button:hover{color:var(--text-2)}
+.toolbar button.active{background:var(--surface-3);color:var(--text-1)}
+.frame{
+  width:960px;
+  height:600px;
+  background:var(--bg);
+  border:1px solid var(--border-1);
+  border-radius:12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.identity-bar{
+  height:56px;
+  flex-shrink:0;
+  background:var(--surface-1);
+  border-bottom:1px solid var(--border-1);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+}
+.identity-left{display:flex;align-items:center;gap:10px}
+.wordmark{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.wordmark span{color:var(--accent)}
+.scope-switch{
+  display:flex;
+  gap:2px;
+  background:var(--surface-2);
+  border-radius:7px;
+  padding:2px;
+  transition:opacity .15s;
+}
+.scope-switch button{
+  font-family:var(--font-mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  padding:5px 10px;
+  border-radius:5px;
+  border:none;
+  background:transparent;
+  color:var(--text-3);
+  cursor:pointer;
+}
+.scope-switch button.active{background:var(--surface-3);color:var(--text-1)}
+.identity-right{display:flex;align-items:center;gap:10px;transition:opacity .15s}
+.team-chip{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:600;
+  padding:6px 10px;border-radius:8px;
+  cursor:pointer;
+}
+.team-chip:hover{background:var(--surface-2)}
+.avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--surface-3);border:1px solid var(--border-2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text-2);
+}
+.body-row{flex:1;display:flex;min-height:0}
+.rail{
+  width:220px;
+  flex-shrink:0;
+  background:var(--surface-1);
+  border-right:1px solid var(--border-1);
+  padding:12px 8px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  transition:width .15s cubic-bezier(.16,1,.3,1);
+}
+.frame.collapsed .rail{width:64px}
+.frame.public .rail{width:180px}
+.rail-item{
+  height:40px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 12px;
+  border-radius:8px;
+  border-left:2px solid transparent;
+  cursor:pointer;
+  position:relative;
+  color:var(--text-2);
+  transition:background .1s;
+}
+.rail-item .icon{
+  width:18px;height:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-2);
+}
+.rail-item .icon svg{width:16px;height:16px}
+.rail-item .label{
+  font-size:14px;
+  font-weight:400;
+  white-space:nowrap;
+  overflow:hidden;
+  opacity:1;
+  transition:opacity .1s;
+}
+.frame.collapsed .rail-item .label{opacity:0;width:0}
+.frame.collapsed .rail-item{justify-content:center;padding:0}
+.rail-item:hover{background:var(--surface-2);color:var(--text-1)}
+.rail-item:hover .icon{color:var(--text-1)}
+.rail-item.active{
+  background:var(--surface-3);
+  border-left-color:var(--accent);
+  color:var(--text-1);
+}
+.rail-item.active .label{font-weight:600}
+.rail-item.active .icon{color:var(--accent)}
+.rail-item:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.rail-secondary{
+  display:flex;flex-direction:column;gap:2px;
+}
+.rail-secondary .rail-item{color:var(--text-3)}
+.rail-secondary .rail-item .icon{color:var(--text-3)}
+.rail-secondary .rail-item:hover,
+.rail-secondary .rail-item:hover .icon{color:var(--text-1)}
+.rail-divider{
+  height:1px;background:var(--border-1);
+  margin:12px 12px;
+  transition:opacity .1s;
+}
+.frame.collapsed .rail-secondary,
+.frame.collapsed .rail-divider{display:none}
+.frame.public .rail-secondary,
+.frame.public .rail-divider{display:none}
+.content{
+  flex:1;
+  padding:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-3);
+}
+.content-inner{text-align:center;max-width:400px}
+.content-label{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--text-3);
+  margin-bottom:8px;
+}
+.content-title{font-size:20px;font-weight:700;color:var(--text-1);margin-bottom:6px}
+.content-desc{font-size:13px;color:var(--text-2);line-height:1.6}
+.state-caption{
+  width:960px;
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--text-3);
+  line-height:1.6;
+}
+.state-caption b{color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="active" data-state="default" onclick="setState('default',this)">По умолчанию</button>
+  <button data-state="collapsed" onclick="setState('collapsed',this)">Живой драфт</button>
+  <button data-state="public" onclick="setState('public',this)">Публичный доступ</button>
+</div>
+
+<div class="frame" id="frame">
+  <div class="identity-bar">
+    <div class="identity-left">
+      <div class="wordmark">DRAFT HUB <span>V2</span></div>
+    </div>
+    <div class="identity-right" id="identityRight">
+      <div class="scope-switch">
+        <button class="active">Global</button>
+        <button>Team</button>
+        <button>Personal</button>
+      </div>
+      <div class="team-chip">
+        Team Analyst
+        <div class="avatar">TA</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-row">
+    <nav class="rail" id="rail">
+      <div class="rail-primary" id="railPrimary">
+        <div class="rail-item active" tabindex="0" data-view="maps">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V6l-6-3m0 14V4"/></svg></span>
+          <span class="label">Карты</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="heroes">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span>
+          <span class="label">Герои</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="draft">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          <span class="label">Драфт</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="roster">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span>
+          <span class="label">Состав</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="players">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><path d="M2 20v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="8" r="2.5"/><path d="M15.5 20v-.5a5 5 0 0 1 7 0v.5"/></svg></span>
+          <span class="label">Игроки</span>
+        </div>
+      </div>
+
+      <div class="rail-divider" id="railDivider"></div>
+
+      <div class="rail-secondary" id="railSecondary">
+        <div class="rail-item" tabindex="0" data-view="tierlist">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h4v4H4zM4 14h4v4H4zM11 7h9M11 17h9"/></svg></span>
+          <span class="label">Tier List</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="settings">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+          <span class="label">Настройки</span>
+        </div>
+        <div class="rail-item" tabindex="0" data-view="admin">
+          <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></span>
+          <span class="label">Админ</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="content">
+      <div class="content-inner" id="contentInner">
+        <div class="content-label">Соревновательные баны</div>
+        <div class="content-title">Драфт активен</div>
+        <div class="content-desc">Рельс свёрнут до иконок, Secondary скрыт полностью — во время таймера на бан/пик даже неактивная иконка Настроек лишняя.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="state-caption" id="caption">
+  <b>По умолчанию</b> — аналитик между задачами. Primary/Secondary разделены, identity-полоса полная (команда/scope/пользователь).
+</div>
+
+<script>
+const frame = document.getElementById('frame');
+const caption = document.getElementById('caption');
+const identityRight = document.getElementById('identityRight');
+const contentInner = document.getElementById('contentInner');
+const railItems = document.querySelectorAll('.rail-item');
+
+const captions = {
+  default: '<b>По умолчанию</b> — аналитик между задачами. Primary/Secondary разделены, identity-полоса полная (команда/scope/пользователь).',
+  collapsed: '<b>Живой драфт</b> — рельс 220px→64px, Secondary и разделитель скрыты полностью (не свёрнуты до иконок — во время таймера даже неактивная иконка лишняя), identity-полоса не меняется (§3.8, память).',
+  public: '<b>Публичный доступ</b> — открыта шеринг-ссылка тир-листа, нет сессии. Identity справа пуста (нечего показывать), рельс — один пункт без группировки (группировать нечего).'
+};
+
+function setState(state, btn){
+  document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  frame.classList.remove('collapsed','public');
+  identityRight.style.opacity = 1;
+  identityRight.style.pointerEvents = 'auto';
+
+  railItems.forEach(i=>i.classList.remove('active'));
+
+  if(state==='collapsed'){
+    frame.classList.add('collapsed');
+    document.querySelector('[data-view="draft"]').classList.add('active');
+    contentInner.innerHTML = '<div class="content-label">Соревновательные баны</div><div class="content-title">Драфт активен</div><div class="content-desc">Рельс свёрнут до иконок, Secondary скрыт полностью — во время таймера на бан/пик даже неактивная иконка Настроек лишняя.</div>';
+  } else if(state==='public'){
+    frame.classList.add('public');
+    identityRight.style.opacity = 0;
+    identityRight.style.pointerEvents = 'none';
+    document.querySelector('[data-view="tierlist"]').classList.add('active');
+    contentInner.innerHTML = '<div class="content-label">Публичный тир-лист</div><div class="content-title">Team Analyst — Tier List</div><div class="content-desc">Анонимный визит по шеринг-ссылке. Нет сессии — нет команды/scope/пользователя сверху, нет Secondary в рельсе.</div>';
+  } else {
+    document.querySelector('[data-view="maps"]').classList.add('active');
+    contentInner.innerHTML = '<div class="content-label">Рабочий контур</div><div class="content-title">Карты</div><div class="content-desc">Primary сверху (Карты/Герои/Драфт/Состав/Игроки), разделитель, Secondary снизу тише (Tier List/Настройки/Админ).</div>';
+  }
+  caption.innerHTML = captions[state];
+}
+
+railItems.forEach(item=>{
+  item.addEventListener('click', ()=>{
+    if(frame.classList.contains('collapsed') || frame.classList.contains('public')) return;
+    railItems.forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

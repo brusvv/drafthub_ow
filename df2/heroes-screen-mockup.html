@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Draft Hub V2 — экран Героев (валидация DESIGN_SYSTEM)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════════
+   Токены — 1:1 из DESIGN_SYSTEM.md §1. Ничего не добавлено и не
+   переопределено здесь без пометки НОВОЕ + причины (см. VALIDATION_REPORT).
+   ════════════════════════════════════════════════════════════ */
+:root{
+  /* §1.1 Neutrals */
+  --bg:#0B0B0D;
+  --surface-1:#141417;
+  --surface-2:#1B1B1F;
+  --surface-3:#232326;
+  --surface-4:#2A2A2E;
+  --border-1:#2F2F36;
+  --border-2:#3A3A42;
+  --text-1:#F5F5F7;
+  --text-2:#A1A1AA;
+  --text-3:#71717A;
+  /* §1.2 Semantic */
+  --success:#22C55E;
+  --warning:#FBBF24;
+  --danger:#EF4444;
+  --info:#3B82F6;
+  --accent:#FF8A00;
+  --accent-hover:#FFA733;
+  /* §1.3 Роли / тиры */
+  --role-tank:#4A9EE0;
+  --role-damage:#E05555;
+  --role-support:#2BBD8E;
+  --tier-s:#F0A030; --tier-a:#8BC34A; --tier-b:#5B9BD5; --tier-c:#888888; --tier-d:#A04030;
+  /* §1.7 Тени */
+  --shadow-popover:0 8px 24px rgba(0,0,0,.4);
+  --shadow-modal:0 20px 50px rgba(0,0,0,.55);
+  /* §1.8 Motion */
+  --duration-fast:100ms; --duration-base:150ms; --duration-slow:250ms;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --font-sans:'Inter',sans-serif;
+  --font-mono:'Space Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;font-family:var(--font-sans);color:var(--text-1);padding:32px;display:flex;flex-direction:column;gap:16px;align-items:center}
+
+/* toolbar для переключения демонстрируемых состояний — не часть экрана,
+   инструмент показа для этого разбора */
+.toolbar{display:flex;gap:8px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:10px;padding:4px}
+.toolbar button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border-radius:7px;border:none;background:transparent;color:var(--text-3);cursor:pointer;transition:all var(--duration-fast)}
+.toolbar button:hover{color:var(--text-2)}
+.toolbar button.active{background:var(--surface-3);color:var(--text-1)}
+
+.frame{width:1180px;height:760px;background:var(--bg);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── Shell — 1:1 из nav-shell-mockup.html §2.11, Heroes активен, состояние
+   "по умолчанию" (не свёрнуто — это не экран живого драфта) ── */
+.identity-bar{height:56px;flex-shrink:0;background:var(--surface-1);border-bottom:1px solid var(--border-1);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.identity-left{display:flex;align-items:center;gap:10px}
+.wordmark{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.wordmark span{color:var(--accent)}
+.scope-switch{display:flex;gap:2px;background:var(--surface-2);border-radius:7px;padding:2px}
+.scope-switch button{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:5px 10px;border-radius:5px;border:none;background:transparent;color:var(--text-3);cursor:pointer}
+.scope-switch button.active{background:var(--surface-3);color:var(--text-1)}
+.identity-right{display:flex;align-items:center;gap:10px}
+.team-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer}
+.team-chip:hover{background:var(--surface-2)}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text-2)}
+
+.body-row{flex:1;display:flex;min-height:0}
+.rail{width:220px;flex-shrink:0;background:var(--surface-1);border-right:1px solid var(--border-1);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.rail-item{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:8px;border-left:2px solid transparent;cursor:pointer;color:var(--text-2)}
+.rail-item .icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text-2)}
+.rail-item .icon svg{width:16px;height:16px}
+.rail-item .label{font-size:14px;font-weight:400}
+.rail-item:hover{background:var(--surface-2);color:var(--text-1)}
+.rail-item:hover .icon{color:var(--text-1)}
+.rail-item.active{background:var(--surface-3);border-left-color:var(--accent);color:var(--text-1)}
+.rail-item.active .label{font-weight:600}
+.rail-item.active .icon{color:var(--accent)}
+.rail-item:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.rail-secondary{display:flex;flex-direction:column;gap:2px}
+.rail-secondary .rail-item,.rail-secondary .rail-item .icon{color:var(--text-3)}
+.rail-divider{height:1px;background:var(--border-1);margin:12px 12px}
+
+/* ════════════════════════════════════════════════════════════
+   Workspace — раздел «Герои». Всё ниже — новое для этого разбора.
+   ════════════════════════════════════════════════════════════ */
+.workspace{flex:1;min-height:0;overflow-y:auto;padding:24px 28px}
+
+/* Toolbar раздела: toggle-группа ролей (§2.3) + Search (§2.2) —
+   единственная плотная сущность-сетка в продукте без строки поиска
+   в V1 (см. VALIDATION_REPORT п.3). */
+.section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.role-toggle{display:flex;gap:2px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:8px;padding:3px}
+.role-toggle button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:7px 14px;border-radius:6px;border:none;background:transparent;color:var(--text-3);cursor:pointer;transition:all var(--duration-fast);display:flex;align-items:center;gap:6px}
+.role-toggle button:hover{color:var(--text-2)}
+.role-toggle button.active{background:var(--surface-3);color:var(--text-1)}
+.role-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.search-input{position:relative;width:260px}
+.search-input input{width:100%;background:var(--surface-1);border:1px solid var(--border-2);border-radius:7px;padding:8px 12px 8px 34px;color:var(--text-1);font-family:var(--font-sans);font-size:13px;outline:none;transition:border-color var(--duration-fast)}
+.search-input input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,138,0,.12)}
+.search-input input::placeholder{color:var(--text-3)}
+.search-input svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-3);pointer-events:none}
+
+/* Section Title (§1.4: Mono 12/700 uppercase +8%) — заголовок роли */
+.role-section{margin-bottom:32px}
+.role-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border-1)}
+.role-header .icon{width:18px;height:18px}
+.role-header .title{font-family:var(--font-sans);font-size:20px;font-weight:600}
+.role-header .count{font-family:var(--font-mono);font-size:11px;color:var(--text-3);margin-left:auto}
+
+/* Подгруппа по подклассу — второй уровень вложенности контента (см.
+   VALIDATION_REPORT п.4, не то же самое что второй уровень навигации §5). */
+.subrole-group{margin-bottom:18px}
+.subrole-group:last-child{margin-bottom:0}
+.subrole-label{font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* Compact card — §2.4 уровень 1 */
+.hero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.hero-card{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color var(--duration-fast),transform var(--duration-fast);position:relative;text-align:left;font:inherit;color:inherit}
+.hero-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
+.hero-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hero-card.banned{opacity:.4;filter:grayscale(1)}
+.hero-card-img{width:100%;aspect-ratio:1;background:var(--surface-3);position:relative}
+.hero-card-accent{position:absolute;top:0;left:0;right:0;height:3px}
+.hero-banned-badge{position:absolute;top:6px;right:6px;font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;background:var(--danger);color:#fff;padding:2px 6px;border-radius:4px;letter-spacing:.04em}
+.hero-card-body{padding:10px}
+.hero-card-name{font-size:16px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}
+.hero-counters{display:flex;gap:4px}
+.hero-counter-chip{position:relative;width:26px;height:26px;border-radius:5px;background:var(--surface-3);flex-shrink:0}
+.hero-counter-score{position:absolute;bottom:-3px;right:-3px;font-family:var(--font-mono);font-size:8px;font-weight:700;background:var(--bg);border:1px solid var(--border-2);border-radius:3px;padding:0 2px;line-height:1.4}
+
+/* Empty state — §2.10, обязательное конкретное действие (§3.2 философии —
+   V1 сейчас отдаёт только текст-подсказку без кнопки, см. VALIDATION_REPORT п.2) */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px;color:var(--text-3)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.6}
+.empty-title{font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text-2);margin-bottom:20px;max-width:320px;line-height:1.6}
+.btn-secondary{font-family:var(--font-sans);font-size:13px;font-weight:600;padding:9px 18px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-1);cursor:pointer;transition:background var(--duration-fast)}
+.btn-secondary:hover{background:var(--surface-3)}
+
+/* Loading — skeleton, повторяет форму реального контента (§2.10) */
+.skeleton{background:linear-gradient(90deg,var(--surface-1) 25%,var(--surface-2) 50%,var(--surface-1) 75%);background-size:200% 100%;animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-card{background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;overflow:hidden}
+.skeleton-card .skeleton{display:block}
+.skeleton-img{aspect-ratio:1}
+.skeleton-body{padding:10px;display:flex;flex-direction:column;gap:8px}
+.skeleton-line{height:14px;border-radius:4px;width:70%}
+.skeleton-chips{display:flex;gap:4px}
+.skeleton-chip{width:26px;height:26px;border-radius:5px}
+
+/* ── Detail popup — §2.4 уровень 2, §2.9 «Модалка: блокирующее решение» ──
+   Тут не решение, а полный профиль — используем тот же .modal-overlay
+   паттерн, т.к. это не "решение", а достаточно много контента, чтобы
+   оправдать прерывание контекста (см. VALIDATION_REPORT — граница между
+   "модалка" и "просто более просторный detail" не описана явно в §2.9). */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.show{display:flex}
+.modal{width:100%;max-width:560px;max-height:82vh;overflow-y:auto;background:var(--surface-1);border:1px solid var(--border-2);border-radius:12px;box-shadow:var(--shadow-modal);padding:24px}
+.modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;border:1px solid var(--border-2);background:transparent;color:var(--text-2);cursor:pointer;font-size:16px}
+.modal-close:hover{color:var(--text-1);border-color:var(--border-2);background:var(--surface-2)}
+.modal-head{display:flex;gap:16px;margin-bottom:20px;position:relative}
+.modal-portrait{width:88px;height:88px;border-radius:12px;background:var(--surface-3);flex-shrink:0;border:2px solid var(--role-tank)}
+.modal-title{font-size:22px;font-weight:700;margin-bottom:6px}
+.modal-role-line{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
+.priority-dots{display:flex;gap:3px;align-items:center}
+.p-dot{width:9px;height:9px;border-radius:2px;background:var(--border-2)}
+.p-dot.filled{background:var(--accent)}
+.priority-num{font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-left:6px}
+.modal-section-title{font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px;margin-top:20px}
+.map-strength-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border-1);margin-bottom:6px}
+.map-strength-name{flex:1;font-size:13px;font-weight:600}
+.map-strength-score{font-family:var(--font-mono);font-size:13px;font-weight:700}
+
+.state-caption{width:1180px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);line-height:1.6}
+.state-caption b{color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="active" data-state="default" onclick="setState('default',this)">По умолчанию</button>
+  <button data-state="loading" onclick="setState('loading',this)">Загрузка</button>
+  <button data-state="empty" onclick="setState('empty',this)">Пусто (фильтр без результатов)</button>
+  <button data-state="error" onclick="setState('error',this)">Ошибка загрузки</button>
+  <button data-state="detail" onclick="setState('detail',this)">Detail popup</button>
+</div>
+
+<div class="frame">
+  <div class="identity-bar">
+    <div class="identity-left"><div class="wordmark">DRAFT HUB <span>V2</span></div></div>
+    <div class="identity-right">
+      <div class="scope-switch"><button class="active">Global</button><button>Team</button><button>Personal</button></div>
+      <div class="team-chip">Team Analyst<div class="avatar">TA</div></div>
+    </div>
+  </div>
+
+  <div class="body-row">
+    <nav class="rail">
+      <div class="rail-primary">
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V6l-6-3m0 14V4"/></svg></span><span class="label">Карты</span></div>
+        <div class="rail-item active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span><span class="label">Герои</span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="label">Драфт</span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></span><span class="label">Состав</span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="3"/><path d="M2 20v-1a6 6 0 0 1 12 0v1"/><circle cx="17" cy="8" r="2.5"/><path d="M15.5 20v-.5a5 5 0 0 1 7 0v.5"/></svg></span><span class="label">Игроки</span></div>
+      </div>
+      <div class="rail-divider"></div>
+      <div class="rail-secondary">
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h4v4H4zM4 14h4v4H4zM11 7h9M11 17h9"/></svg></span><span class="label">Tier List</span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg></span><span class="label">Настройки</span></div>
+      </div>
+    </nav>
+
+    <div class="workspace" id="workspace">
+      <div class="section-toolbar">
+        <div class="role-toggle" id="roleToggle">
+          <button class="active" data-role="all" onclick="setRole('all',this)">Все</button>
+          <button data-role="Tank" onclick="setRole('Tank',this)"><span class="role-dot" style="background:var(--role-tank)"></span>Tank</button>
+          <button data-role="Damage" onclick="setRole('Damage',this)"><span class="role-dot" style="background:var(--role-damage)"></span>Damage</button>
+          <button data-role="Support" onclick="setRole('Support',this)"><span class="role-dot" style="background:var(--role-support)"></span>Support</button>
+        </div>
+        <div class="search-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="heroSearch" placeholder="Найти героя..." oninput="onSearchInput()">
+        </div>
+      </div>
+
+      <div id="content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="state-caption" id="caption">
+  <b>По умолчанию</b> — сетка сгруппирована Роль → Подкласс (два уровня вложенности контента, §2.4 + новый вопрос в VALIDATION_REPORT п.4). Compact-карточка: портрет + имя + один слот "топ-контрпики" (см. VALIDATION_REPORT п.1 про то, считать ли это 1 метрику или 3).
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-head">
+      <div class="modal-portrait"></div>
+      <div>
+        <div class="modal-title">Рейнхардт</div>
+        <div class="modal-role-line">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--role-tank)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+          Tank · Bruiser
+        </div>
+      </div>
+    </div>
+    <div id="modalPriority" class="priority-dots" style="margin-bottom:4px"></div>
+    <div class="modal-section-title">Сила на картах</div>
+    <div class="map-strength-row"><span class="map-strength-name">King's Row</span><span class="map-strength-score" style="color:var(--success)">8.5</span></div>
+    <div class="map-strength-row"><span class="map-strength-name">Hollywood</span><span class="map-strength-score" style="color:var(--success)">7.8</span></div>
+    <div class="map-strength-row"><span class="map-strength-name">Circuit Royal</span><span class="map-strength-score" style="color:var(--danger)">3.2</span></div>
+  </div>
+</div>
+
+<script>
+const HEROES = {
+  Tank: {
+    Initiator: [{n:'Рейнхардт',ctr:[62,45,38]},{n:'Зверь',ctr:[71,50]}],
+    Bruiser: [{n:'Симетра',ctr:[],banned:true},{n:'Рамматтра',ctr:[58,40,33]}],
+    Stalwart: [{n:'Оришa',ctr:[66]}],
+  },
+  Damage: {
+    Flanker: [{n:'Трейсер',ctr:[80,72,55]},{n:'Гэндзи',ctr:[68,44]}],
+    Recon: [{n:'Соджорн',ctr:[]}],
+    Sharpshooter: [{n:'Уидоумейкер',ctr:[77,60,52]},{n:'Эш',ctr:[49]}],
+    Specialist: [{n:'Симметра',ctr:[]}],
+  },
+  Support: {
+    Medic: [{n:'Ана',ctr:[64,51]},{n:'Мерси',ctr:[]}],
+    Tactician: [{n:'Лусио',ctr:[70]}],
+    Survivor: [{n:'Мойра',ctr:[45,30]}],
+  }
+};
+const roleColor = { Tank:'var(--role-tank)', Damage:'var(--role-damage)', Support:'var(--role-support)' };
+
+function heroGridHtml(roleFilter, query){
+  const q = (query||'').trim().toLowerCase();
+  const roles = roleFilter==='all' ? ['Tank','Damage','Support'] : [roleFilter];
+  let anyMatch = false;
+  const html = roles.map(role=>{
+    const subroles = HEROES[role];
+    const filteredSubroles = Object.fromEntries(
+      Object.entries(subroles)
+        .map(([sub,heroes])=>[sub, q ? heroes.filter(h=>h.n.toLowerCase().includes(q)) : heroes])
+        .filter(([,heroes])=>heroes.length)
+    );
+    const total = Object.values(filteredSubroles).flat().length;
+    if(!total) return '';
+    anyMatch = true;
+    const subHtml = Object.entries(filteredSubroles).map(([sub,heroes])=>`
+      <div class="subrole-group">
+        <div class="subrole-label">${sub}</div>
+        <div class="hero-grid">${heroes.map(h=>`
+          <button type="button" class="hero-card${h.banned?' banned':''}" onclick="openModal()">
+            <div class="hero-card-img">
+              <div class="hero-card-accent" style="background:${roleColor[role]}"></div>
+              ${h.banned?'<div class="hero-banned-badge">БАН</div>':''}
+            </div>
+            <div class="hero-card-body">
+              <div class="hero-card-name">${h.n}</div>
+              ${h.ctr.length?`<div class="hero-counters">${h.ctr.slice(0,3).map(s=>`
+                <div class="hero-counter-chip"><span class="hero-counter-score">${s}</span></div>`).join('')}</div>`:''}
+            </div>
+          </button>`).join('')}
+        </div>
+      </div>`).join('');
+    return `<div class="role-section">
+      <div class="role-header">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="${roleColor[role]}" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+        <span class="title">${role}</span>
+        <span class="count">${total} героев</span>
+      </div>
+      ${subHtml}
+    </div>`;
+  }).join('');
+  if(!anyMatch){
+    const roleLabel = roleFilter==='all' ? 'всем ролям' : `роли «${roleFilter}»`;
+    return `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-title">Ничего не найдено</div>
+      <div class="empty-desc">По ${roleLabel}${q?` и запросу «${q}»`:''} героев нет. Попробуй изменить запрос ${roleFilter!=='all'?'или сбросить фильтр по роли':''}.</div>
+      ${roleFilter!=='all' ? `<button class="btn-secondary" onclick="document.getElementById('heroSearch').value='';setRole('all', document.querySelector('#roleToggle button[data-role=all]'))">Сбросить фильтр</button>` : ''}
+    </div>`;
+  }
+  return html;
+}
+
+function loadingHtml(){
+  const cards = Array.from({length:10},()=>`
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton-chips">
+          <div class="skeleton skeleton-chip"></div><div class="skeleton skeleton-chip"></div><div class="skeleton skeleton-chip"></div>
+        </div>
+      </div>
+    </div>`).join('');
+  return `<div class="hero-grid">${cards}</div>`;
+}
+
+let currentRole = 'all';
+let _searchDebounce = null;
+
+function renderGrid(){
+  const query = document.getElementById('heroSearch').value;
+  document.getElementById('content').innerHTML = heroGridHtml(currentRole, query);
+}
+
+function onSearchInput(){
+  clearTimeout(_searchDebounce);
+  // §2.2: debounce не длиннее --duration-base (150ms), фильтр на каждый ввод, не по Enter
+  _searchDebounce = setTimeout(renderGrid, 150);
+}
+
+function setRole(role, btn){
+  currentRole = role;
+  document.querySelectorAll('#roleToggle button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+const captions = {
+  default: '<b>По умолчанию</b> — сетка сгруппирована Роль → Подкласс (два уровня вложенности контента, §2.4 + новый вопрос в VALIDATION_REPORT п.4). Compact-карточка: портрет + имя + один слот "топ-контрпики" (см. VALIDATION_REPORT п.1 про то, считать ли это 1 метрику или 3).',
+  loading: '<b>Загрузка</b> — skeleton повторяет форму реальной сетки (роль-группы не показаны, т.к. до ответа каталога состав по ролям ещё не известен) — §2.10.',
+  empty: '<b>Пусто</b> — конкретная причина (роль+запрос) и конкретное действие (кнопка «Сбросить фильтр»), не просто текст-подсказка. В V1 сейчас только текст без кнопки — см. VALIDATION_REPORT п.2, это расхождение с §3.2 философии, не новый вопрос к системе.',
+  detail: '<b>Detail popup</b> — §2.4 уровень 2. Приоритет — 10 сегментов (не только заливка активная/неактивная — число рядом, §4). Сила на картах — цвет + число одновременно (доступность соблюдена).'
+};
+
+function setState(state, btn){
+  document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  closeModal();
+  const search = document.getElementById('heroSearch');
+  if(state==='default'){
+    currentRole='all'; search.value='';
+    document.querySelectorAll('#roleToggle button').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#roleToggle button[data-role=all]').classList.add('active');
+    renderGrid();
+  } else if(state==='loading'){
+    document.getElementById('content').innerHTML = loadingHtml();
+  } else if(state==='empty'){
+    // Реальный путь: роль=Support + запрос, которому заведомо нет совпадений —
+    // не отдельный статичный шаблон, тот же heroGridHtml(), что и живой поиск.
+    currentRole='Support'; search.value='зз';
+    document.querySelectorAll('#roleToggle button').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#roleToggle button[data-role=Support]').classList.add('active');
+    renderGrid();
+  } else if(state==='detail'){
+    currentRole='all'; search.value='';
+    document.querySelectorAll('#roleToggle button').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#roleToggle button[data-role=all]').classList.add('active');
+    renderGrid();
+    openModal();
+  }
+  document.getElementById('caption').innerHTML = captions[state];
+}
+
+function openModal(){
+  const dotsHtml = Array.from({length:10},(_,i)=>`<span class="p-dot${i<8?' filled':''}"></span>`).join('') + '<span class="priority-num">8/10</span>';
+  document.getElementById('modalPriority').innerHTML = dotsHtml;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+setState('default', document.querySelector('.toolbar button.active'));
+</script>
+</body>
+</html>

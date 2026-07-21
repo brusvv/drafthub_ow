@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Draft Hub V2 — Auth (§0 проверка гипотезы Shell)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0D;
+  --surface-1:#141417;
+  --surface-2:#1B1B1F;
+  --surface-3:#232326;
+  --border-1:#2F2F36;
+  --border-2:#3A3A42;
+  --text-1:#F5F5F7;
+  --text-2:#A1A1AA;
+  --text-3:#71717A;
+  --accent:#FF8A00;
+  --accent-hover:#FFA733;
+  --danger:#EF4444;
+  --role-tank:#4A9EE0;
+  --role-damage:#E05555;
+  --role-support:#2BBD8E;
+  --font-sans:'Inter',sans-serif;
+  --font-mono:'Space Mono',monospace;
+  --radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;font-family:var(--font-sans);color:var(--text-1);padding:32px;display:flex;flex-direction:column;gap:16px;align-items:center}
+
+.toolbar{display:flex;gap:8px;background:var(--surface-1);border:1px solid var(--border-1);border-radius:10px;padding:4px;flex-wrap:wrap;max-width:900px;justify-content:center}
+.toolbar button{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border-radius:7px;border:none;background:transparent;color:var(--text-3);cursor:pointer;transition:all .15s}
+.toolbar button:hover{color:var(--text-2)}
+.toolbar button.active{background:var(--surface-3);color:var(--text-1)}
+
+/* ── Frame — та же рамка "окна браузера", что в остальных мокапах,
+     ЧИСТО для демонстрации в одном контексте. Важно: когда активно
+     auth-состояние, ВНУТРИ frame нет ни identity-bar, ни rail вообще —
+     не свёрнуты, не приглушены, буквально отсутствуют в разметке.
+     Это не решение этого мокапа — это прямое отражение V1:
+     src/html/main-app.html оборачивает Shell в <div id="app"
+     style="display:none">, src/html/auth.html — сосед, отдельный
+     <div id="authScreen">. auth/ui.js:9-22 переключает между ними
+     через .style.display, не через классы состояния ОДНОГО контейнера
+     — это два разных контейнера на одном уровне документа. ── */
+.frame{width:1000px;height:640px;background:var(--bg);border:1px solid var(--border-1);border-radius:12px;overflow:hidden;position:relative}
+
+/* ════ Shell — существует только в состоянии "Обычная работа" ════ */
+.app-shell{position:absolute;inset:0;display:flex;flex-direction:column}
+.identity-bar{height:56px;flex-shrink:0;background:var(--surface-1);border-bottom:1px solid var(--border-1);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.wordmark{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.wordmark span{color:var(--accent)}
+.team-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text-2)}
+.body-row{flex:1;display:flex;min-height:0}
+.rail{width:64px;flex-shrink:0;background:var(--surface-1);border-right:1px solid var(--border-1);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.rail-item{height:40px;display:flex;align-items:center;justify-content:center;border-radius:8px;border-left:2px solid transparent;color:var(--text-2)}
+.rail-item.active{background:var(--surface-3);border-left-color:var(--accent);color:var(--accent)}
+.rail-item .icon svg{width:16px;height:16px}
+.workspace-ph{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+
+/* ════ Auth — отдельный контейнер, sibling у .app-shell, не его
+     состояние. Bare card, центрирован, БЕЗ identity-bar/rail — как в
+     реальном V1 auth/ui.js _renderLoginForm()/_renderRegisterForm()/
+     _renderNoTeams(), все три возвращают один и тот же внешний
+     .auth-screen/.auth-card, ничего похожего на Shell внутри. ════ */
+.auth-screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:var(--bg)}
+.auth-screen.show{display:flex}
+.auth-inner{width:340px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.auth-logo{font-size:20px;font-weight:800;text-align:center}
+.auth-sub{font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.auth-card{width:100%;background:var(--surface-1);border:1px solid var(--border-1);border-radius:12px;padding:24px}
+.oauth-btn{width:100%;padding:10px;border-radius:7px;border:1px solid var(--border-1);background:var(--surface-2);color:var(--text-1);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px}
+.oauth-btn:hover{background:var(--surface-3)}
+.auth-divider{text-align:center;font-family:var(--font-mono);font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0}
+.form-group{margin-bottom:10px}
+.form-input{width:100%;padding:9px 11px;border-radius:7px;border:1px solid var(--border-1);background:var(--surface-2);color:var(--text-1);font-size:13px;font-family:var(--font-sans)}
+.form-input:focus{outline:none;border-color:var(--accent)}
+.btn-primary{width:100%;padding:10px;border-radius:7px;border:none;background:var(--accent);color:#0B0B0D;font-weight:700;font-size:13px;cursor:pointer}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-plain{width:100%;padding:9px;border-radius:7px;border:1px solid var(--border-1);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;margin-top:8px}
+.auth-switch{text-align:center;margin-top:12px;font-size:12px;color:var(--text-3)}
+.auth-switch button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline}
+.no-teams-desc{font-size:13px;color:var(--text-2);margin-bottom:16px;line-height:1.5}
+.no-teams-title{font-size:15px;font-weight:700;margin-bottom:8px}
+
+.state-caption{width:1000px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);line-height:1.6}
+.state-caption b{color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="active" onclick="setState('normal',this)">Обычная работа (есть сессия + команда)</button>
+  <button onclick="setState('login',this)">Вход (нет сессии)</button>
+  <button onclick="setState('register',this)">Регистрация (нет сессии)</button>
+  <button onclick="setState('no-teams',this)">Нет команд (есть сессия, команд — 0)</button>
+</div>
+
+<div class="frame">
+  <!-- Shell существует только здесь -->
+  <div class="app-shell" id="appShell">
+    <div class="identity-bar">
+      <div class="wordmark">DRAFT HUB <span>V2</span></div>
+      <div class="team-chip">Team Analyst<div class="avatar">TA</div></div>
+    </div>
+    <div class="body-row">
+      <nav class="rail">
+        <div class="rail-item active"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 20l-6-3V4l6 3m0 13l6-3m-6 3V7m6 10l6 3V6l-6-3m0 14V4"/></svg></span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span></div>
+        <div class="rail-item"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span></div>
+      </nav>
+      <div class="workspace-ph">Workspace — обычный раздел приложения</div>
+    </div>
+  </div>
+
+  <!-- Auth — sibling-контейнер, не состояние app-shell -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-inner" id="authInner"><!-- рендерится JS --></div>
+  </div>
+</div>
+
+<div class="state-caption" id="caption"></div>
+
+<script>
+const views = {
+  normal: () => {
+    document.getElementById('appShell').style.display = 'flex';
+    document.getElementById('authScreen').classList.remove('show');
+  },
+  login: () => {
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('authScreen').classList.add('show');
+    document.getElementById('authInner').innerHTML = `
+      <div><div class="auth-logo">Draft Hub</div><div class="auth-sub">Team Analyst</div></div>
+      <div class="auth-card">
+        <button class="oauth-btn">Войти через Discord</button>
+        <button class="oauth-btn">Войти через Google</button>
+        <div class="auth-divider">или</div>
+        <div class="form-group"><input class="form-input" placeholder="Email"></div>
+        <div class="form-group"><input class="form-input" type="password" placeholder="Пароль"></div>
+        <button class="btn-primary">Войти</button>
+        <div class="auth-switch">Нет аккаунта? <button onclick="setState('register',document.querySelectorAll('.toolbar button')[2])">Создать</button></div>
+      </div>`;
+  },
+  register: () => {
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('authScreen').classList.add('show');
+    document.getElementById('authInner').innerHTML = `
+      <div><div class="auth-logo">Draft Hub</div></div>
+      <div class="auth-card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px">Создать аккаунт</div>
+        <div class="form-group"><input class="form-input" placeholder="Email"></div>
+        <div class="form-group"><input class="form-input" type="password" placeholder="Пароль (мин. 8 символов)"></div>
+        <div class="form-group"><input class="form-input" type="password" placeholder="Повтори пароль"></div>
+        <button class="btn-primary">Создать аккаунт</button>
+        <div class="auth-switch">Уже есть аккаунт? <button onclick="setState('login',document.querySelectorAll('.toolbar button')[1])">Войти</button></div>
+      </div>`;
+  },
+  'no-teams': () => {
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('authScreen').classList.add('show');
+    document.getElementById('authInner').innerHTML = `
+      <div><div class="auth-logo">Draft Hub</div></div>
+      <div class="auth-card">
+        <div class="no-teams-title">Выбери команду</div>
+        <div class="no-teams-desc">У тебя пока нет команд. Создай новую или попроси инвайт у тренера.</div>
+        <button class="btn-primary">+ Создать команду</button>
+        <button class="btn-plain">Выйти</button>
+      </div>`;
+  }
+};
+
+const captions = {
+  normal: '<b>Обычная работа.</b> Есть сессия и активная команда — Shell (identity-bar + rail) присутствует полностью, как обычно.',
+  login: '<b>Вход — нет сессии.</b> Shell отсутствует НЕ частично (не свёрнут, не приглушён) — целиком нет в разметке. `.auth-screen` — bare card, не урезанный Shell.',
+  register: '<b>Регистрация — тоже нет сессии.</b> Тот же bare card, что и логин — своя минимальная «шапка» (.auth-logo), но это не переиспользованный компонент Shell, а отдельный, самостоятельный элемент только этого экрана.',
+  'no-teams': '<b>Есть сессия, но команд — 0.</b> Важный случай: сессия РЕАЛЬНО есть (доступна кнопка «Выйти»), но Shell всё равно отсутствует. Значит критерий — не "есть ли сессия", а "есть ли активная команда".'
+};
+
+function setState(state, btn){
+  document.querySelectorAll('.toolbar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  views[state]();
+  document.getElementById('caption').innerHTML = captions[state];
+}
+
+setState('normal', document.querySelector('.toolbar button.active'));
+</script>
+</body>
+</html>
